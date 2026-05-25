@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local data artifacts
+data/raw/
+data/processed/
+data/geo/
+
+# Local environment
+.env
+.env.*
+
+# OS/editor
+.DS_Store
+
