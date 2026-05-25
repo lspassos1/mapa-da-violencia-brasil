@@ -46,3 +46,24 @@ export interface PeriodOption {
   updatedAt: string;
 }
 
+export interface DataStatus {
+  source: string;
+  lastUpdated: string;
+  latestPeriod: string;
+  status: string;
+}
+
+export interface CrimeMapFilters {
+  indicator: CrimeIndicatorKey;
+  period: string;
+  viewMode: ViewMode;
+  uf: string | null;
+}
+
+export interface CrimeMapResult {
+  demo: boolean;
+  status: DataStatus;
+  filters: CrimeMapFilters;
+  items: MunicipalityCrimeData[];
+  ranking: MunicipalityCrimeData[];
+}

@@ -1,5 +1,5 @@
 import { Trophy } from "lucide-react";
-import { getMetricValue } from "@/lib/ranking";
+import { getMetricValue } from "@/lib/crimeMetrics";
 import { riskLevelLabels } from "@/lib/riskLevel";
 import { formatMetricValue } from "@/lib/formatters";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
@@ -60,4 +60,3 @@ export function RankingPanel({
     </section>
   );
 }
-

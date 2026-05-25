@@ -3,10 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from "maplibre-gl";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { createStateFeatureCollection } from "@/data/stateGeometries";
-import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
-import { getMetricValue } from "@/lib/ranking";
 import { getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
+import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import { MapTooltip } from "./MapTooltip";
 
@@ -316,33 +314,4 @@ export function BrazilCrimeMap({
       <MapTooltip indicator={indicator} tooltip={tooltip} />
     </div>
   );
-}
-
-function createCityFeatureCollection(
-  data: MunicipalityCrimeData[],
-  indicator: CrimeIndicatorKey,
-  viewMode: ViewMode,
-) {
-  return {
-    type: "FeatureCollection" as const,
-    features: data.map((item) => {
-      const metric = item.indicadores[indicator];
-      return {
-        type: "Feature" as const,
-        properties: {
-          idIbge: item.idIbge,
-          municipio: item.municipio,
-          uf: item.uf,
-          score: metric.score,
-          value: getMetricValue(item, indicator, viewMode),
-          color: getScoreColor(metric.score),
-          radius: getScoreRadius(metric.score),
-        },
-        geometry: {
-          type: "Point" as const,
-          coordinates: [item.lng, item.lat],
-        },
-      };
-    }),
-  };
 }

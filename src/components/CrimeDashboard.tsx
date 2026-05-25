@@ -9,28 +9,39 @@ import { MapLegend } from "@/components/map/MapLegend";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { MunicipalityDetailsPanel } from "@/components/panels/MunicipalityDetailsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
-import { demoDataStatus, indicatorOptions, mockCrimeData, periodOptions } from "@/data/mockCrimeData";
-import { getRankedMunicipalities } from "@/lib/ranking";
+import {
+  getAvailableIndicators,
+  getAvailablePeriods,
+  getCrimeMapData,
+  getDefaultCrimeMapFilters,
+  getDemoDataStatus,
+} from "@/services/crimeDataService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 
+const defaultFilters = getDefaultCrimeMapFilters();
+const indicators = getAvailableIndicators();
+const periods = getAvailablePeriods();
+const demoStatus = getDemoDataStatus();
+
 export function CrimeDashboard() {
-  const [indicator, setIndicator] = useState<CrimeIndicatorKey>("indiceGeral");
-  const [viewMode, setViewMode] = useState<ViewMode>("score");
-  const [period, setPeriod] = useState(periodOptions[0].key);
+  const [indicator, setIndicator] = useState<CrimeIndicatorKey>(defaultFilters.indicator);
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultFilters.viewMode);
+  const [period, setPeriod] = useState(defaultFilters.period);
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [selectedMunicipality, setSelectedMunicipality] = useState<MunicipalityCrimeData | null>(null);
 
-  const currentData = useMemo(
-    () => mockCrimeData.filter((item) => item.periodo === period),
-    [period],
+  const mapResult = useMemo(
+    () => getCrimeMapData({ indicator, period, viewMode, uf: null }),
+    [indicator, period, viewMode],
   );
-
-  const ranking = useMemo(
-    () => getRankedMunicipalities(currentData, indicator, viewMode, selectedState, 10),
-    [currentData, indicator, selectedState, viewMode],
+  const rankingResult = useMemo(
+    () => getCrimeMapData({ indicator, period, viewMode, uf: selectedState }),
+    [indicator, period, selectedState, viewMode],
   );
+  const currentData = mapResult.items;
+  const ranking = rankingResult.ranking;
 
-  const selectedPeriod = periodOptions.find((option) => option.key === period) ?? periodOptions[0];
+  const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
 
   function handleStateSelect(uf: string) {
     setSelectedState(uf);
@@ -58,9 +69,9 @@ export function CrimeDashboard() {
         <aside className="flex min-h-0 flex-col gap-4">
           <CrimeFilters
             indicator={indicator}
-            indicators={indicatorOptions}
+            indicators={indicators}
             period={period}
-            periods={periodOptions}
+            periods={periods}
             viewMode={viewMode}
             onIndicatorChange={(next) => {
               setIndicator(next);
@@ -118,13 +129,13 @@ export function CrimeDashboard() {
             <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Status da base</p>
             <div className="mt-3 space-y-2 text-sm text-slate-300">
               <p>
-                <span className="text-slate-500">Fonte:</span> {demoDataStatus.source}
+                <span className="text-slate-500">Fonte:</span> {demoStatus.source}
               </p>
               <p>
                 <span className="text-slate-500">Periodo:</span> {selectedPeriod.label}
               </p>
               <p>
-                <span className="text-slate-500">Atualizado:</span> {demoDataStatus.lastUpdated}
+                <span className="text-slate-500">Atualizado:</span> {demoStatus.lastUpdated}
               </p>
             </div>
           </div>
@@ -132,6 +143,7 @@ export function CrimeDashboard() {
             allData={currentData}
             indicator={indicator}
             municipality={selectedMunicipality}
+            selectedState={selectedState}
             viewMode={viewMode}
           />
         </aside>
@@ -139,4 +151,3 @@ export function CrimeDashboard() {
     </main>
   );
 }
-

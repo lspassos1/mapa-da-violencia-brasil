@@ -1,5 +1,5 @@
 import { ChevronLeft, Home } from "lucide-react";
-import { getStateByUf } from "@/data/stateGeometries";
+import { getStateByUf } from "@/services/geoService";
 import type { MunicipalityCrimeData } from "@/types/crime";
 
 interface BreadcrumbProps {
@@ -49,4 +49,3 @@ export function Breadcrumb({
     </nav>
   );
 }
-

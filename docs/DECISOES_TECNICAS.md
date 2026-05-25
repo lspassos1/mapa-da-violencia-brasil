@@ -226,3 +226,26 @@ Consequencias:
 
 - Enquanto nao houver codigo, esses comandos nao se aplicam.
 - Quando app existir, falhas bloqueiam release.
+
+## ADR-013 - Evolucao da camada geografica
+
+Status: Aceita
+
+Decisao:
+
+- O MVP visual usa centroides municipais demonstrativos e bounds simplificados de UFs.
+- A proxima camada geografica deve ser um GeoJSON leve de UFs.
+- Depois, a aplicacao deve evoluir para poligonos municipais simplificados.
+- Em escala maior, a camada municipal deve migrar para vector tiles ou PMTiles.
+
+Motivo:
+
+- A navegacao Brasil -> Estado -> Municipio ja pode ser validada sem carregar a malha municipal completa.
+- Bounds simplificados reduzem peso e risco no MVP.
+- A separacao em `src/services/geoService.ts` permite trocar a origem geografica sem reescrever componentes.
+
+Consequencias:
+
+- O MVP atual nao representa limites reais de municipios.
+- Cores municipais ainda sao aplicadas em centroides, nao em poligonos.
+- A futura integracao com IBGE deve preservar `id_ibge` como chave de join entre dados e geometria.

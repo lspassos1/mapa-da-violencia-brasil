@@ -1,30 +1,43 @@
 import { BarChart3, MapPinned } from "lucide-react";
-import { demoDataStatus, indicatorOptions } from "@/data/mockCrimeData";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 import { getMunicipalityRank } from "@/lib/ranking";
 import { riskLevelLabels } from "@/lib/riskLevel";
+import { getAvailableIndicators, getDemoDataStatus } from "@/services/crimeDataService";
+import { getStateByUf } from "@/services/geoService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 
 interface MunicipalityDetailsPanelProps {
   allData: MunicipalityCrimeData[];
   indicator: CrimeIndicatorKey;
   municipality: MunicipalityCrimeData | null;
+  selectedState: string | null;
   viewMode: ViewMode;
 }
+
+const indicatorOptions = getAvailableIndicators();
+const demoDataStatus = getDemoDataStatus();
 
 export function MunicipalityDetailsPanel({
   allData,
   indicator,
   municipality,
+  selectedState,
   viewMode,
 }: MunicipalityDetailsPanelProps) {
   if (!municipality) {
+    const state = getStateByUf(selectedState);
+    const stateItems = selectedState ? allData.filter((item) => item.uf === selectedState) : [];
+
     return (
       <section className="flex flex-1 flex-col justify-center rounded-lg border border-white/10 bg-white/[0.04] p-5 text-center backdrop-blur">
         <MapPinned className="mx-auto h-8 w-8 text-cyan-300" />
-        <h2 className="mt-4 text-lg font-semibold">Nenhum municipio selecionado</h2>
+        <h2 className="mt-4 text-lg font-semibold">
+          {state ? `${state.nome} em foco` : "Nenhum municipio selecionado"}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Clique em uma cidade no mapa ou em um item do ranking para ver detalhes demonstrativos.
+          {state
+            ? `${stateItems.length} municipios demonstrativos disponiveis neste recorte. Clique em uma cidade no mapa ou no ranking para abrir os detalhes.`
+            : "Clique em uma cidade no mapa ou em um item do ranking para ver detalhes demonstrativos."}
         </p>
       </section>
     );
@@ -85,4 +98,3 @@ function MetricCard({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

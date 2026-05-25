@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { demoDataStatus, mockCrimeData } from "@/data/mockCrimeData";
+import { getDefaultCrimeMapFilters, getDemoDataStatus } from "@/services/crimeDataService";
+import { getMunicipalityById } from "@/services/municipalityService";
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ idIbge: string }> },
 ) {
   const { searchParams } = new URL(request.url);
-  const period = searchParams.get("periodo") ?? "2026-04";
+  const period = searchParams.get("periodo") ?? getDefaultCrimeMapFilters().period;
   const { idIbge } = await context.params;
-  const item = mockCrimeData.find((municipality) => municipality.idIbge === idIbge && municipality.periodo === period);
+  const item = getMunicipalityById(idIbge, period);
 
   if (!item) {
     return NextResponse.json({ error: "Municipio nao encontrado" }, { status: 404 });
@@ -16,8 +17,7 @@ export async function GET(
 
   return NextResponse.json({
     demo: true,
-    status: demoDataStatus,
+    status: getDemoDataStatus(),
     item,
   });
 }
-

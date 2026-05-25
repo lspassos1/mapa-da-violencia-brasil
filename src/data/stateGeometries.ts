@@ -1,6 +1,6 @@
-import type { StateMapInfo } from "@/types/map";
+import type { Bounds, StateMapInfo } from "@/types/geo";
 
-export const brazilBounds = [-74.1, -34.2, -34.7, 5.4] as const;
+export const brazilBounds: Bounds = [-74.1, -34.2, -34.7, 5.4];
 
 export const stateMapData: StateMapInfo[] = [
   { uf: "AM", nome: "Amazonas", bounds: [-73.8, -9.8, -56.0, 2.4], centroid: [-63.3, -4.1] },
@@ -16,39 +16,4 @@ export const stateMapData: StateMapInfo[] = [
   { uf: "PR", nome: "Parana", bounds: [-54.6, -26.8, -48.0, -22.5], centroid: [-51.3, -24.7] },
   { uf: "RS", nome: "Rio Grande do Sul", bounds: [-57.7, -33.8, -49.7, -27.1], centroid: [-53.6, -30.2] },
 ];
-
-export function getStateByUf(uf: string | null): StateMapInfo | undefined {
-  if (!uf) {
-    return undefined;
-  }
-  return stateMapData.find((state) => state.uf === uf);
-}
-
-export function createStateFeatureCollection() {
-  return {
-    type: "FeatureCollection" as const,
-    features: stateMapData.map((state) => {
-      const [west, south, east, north] = state.bounds;
-      return {
-        type: "Feature" as const,
-        properties: {
-          uf: state.uf,
-          nome: state.nome,
-        },
-        geometry: {
-          type: "Polygon" as const,
-          coordinates: [
-            [
-              [west, south],
-              [east, south],
-              [east, north],
-              [west, north],
-              [west, south],
-            ],
-          ],
-        },
-      };
-    }),
-  };
-}
 

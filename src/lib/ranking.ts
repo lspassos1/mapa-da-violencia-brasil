@@ -1,16 +1,5 @@
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
-
-export function getMetricValue(
-  item: MunicipalityCrimeData,
-  indicator: CrimeIndicatorKey,
-  viewMode: ViewMode,
-): number {
-  const metric = item.indicadores[indicator];
-  if (viewMode === "total") return metric.total;
-  if (viewMode === "taxa100k") return metric.taxa100k;
-  if (viewMode === "variacaoMensal") return metric.variacaoMensal;
-  return metric.score;
-}
+import { getMetricValue } from "@/lib/crimeMetrics";
 
 export function getRankedMunicipalities(
   data: MunicipalityCrimeData[],
@@ -35,4 +24,3 @@ export function getMunicipalityRank(
   const ranked = getRankedMunicipalities(data, indicator, viewMode, uf, data.length);
   return ranked.findIndex((item) => item.idIbge === municipalityId) + 1;
 }
-
