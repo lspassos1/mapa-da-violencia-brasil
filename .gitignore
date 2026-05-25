@@ -4,6 +4,12 @@ __pycache__/
 .venv/
 venv/
 
+# Node / Next.js
+node_modules/
+.next/
+out/
+tsconfig.tsbuildinfo
+
 # Local data artifacts
 data/raw/
 data/processed/
@@ -15,4 +21,3 @@ data/geo/
 
 # OS/editor
 .DS_Store
-
