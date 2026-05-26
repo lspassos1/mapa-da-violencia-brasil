@@ -14,14 +14,14 @@ Entregas:
 
 ## Fase 1 - Repositorio publico e deploy demo
 
-Status: atual.
+Status: concluido.
 
-Tarefas:
+Entregas:
 
 - README profissional.
-- Deploy Vercel.
-- Screenshots ou GIF do MVP.
-- Templates e issues iniciais.
+- Deploy Vercel: https://mapa-da-violencia-brasil.vercel.app.
+- Screenshot do MVP no README.
+- Templates de issues iniciais.
 - Documentacao de contribuicao.
 - Checklist publico de validacao.
 

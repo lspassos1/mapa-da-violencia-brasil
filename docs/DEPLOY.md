@@ -2,7 +2,12 @@
 
 Este documento descreve o deploy demo do Mapa da Violencia Brasil na Vercel.
 
-Status desta fase: o app esta pronto para importacao manual no painel da Vercel ou deploy via Git integration. Nenhuma integracao com SINESP, IBGE, Supabase, PostGIS ou vector tiles deve ser feita nesta etapa.
+Status desta fase: deploy publico concluido. Nenhuma integracao com SINESP, IBGE, Supabase, PostGIS ou vector tiles foi feita nesta etapa.
+
+## URLs
+
+- Demo publica: https://mapa-da-violencia-brasil.vercel.app
+- Painel Vercel: https://vercel.com/lspassos1s-projects/mapa-da-violencia-brasil
 
 ## Vercel
 
@@ -38,20 +43,6 @@ O deploy demo ainda usa dados demonstrativos/mockados. Os dados nao representam 
 - Painel de municipio abre.
 - `/metodologia` abre.
 - Aviso de dados demonstrativos aparece.
-
-## Atualizar README apos deploy
-
-Quando a URL publica estiver disponivel, substitua:
-
-```txt
-Deploy Vercel: em preparacao.
-```
-
-por:
-
-```txt
-Deploy Vercel: https://...
-```
 
 ## Validacao local antes do deploy
 
