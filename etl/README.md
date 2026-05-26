@@ -22,6 +22,40 @@ python3 -m etl.sources sp --discover
 python3 -m unittest discover -s etl/tests
 ```
 
+## Pipeline nacional offline/local
+
+Esta pipeline prepara fontes oficiais tabulares sem alterar o MVP visual e sem versionar arquivos brutos.
+
+```bash
+python3 -m etl.official_data discover --write-samples
+python3 -m etl.official_data download --source ibge_population
+python3 -m etl.official_data inspect --write-samples
+python3 -m etl.official_data normalize --write-samples
+```
+
+Saidas locais ignoradas pelo Git:
+
+- `data/raw/`
+- `data/processed/`
+
+Amostras leves versionaveis:
+
+- `etl/samples/official_source_catalog.sample.json`
+- `etl/samples/inspection_summary.sample.json`
+- `etl/samples/ibge_population_2025.sample.csv`
+- `etl/samples/municipality_key_validation.sample.json`
+- `etl/samples/normalization_metadata.sample.json`
+
+O download dos recursos SINESP/MJSP tambem e suportado pelos ids `sinesp_municipios`,
+`sinesp_uf` e `sinesp_vde`, mas a normalizacao criminal so deve ser considerada pronta
+depois de baixar os arquivos brutos localmente e validar o schema real.
+
+Exemplo com timeout curto para registrar indisponibilidade temporaria do portal:
+
+```bash
+python3 -m etl.official_data download --source sinesp_municipios --timeout 20
+```
+
 ## Formato canonico
 
 Os conectores retornam `CrimeRecord` com:

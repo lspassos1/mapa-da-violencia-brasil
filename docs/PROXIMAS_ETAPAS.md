@@ -20,7 +20,7 @@ Escopo recomendado:
 ## Ordem recomendada
 
 1. Integrar camada real de UFs.
-2. Integrar populacao IBGE.
+2. Integrar populacao IBGE. Parcialmente preparado em modo offline/local: parser ODS, CSV processado local e validacao de `id_ibge`.
 3. Integrar base nacional SINESP/VDE.
 4. Criar normalizador de indicadores.
 5. Criar banco local ou SQLite temporario.

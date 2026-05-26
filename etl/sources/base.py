@@ -161,7 +161,17 @@ def fetch_url_bytes(url: str, timeout: int = 30) -> bytes:
 def fetch_url_bytes_with_curl(url: str, timeout: int = 30) -> bytes:
     try:
         completed = subprocess.run(
-            ["curl", "-fsSL", "-A", USER_AGENT, "--max-time", str(timeout), url],
+            [
+                "curl",
+                "-fsSL",
+                "-A",
+                USER_AGENT,
+                "--connect-timeout",
+                str(min(timeout, 20)),
+                "--max-time",
+                str(timeout),
+                url,
+            ],
             check=True,
             capture_output=True,
         )

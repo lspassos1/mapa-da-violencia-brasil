@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "inspected_at": "2026-05-26T20:13:06Z",
+    "limitations": [
+      "Inspection does not certify methodology; it only records file shape and basic schema signals."
+    ]
+  },
+  "summary": {
+    "file_count": 1,
+    "files": [
+      "data/raw/ibge_population.ods"
+    ]
+  },
+  "files": [
+    {
+      "path": "data/raw/ibge_population.ods",
+      "bytes": 212846,
+      "sha256": "33dc6f79def9522e282cd69b87a9ce75327a81239d6060d9c8f9f5a49bd2a1b5",
+      "format": "ods",
+      "ods": {
+        "logical_nonempty_or_repeated_rows": 5644,
+        "sample_rows": [
+          {
+            "row_index": 0,
+            "values": [
+              "ESTIMATIVAS DA POPULAÇÃO RESIDENTE NO BRASIL E UNIDADES DA FEDERAÇÃO COM DATA DE REFERÊNCIA EM 1º DE JULHO DE 2025"
+            ]
+          },
+          {
+            "row_index": 1,
+            "values": [
+              "BRASIL E UNIDADES DA FEDERAÇÃO",
+              "POPULAÇÃO ESTIMADA"
+            ]
+          },
+          {
+            "row_index": 2,
+            "values": [
+              "Brasil",
+              "213.421.037"
+            ]
+          },
+          {
+            "row_index": 3,
+            "values": [
+              "Norte",
+              "18.801.282"
+            ]
+          },
+          {
+            "row_index": 4,
+            "values": [
+              "Rondônia",
+              "1.751.950"
+            ]
+          },
+          {
+            "row_index": 5,
+            "values": [
+              "Acre",
+              "884.372"
+            ]
+          },
+          {
+            "row_index": 6,
+            "values": [
+              "Amazonas",
+              "4.321.616"
+            ]
+          },
+          {
+            "row_index": 7,
+            "values": [
+              "Roraima",
+              "738.772"
+            ]
+          },
+          {
+            "row_index": 8,
+            "values": [
+              "Pará",
+              "8.711.196"
+            ]
+          },
+          {
+            "row_index": 9,
+            "values": [
+              "Amapá",
+              "806.517"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "validated_at": "2026-05-26T20:13:36Z",
+    "key": "id_ibge",
+    "key_rule": "cod_uf(2) + cod_municipio(5)"
+  },
+  "summary": {
+    "population_rows": 5571,
+    "municipality_registry_rows": 5571,
+    "matched_ids": 5571,
+    "missing_in_registry_count": 0,
+    "missing_population_count": 0,
+    "duplicate_population_ids_count": 0,
+    "duplicate_registry_ids_count": 0,
+    "is_complete_match": true
+  },
+  "missing_in_registry": [],
+  "missing_population": [],
+  "duplicate_population_ids": [],
+  "duplicate_registry_ids": []
+}

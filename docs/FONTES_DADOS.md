@@ -126,6 +126,18 @@ Tarefas de ETL:
 4. Atualizar `municipios.populacao_atual`.
 5. Registrar fonte e ano de referencia.
 
+Status da pipeline offline/local em 2026-05-26:
+
+- Arquivo ODS selecionado automaticamente no diretorio oficial: `POP2025_20260113.ods`.
+- Saida local ignorada pelo Git: `data/processed/ibge_population_2025.csv`.
+- Chave canonica: `id_ibge = cod_uf(2) + cod_municipio(5)`.
+- Validacao contra API oficial de municipios do IBGE: 5.571 municipios na populacao e 5.571 municipios na API, com 5.571 chaves correspondentes.
+- Amostra versionada: `etl/samples/ibge_population_2025.sample.csv`.
+
+Observacao:
+
+- A populacao ja esta preparada para calculo de taxa por 100 mil em etapa futura, mas ainda nao alimenta o MVP visual.
+
 ## 5. Fonte estadual - Rio de Janeiro / ISPDados
 
 Fonte:

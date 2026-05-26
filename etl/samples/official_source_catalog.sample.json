@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "collected_at": "2026-05-26T20:12:24Z",
+    "limitations": [
+      "Catalogo registra metadados e URLs oficiais; arquivos brutos ficam fora do Git.",
+      "SINESP/MJSP deve ser baixado localmente para confirmar schema tabular antes de uso no MVP.",
+      "Dados ainda nao substituem os mocks da interface."
+    ]
+  },
+  "summary": {
+    "resource_count": 7,
+    "mjsp_dataset_modified": "2026-04-30T18:21:15.960122",
+    "mjsp_license": "Creative Commons Atribuição",
+    "ibge_population_url": "https://ftp.ibge.gov.br/Estimativas_de_Populacao/Estimativas_2025/POP2025_20260113.ods"
+  },
+  "resources": [
+    {
+      "source_id": "sinesp_dictionary_uf",
+      "title": "Dicionário de Dados - UF",
+      "url": "https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/resource/fca1cb9b-1bfb-4090-bdca-5171ed3b9fa4/download/dicionario-de-dados-convertido.pdf",
+      "format": "PDF",
+      "source_name": "MJSP/SINESP",
+      "license": "Creative Commons Atribuição",
+      "last_modified": "2019-03-28T15:23:47.208378",
+      "notes": null
+    },
+    {
+      "source_id": "sinesp_dictionary_municipios",
+      "title": "Dicionário de Dados - Município",
+      "url": "https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/resource/f29f6034-8dfc-4270-974e-ceedd18d7244/download/dicionario-de-dadosmunicipios.pdf",
+      "format": "PDF",
+      "source_name": "MJSP/SINESP",
+      "license": "Creative Commons Atribuição",
+      "last_modified": "2021-01-29T19:20:44.143455",
+      "notes": null
+    },
+    {
+      "source_id": "sinesp_municipios",
+      "title": "Dados Nacionais de Segurança Pública - Municípios",
+      "url": "https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/resource/03af7ce2-174e-4ebd-b085-384503cfb40f/download/indicadoressegurancapublicamunic.xlsx",
+      "format": "XLSX",
+      "source_name": "MJSP/SINESP",
+      "license": "Creative Commons Atribuição",
+      "last_modified": "2023-04-14T17:59:53.201229",
+      "notes": "Indicadores de segurança pública por Município."
+    },
+    {
+      "source_id": "sinesp_uf",
+      "title": "Dados Nacionais de Segurança Pública - UF",
+      "url": "https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/resource/feeae05e-faba-406c-8a4a-512aec91a9d1/download/indicadoressegurancapublicauf.xlsx",
+      "format": "XLSX",
+      "source_name": "MJSP/SINESP",
+      "license": "Creative Commons Atribuição",
+      "last_modified": "2023-09-21T18:43:36.061401",
+      "notes": "Indicadores de segurança pública por Unidade da Federação."
+    },
+    {
+      "source_id": "sinesp_vde",
+      "title": "Base de Dados VDE",
+      "url": "https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/resource/e9d6cc2b-33f1-468d-ab09-9aa8303c2eba/download/basededadosvde.zip",
+      "format": ".zip",
+      "source_name": "MJSP/SINESP",
+      "license": "Creative Commons Atribuição",
+      "last_modified": "2026-04-30T18:21:15.939910",
+      "notes": "Planilha contendo a Base de Dados do Validador de Dados Estatísticos (VDE) referente ao período entre 2015 e 2026."
+    },
+    {
+      "source_id": "ibge_population",
+      "title": "Estimativas da população residente 2025",
+      "url": "https://ftp.ibge.gov.br/Estimativas_de_Populacao/Estimativas_2025/POP2025_20260113.ods",
+      "format": "ODS",
+      "source_name": "IBGE",
+      "license": "Dados públicos IBGE",
+      "last_modified": null,
+      "notes": "Estimativas de população residente com referência em 1 de julho de 2025."
+    },
+    {
+      "source_id": "ibge_municipalities_api",
+      "title": "IBGE API de localidades - municípios",
+      "url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios",
+      "format": "JSON",
+      "source_name": "IBGE",
+      "license": "Dados públicos IBGE",
+      "last_modified": null,
+      "notes": "Usada para validar códigos IBGE municipais de 7 dígitos."
+    }
+  ]
+}
