@@ -122,7 +122,7 @@ class OfficialDataTests(unittest.TestCase):
         self.assertEqual(normalized[0]["mes"], 1)
         self.assertEqual(normalized[0]["valor"], 31)
         self.assertEqual(normalized[0]["unidade_medida"], "vitimas")
-        self.assertEqual(normalized[0]["indicador_codigo"], "vitimas_indicador_nao_informado")
+        self.assertEqual(normalized[0]["indicador_codigo"], "homicidio_doloso")
 
     def test_parse_optional_month_year_supports_excel_serial(self):
         self.assertEqual(parse_optional_month_year("43101"), (2018, 1))

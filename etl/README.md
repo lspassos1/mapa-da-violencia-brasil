@@ -101,10 +101,12 @@ O arquivo municipal real baixado do MJSP/SINESP tem 27 abas por UF e schema:
 - `Mês/Ano`
 - `Vítimas`
 
-Como o XLSX municipal nao traz uma coluna explicita de tipo de crime/indicador,
-o normalizador usa:
+O XLSX municipal nao traz uma coluna explicita de tipo de crime/indicador por
+linha, mas o `Dicionário de Dados - Município` do MJSP/SINESP informa que a
+unidade `Vítimas` pertence ao indicador `Homicídio doloso`. Por isso o
+normalizador usa:
 
-- `indicador_codigo`: `vitimas_indicador_nao_informado`
+- `indicador_codigo`: `homicidio_doloso`
 - `unidade_medida`: `vitimas`
 - `valor`: valor da coluna `Vítimas`
 
@@ -115,5 +117,7 @@ linha traz `id_ibge` municipal valido:
 - `data/processed/sinesp_municipal_indicators_with_population.csv`
 
 Esses arquivos continuam ignorados pelo Git.
+
+Detalhes da investigacao ficam em `docs/SINESP_MJSP_INDICADORES.md`.
 
 Observacao: algumas fontes estaduais publicam codigo municipal com 6 digitos. O conector preserva o codigo original normalizado, sem inventar o digito final do IBGE. A conversao para `id_ibge` de 7 digitos deve acontecer em uma etapa posterior, usando a tabela oficial de municipios do IBGE e, quando necessario, nome + UF como apoio auditavel.

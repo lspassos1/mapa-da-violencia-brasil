@@ -1,14 +1,16 @@
 {
   "metadata": {
-    "inspected_at": "2026-05-26T21:02:32Z",
+    "inspected_at": "2026-05-26T21:49:03Z",
     "limitations": [
       "Inspection does not certify methodology; it only records file shape and basic schema signals."
     ]
   },
   "summary": {
-    "file_count": 2,
+    "file_count": 4,
     "files": [
       "data/raw/ibge_population.ods",
+      "data/raw/sinesp_dictionary_municipios.pdf",
+      "data/raw/sinesp_dictionary_uf.pdf",
       "data/raw/sinesp_municipios.xlsx"
     ]
   },
@@ -92,6 +94,18 @@
           }
         ]
       }
+    },
+    {
+      "path": "data/raw/sinesp_dictionary_municipios.pdf",
+      "bytes": 268402,
+      "sha256": "a080078fe464380d76e555df5bbe788b588028d64dcf68f5411da6437d5db3bc",
+      "format": "pdf"
+    },
+    {
+      "path": "data/raw/sinesp_dictionary_uf.pdf",
+      "bytes": 213947,
+      "sha256": "0c200a3bf14fb1f5830b1b13b7d2cf3430bfd7c9a64cb9c974ce19a6be7c6c46",
+      "format": "pdf"
     },
     {
       "path": "data/raw/sinesp_municipios.xlsx",

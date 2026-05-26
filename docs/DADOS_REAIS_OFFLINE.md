@@ -133,7 +133,7 @@ id_ibge = cod_uf(2 digitos) + cod_municipio(5 digitos)
 
 A validacao compara essa chave contra a API oficial de municipios do IBGE.
 
-## Normalizacao inicial SINESP/MJSP
+## Resolucao do indicador municipal SINESP/MJSP
 
 O XLSX municipal real foi inspecionado. Ele tem 27 abas, uma por UF, com schema:
 
@@ -150,18 +150,27 @@ O campo `Mês/Ano` vem como serial de data do Excel. Exemplo: `43101` equivale
 a janeiro de 2018.
 
 Este arquivo municipal nao traz coluna explicita de tipo de crime/indicador.
+O dicionario oficial do recurso municipal resolve essa ambiguidade:
+
+```txt
+Recurso: Dicionário de Dados - Município
+Unidade de medida: Vítimas
+Descrição: número de pessoas registradas como vítimas em um boletim de ocorrência
+Indicador: Homicídio doloso
+Unidade geográfica: Município
+```
+
 Por isso a pipeline normaliza o valor com:
 
 ```txt
-indicador_codigo = vitimas_indicador_nao_informado
+indicador_codigo = homicidio_doloso
 unidade_medida = vitimas
 valor = Vítimas
 ```
 
-Isso evita inventar o tipo de crime. O arquivo pode ser usado para validar
-geografia municipal, datas e taxas por 100 mil habitantes, mas ainda nao deve
-ser apresentado como homicidio/feminicidio/roubo/etc. sem um dicionario ou outra
-fonte oficial que explicite o indicador.
+O arquivo municipal pode ser usado como fonte de vitimas de homicidio doloso por
+municipio e periodo. Ele nao serve para varios tipos de crime, porque nao traz
+coluna de indicador por linha.
 
 Para arquivos SINESP com schema mais completo, a normalizacao tambem procura
 colunas equivalentes a:
@@ -227,11 +236,36 @@ Observacoes de chave:
 - 1.908 linhas nao trazem `id_ibge`, principalmente regioes administrativas do DF; elas ficam fora do dataset combinado por municipio para nao forcar join indevido.
 - A taxa inicial usa `taxa_100k = (valor / populacao_2025) * 100000`.
 
+Documentacao detalhada da investigacao:
+
+```txt
+docs/SINESP_MJSP_INDICADORES.md
+```
+
+## Base VDE como alternativa
+
+A Base de Dados VDE e a candidata oficial para uma proxima etapa com varios
+indicadores por crime. A pipeline tentou baixar automaticamente:
+
+```txt
+python3 -m etl.official_data download --source sinesp_vde --timeout 900 --retries 2
+```
+
+Resultado desta execucao:
+
+- endpoint oficial testado:
+  `https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/resource/e9d6cc2b-33f1-468d-ab09-9aa8303c2eba/download/basededadosvde.zip`;
+- o servidor iniciou transferencia;
+- a tentativa chegou a 29.070.962 bytes recebidos;
+- a transferencia terminou com `curl: (28) Operation timed out after 900004 milliseconds`;
+- o `.part` foi preservado em `data/raw/` para retomada automatizada futura;
+- o schema interno do VDE ainda nao foi assumido, porque o ZIP nao foi completado.
+
 ## Limitacoes
 
 - O MVP visual continua usando dados demonstrativos.
-- O dataset SINESP municipal foi normalizado, mas o indicador de crime nao esta explicito no XLSX municipal.
-- A normalizacao SINESP municipal ainda nao deve substituir mocks por tipo de crime.
+- O dataset SINESP municipal foi normalizado como vitimas de homicidio doloso com base no dicionario oficial municipal.
+- A normalizacao SINESP municipal ainda nao cobre outros tipos de crime.
 - Populacao IBGE 2025 foi preparada para calculo futuro de taxa por 100 mil habitantes.
 - Download de recursos MJSP pode ser lento e exigir timeout alto.
 - Os arquivos processados desta etapa nao devem ser apresentados como base oficial do app ate a metodologia de integracao criminal estar validada.

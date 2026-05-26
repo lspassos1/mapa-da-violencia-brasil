@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-05-26T21:04:58Z",
+    "generated_at": "2026-05-26T21:52:16Z",
     "source_family": "MJSP/SINESP",
     "git_policy": "Raw and full processed outputs remain ignored by Git.",
     "limitations": [
@@ -28,6 +28,21 @@
   "outputs": {
     "normalized_csv": "data/processed/sinesp_indicators_normalized.csv",
     "status": "data/processed/sinesp_normalization_status.json"
+  },
+  "indicator_resolution": {
+    "source_id": "sinesp_municipios",
+    "official_resource": "Dicionário de Dados - Município",
+    "resource_url": "https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/resource/f29f6034-8dfc-4270-974e-ceedd18d7244/download/dicionario-de-dadosmunicipios.pdf",
+    "unit_column": "Vítimas",
+    "unit_meaning": "Número de pessoas registradas como vítimas em um boletim de ocorrência.",
+    "indicator_code": "homicidio_doloso",
+    "indicator_name": "Homicídio doloso",
+    "confidence": "high",
+    "reasoning": "O dicionario municipal lista a unidade de medida Vítimas e, na seção Indicadores, descreve Homicídio doloso conforme Portaria MJSP nº 229/2018. O XLSX municipal usa somente a coluna Vítimas, portanto o valor deve ser tratado como vítimas de homicídio doloso, não como ocorrências.",
+    "limitations": [
+      "O XLSX municipal nao traz coluna explicita de indicador por linha.",
+      "Para varios indicadores municipais por crime, usar a Base de Dados VDE se o schema trouxer indicador/natureza."
+    ]
   },
   "files": [
     {

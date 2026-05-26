@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "validated_at": "2026-05-26T21:04:30Z",
+    "validated_at": "2026-05-26T21:51:59Z",
     "key": "id_ibge",
     "key_rule": "cod_uf(2) + cod_municipio(5)"
   },

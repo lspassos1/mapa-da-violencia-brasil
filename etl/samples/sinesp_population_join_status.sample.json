@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-05-26T21:05:00Z",
+    "generated_at": "2026-05-26T21:52:17Z",
     "join_key": "id_ibge",
     "rate_formula": "taxa_100k = (valor / populacao) * 100000"
   },

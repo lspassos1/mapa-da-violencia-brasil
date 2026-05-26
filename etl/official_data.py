@@ -132,6 +132,7 @@ SINESP_INDICATOR_ALIASES = {
     "estupro": ["estupro", "estupros"],
     "trafico_drogas": ["trafico_de_drogas", "trafico_drogas"],
 }
+SINESP_MUNICIPAL_DEFAULT_INDICATOR = "Homicídio doloso"
 
 MONTH_NAMES = {
     "janeiro": 1,
@@ -395,9 +396,10 @@ def download_sources(
                     "url": resource["url"],
                     "error": str(error),
                     "attempts": max(1, retries),
-                    "manual_fallback": (
-                        "Baixe o arquivo pelo navegador e registre com "
-                        f"`python3 -m etl.official_data register-manual --source {source_id} --file /caminho/arquivo`."
+                    "automated_resume": (
+                        "Reexecute o download para retomar o .part local: "
+                        f"`python3 -m etl.official_data download --source {source_id} "
+                        f"--timeout {timeout} --retries {max(1, retries)}`."
                     ),
                     "started_at": started_at,
                     "finished_at": utc_now(),
@@ -660,11 +662,38 @@ def normalize_sinesp_sources(municipalities: list[dict[str, str]]) -> dict[str, 
             "normalized_csv": "data/processed/sinesp_indicators_normalized.csv" if all_rows else None,
             "status": "data/processed/sinesp_normalization_status.json",
         },
+        "indicator_resolution": sinesp_municipal_indicator_resolution(),
         "files": file_results,
         "municipality_key_validation": key_validation,
     }
     write_json(PROCESSED_DIR / "sinesp_normalization_status.json", status)
     return {"rows": all_rows, "status": status}
+
+
+def sinesp_municipal_indicator_resolution() -> dict[str, object]:
+    return {
+        "source_id": "sinesp_municipios",
+        "official_resource": "Dicionário de Dados - Município",
+        "resource_url": (
+            "https://dados.mj.gov.br/dataset/210b9ae2-21fc-4986-89c6-2006eb4db247/"
+            "resource/f29f6034-8dfc-4270-974e-ceedd18d7244/download/dicionario-de-dadosmunicipios.pdf"
+        ),
+        "unit_column": "Vítimas",
+        "unit_meaning": "Número de pessoas registradas como vítimas em um boletim de ocorrência.",
+        "indicator_code": "homicidio_doloso",
+        "indicator_name": SINESP_MUNICIPAL_DEFAULT_INDICATOR,
+        "confidence": "high",
+        "reasoning": (
+            "O dicionario municipal lista a unidade de medida Vítimas e, na seção Indicadores, "
+            "descreve Homicídio doloso conforme Portaria MJSP nº 229/2018. O XLSX municipal "
+            "usa somente a coluna Vítimas, portanto o valor deve ser tratado como vítimas de "
+            "homicídio doloso, não como ocorrências."
+        ),
+        "limitations": [
+            "O XLSX municipal nao traz coluna explicita de indicador por linha.",
+            "Para varios indicadores municipais por crime, usar a Base de Dados VDE se o schema trouxer indicador/natureza.",
+        ],
+    }
 
 
 def find_sinesp_raw_files() -> list[Path]:
@@ -811,8 +840,10 @@ def normalize_sinesp_row(
     victims = parse_optional_int(pick_field(row, SINESP_COLUMN_ALIASES["vitimas"]))
     metric_value = occurrences if occurrences is not None else victims
     unit = "ocorrencias" if occurrences is not None else "vitimas"
-    if not indicator_name and victims is not None:
-        indicator_name = "Vítimas (indicador não informado no XLSX municipal)"
+    if not indicator_name and victims is not None and source_id == "sinesp_municipios":
+        indicator_name = SINESP_MUNICIPAL_DEFAULT_INDICATOR
+    elif not indicator_name and victims is not None:
+        indicator_name = "Vítimas (indicador não informado no arquivo)"
     if not indicator_name or year is None or metric_value is None:
         return None
 
@@ -1092,8 +1123,12 @@ def parse_optional_month_year(value: str) -> tuple[int, int] | None:
 
 def sinesp_row_limitation(indicator_name: str, unit: str) -> str:
     limitations = ["Normalizacao inicial; revisar dicionario oficial antes de uso no app."]
-    if canonical_indicator_code(indicator_name) == "vitimas_indicador_nao_informado":
-        limitations.append("XLSX municipal informa vitimas, mas nao explicita o tipo de crime/indicador.")
+    if canonical_indicator_code(indicator_name) == "homicidio_doloso":
+        limitations.append(
+            "Indicador inferido do Dicionario de Dados - Municipio, que descreve o XLSX municipal como Homicidio doloso."
+        )
+    elif canonical_indicator_code(indicator_name) == "vitimas_indicador_nao_informado":
+        limitations.append("Arquivo informa vitimas, mas nao explicita o tipo de crime/indicador.")
     if unit == "vitimas":
         limitations.append("Valor canonico usa a coluna Vitimas porque nao ha coluna de ocorrencias no arquivo.")
     return " ".join(limitations)
@@ -1350,7 +1385,7 @@ def write_combined_samples(combined: dict[str, object]) -> None:
 def write_csv(path: Path, rows: Iterable[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({field: row.get(field, "") for field in fieldnames})
@@ -1386,40 +1421,43 @@ def download_url_to_path(
     partial = target.with_name(f"{target.name}.part")
     attempts = max(1, retries)
     try:
-        subprocess.run(
-            [
-                "curl",
-                "-fsSL",
-                "-A",
-                USER_AGENT,
-                "--connect-timeout",
-                str(min(timeout, 20)),
-                "--max-time",
-                str(timeout),
-                "--retry",
-                str(max(0, attempts - 1)),
-                "--retry-delay",
-                str(max(0, backoff_seconds)),
-                "--retry-all-errors",
-                "-C",
-                "-",
-                "-o",
-                str(partial),
-                url,
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except FileNotFoundError as error:
+        for attempt in range(1, attempts + 1):
+            try:
+                subprocess.run(
+                    [
+                        "curl",
+                        "-fsSL",
+                        "-A",
+                        USER_AGENT,
+                        "--connect-timeout",
+                        str(min(timeout, 20)),
+                        "--max-time",
+                        str(timeout),
+                        "-C",
+                        "-",
+                        "-o",
+                        str(partial),
+                        url,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                partial.replace(target)
+                return attempt
+            except subprocess.CalledProcessError as error:
+                if attempt >= attempts:
+                    stderr = (error.stderr or "").strip()
+                    partial_bytes = partial.stat().st_size if partial.exists() else 0
+                    raise RuntimeError(
+                        f"failed to download {url}: {stderr or error}; partial_bytes={partial_bytes}"
+                    ) from error
+                time.sleep(max(0, backoff_seconds))
+    except FileNotFoundError:
         payload = fetch_bytes_with_retry(url, timeout=timeout, attempts=attempts, backoff_seconds=backoff_seconds)
         target.write_bytes(payload)
         return attempts
-    except subprocess.CalledProcessError as error:
-        stderr = (error.stderr or "").strip()
-        raise RuntimeError(f"failed to download {url}: {stderr or error}") from error
-    partial.replace(target)
-    return attempts
+    raise RuntimeError(f"failed to download {url}")
 
 
 def fetch_bytes_with_retry(url: str, timeout: int, attempts: int, backoff_seconds: int) -> bytes:
