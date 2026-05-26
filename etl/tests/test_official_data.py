@@ -1,11 +1,12 @@
-import io
 import unittest
 import zipfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from etl.official_data import (
-    cell_text,
+    canonical_indicator_code,
+    detect_tabular_header,
+    normalize_sinesp_table_rows,
     parse_ibge_population_ods,
     validate_municipality_keys,
 )
@@ -62,6 +63,41 @@ class OfficialDataTests(unittest.TestCase):
 
         self.assertTrue(validation["summary"]["is_complete_match"])
         self.assertEqual(validation["summary"]["matched_ids"], 1)
+
+    def test_detect_tabular_header_finds_sinesp_schema(self):
+        rows = [
+            (0, ["Relatorio demonstrativo"]),
+            (1, ["UF", "Codigo IBGE", "Municipio", "Ano", "Mes", "Indicador", "Ocorrencias"]),
+        ]
+
+        header = detect_tabular_header(rows)
+
+        self.assertIsNotNone(header)
+        self.assertEqual(header["row_index"], 1)
+
+    def test_normalize_sinesp_table_rows_builds_canonical_record(self):
+        with TemporaryDirectory() as tmpdir:
+            source_file = Path(tmpdir) / "sinesp_municipios.xlsx"
+            source_file.write_text("placeholder", encoding="utf-8")
+            rows = [
+                (0, ["UF", "Codigo IBGE", "Municipio", "Ano", "Mes", "Indicador", "Ocorrencias", "Vitimas"]),
+                (1, ["SP", "3550308", "Sao Paulo", "2025", "Janeiro", "Homicidio doloso", "12", "12"]),
+            ]
+
+            normalized = normalize_sinesp_table_rows(
+                rows,
+                source_id="sinesp_municipios",
+                source_file=source_file,
+            )
+
+        self.assertEqual(len(normalized), 1)
+        self.assertEqual(normalized[0]["id_ibge"], "3550308")
+        self.assertEqual(normalized[0]["mes"], 1)
+        self.assertEqual(normalized[0]["indicador_codigo"], "homicidio_doloso")
+        self.assertEqual(normalized[0]["ocorrencias"], 12)
+
+    def test_canonical_indicator_code_maps_known_labels(self):
+        self.assertEqual(canonical_indicator_code("Roubo de veículos"), "roubo_veiculos")
 
 
 if __name__ == "__main__":

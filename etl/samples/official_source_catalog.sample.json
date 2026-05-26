@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "collected_at": "2026-05-26T20:12:24Z",
+    "collected_at": "2026-05-26T20:35:11Z",
     "limitations": [
       "Catalogo registra metadados e URLs oficiais; arquivos brutos ficam fora do Git.",
       "SINESP/MJSP deve ser baixado localmente para confirmar schema tabular antes de uso no MVP.",

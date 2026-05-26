@@ -12,14 +12,17 @@ import csv
 import hashlib
 import json
 import re
+import shutil
+import subprocess
+import time
 import zipfile
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Mapping
 from xml.etree import ElementTree as ET
 
-from etl.sources.base import fetch_url_bytes_with_curl, normalize_header
+from etl.sources.base import USER_AGENT, fetch_url_bytes_with_curl, normalize_header
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +37,95 @@ MJSP_PACKAGE_API_URL = (
 )
 IBGE_POPULATION_DIR_URL = "https://ftp.ibge.gov.br/Estimativas_de_Populacao/Estimativas_2025/"
 IBGE_MUNICIPALITIES_API_URL = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
+DOWNLOADABLE_SOURCE_IDS = [
+    "ibge_population",
+    "sinesp_dictionary_municipios",
+    "sinesp_dictionary_uf",
+    "sinesp_municipios",
+    "sinesp_uf",
+    "sinesp_vde",
+]
+SINESP_SOURCE_IDS = {"sinesp_municipios", "sinesp_uf", "sinesp_vde"}
+SINESP_NORMALIZED_FIELDNAMES = [
+    "source_id",
+    "source_file",
+    "nivel_geografico",
+    "id_ibge",
+    "uf",
+    "municipio",
+    "ano",
+    "mes",
+    "indicador_codigo",
+    "indicador_nome",
+    "ocorrencias",
+    "vitimas",
+    "fonte",
+    "data_coleta",
+    "limitacoes",
+]
+
+SINESP_COLUMN_ALIASES = {
+    "uf": ["uf", "sigla_uf", "sg_uf", "estado", "unidade_federativa"],
+    "id_ibge": [
+        "id_ibge",
+        "codigo_ibge",
+        "cod_ibge",
+        "codigo_municipio",
+        "cod_municipio",
+        "cod_munic",
+        "municipio_codigo",
+    ],
+    "municipio": ["municipio", "nome_municipio", "nome_do_municipio", "cidade"],
+    "ano": ["ano", "ano_referencia", "ano_do_fato"],
+    "mes": ["mes", "mes_referencia", "mes_do_fato"],
+    "indicador": [
+        "indicador",
+        "indicador_criminal",
+        "natureza",
+        "natureza_criminal",
+        "tipo_crime",
+        "crime",
+        "descricao_indicador",
+    ],
+    "ocorrencias": [
+        "ocorrencias",
+        "ocorrencia",
+        "qtd_ocorrencias",
+        "quantidade_ocorrencias",
+        "quantidade",
+        "total",
+        "valor",
+        "registros",
+    ],
+    "vitimas": ["vitimas", "qtd_vitimas", "quantidade_vitimas", "numero_vitimas"],
+}
+
+SINESP_INDICATOR_ALIASES = {
+    "homicidio_doloso": ["homicidio_doloso", "homicidios_dolosos"],
+    "feminicidio": ["feminicidio", "feminicidios"],
+    "latrocinio": ["latrocinio", "roubo_seguido_de_morte"],
+    "lesao_corporal_seguida_de_morte": ["lesao_corporal_seguida_de_morte"],
+    "roubo_veiculos": ["roubo_de_veiculo", "roubo_de_veiculos", "roubo_veiculo"],
+    "furto_veiculos": ["furto_de_veiculo", "furto_de_veiculos", "furto_veiculo"],
+    "roubo_carga": ["roubo_de_carga", "roubo_carga"],
+    "estupro": ["estupro", "estupros"],
+    "trafico_drogas": ["trafico_de_drogas", "trafico_drogas"],
+}
+
+MONTH_NAMES = {
+    "janeiro": 1,
+    "fevereiro": 2,
+    "marco": 3,
+    "abril": 4,
+    "maio": 5,
+    "junho": 6,
+    "julho": 7,
+    "agosto": 8,
+    "setembro": 9,
+    "outubro": 10,
+    "novembro": 11,
+    "dezembro": 12,
+}
 
 ODS_NS = {
     "table": "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
@@ -68,11 +160,21 @@ def main() -> int:
     download_parser.add_argument(
         "--source",
         action="append",
-        choices=["ibge_population", "sinesp_municipios", "sinesp_uf", "sinesp_vde"],
+        choices=DOWNLOADABLE_SOURCE_IDS,
         default=[],
         help="Source to download. May be repeated. Defaults to ibge_population.",
     )
     download_parser.add_argument("--timeout", type=int, default=120, help="Download timeout in seconds")
+    download_parser.add_argument("--retries", type=int, default=3, help="Total download attempts")
+    download_parser.add_argument("--backoff-seconds", type=int, default=5, help="Delay between retries")
+
+    manual_parser = subparsers.add_parser(
+        "register-manual",
+        help="Register a raw source downloaded manually outside this environment",
+    )
+    manual_parser.add_argument("--source", required=True, choices=DOWNLOADABLE_SOURCE_IDS)
+    manual_parser.add_argument("--file", required=True, type=Path, help="Local file to copy into data/raw")
+    manual_parser.add_argument("--note", default=None, help="Optional audit note")
 
     inspect_parser = subparsers.add_parser("inspect", help="Inspect local raw resources")
     inspect_parser.add_argument("--write-samples", action="store_true")
@@ -84,7 +186,15 @@ def main() -> int:
     ensure_dirs()
 
     if args.command == "discover":
-        catalog = discover_catalog()
+        try:
+            catalog = discover_catalog()
+        except Exception as error:  # noqa: BLE001 - keep offline/local workflow usable during portal timeouts.
+            catalog = load_cached_catalog()
+            catalog = dict(catalog)
+            metadata = dict(catalog.get("metadata", {}))
+            metadata["discovery_warning"] = str(error)
+            metadata["used_cached_catalog"] = True
+            catalog["metadata"] = metadata
         write_json(PROCESSED_DIR / "official_source_catalog.json", catalog)
         if args.write_samples:
             write_json(SAMPLES_DIR / "official_source_catalog.sample.json", catalog)
@@ -93,8 +203,19 @@ def main() -> int:
 
     if args.command == "download":
         sources = args.source or ["ibge_population"]
-        manifest = download_sources(sources, timeout=args.timeout)
+        manifest = download_sources(
+            sources,
+            timeout=args.timeout,
+            retries=args.retries,
+            backoff_seconds=args.backoff_seconds,
+        )
         write_json(PROCESSED_DIR / "download_manifest.json", manifest)
+        print(json.dumps(manifest, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "register-manual":
+        manifest = register_manual_source(args.source, args.file, note=args.note)
+        write_json(PROCESSED_DIR / "manual_source_manifest.json", manifest)
         print(json.dumps(manifest, ensure_ascii=False, indent=2))
         return 0
 
@@ -112,6 +233,7 @@ def main() -> int:
             write_population_sample(result["population_rows"])
             write_json(SAMPLES_DIR / "municipality_key_validation.sample.json", result["validation"])
             write_json(SAMPLES_DIR / "normalization_metadata.sample.json", result["metadata"])
+            write_sinesp_samples(result["sinesp"])
         print(json.dumps(result["validation"]["summary"], ensure_ascii=False, indent=2))
         return 0
 
@@ -192,7 +314,12 @@ def discover_catalog() -> dict[str, object]:
     }
 
 
-def download_sources(source_ids: list[str], timeout: int = 120) -> dict[str, object]:
+def download_sources(
+    source_ids: list[str],
+    timeout: int = 120,
+    retries: int = 3,
+    backoff_seconds: int = 5,
+) -> dict[str, object]:
     discovery_warning = None
     try:
         catalog = discover_catalog()
@@ -202,21 +329,38 @@ def download_sources(source_ids: list[str], timeout: int = 120) -> dict[str, obj
     resources = {item["source_id"]: item for item in catalog["resources"]}
     downloads = []
     for source_id in source_ids:
+        if source_id not in resources:
+            downloads.append(
+                {
+                    "source_id": source_id,
+                    "status": "failed",
+                    "error": "source id not found in official catalog",
+                    "started_at": utc_now(),
+                    "finished_at": utc_now(),
+                }
+            )
+            continue
         resource = resources[source_id]
         suffix = suffix_for(resource["format"], resource["url"])
         target = RAW_DIR / f"{source_id}{suffix}"
         started_at = utc_now()
         try:
-            payload = fetch_bytes(resource["url"], timeout=timeout)
-            target.write_bytes(payload)
+            attempts = download_url_to_path(
+                resource["url"],
+                target,
+                timeout=timeout,
+                retries=retries,
+                backoff_seconds=backoff_seconds,
+            )
             downloads.append(
                 {
                     "source_id": source_id,
                     "status": "downloaded",
                     "url": resource["url"],
                     "path": str(target.relative_to(PROJECT_ROOT)),
-                    "bytes": len(payload),
-                    "sha256": sha256_bytes(payload),
+                    "bytes": target.stat().st_size,
+                    "sha256": sha256_file(target),
+                    "attempts": attempts,
                     "started_at": started_at,
                     "finished_at": utc_now(),
                 }
@@ -228,6 +372,11 @@ def download_sources(source_ids: list[str], timeout: int = 120) -> dict[str, obj
                     "status": "failed",
                     "url": resource["url"],
                     "error": str(error),
+                    "attempts": max(1, retries),
+                    "manual_fallback": (
+                        "Baixe o arquivo pelo navegador e registre com "
+                        f"`python3 -m etl.official_data register-manual --source {source_id} --file /caminho/arquivo`."
+                    ),
                     "started_at": started_at,
                     "finished_at": utc_now(),
                 }
@@ -238,15 +387,57 @@ def download_sources(source_ids: list[str], timeout: int = 120) -> dict[str, obj
             "raw_directory": str(RAW_DIR.relative_to(PROJECT_ROOT)),
             "git_policy": "Raw downloads are ignored by Git.",
             "discovery_warning": discovery_warning,
+            "download_policy": "curl writes to .part files with resume enabled and records failures for retry/manual fallback.",
         },
         "downloads": downloads,
+    }
+
+
+def register_manual_source(source_id: str, file_path: Path, note: str | None = None) -> dict[str, object]:
+    source_file = file_path.expanduser().resolve()
+    if not source_file.exists() or not source_file.is_file():
+        raise FileNotFoundError(f"Manual source file not found: {source_file}")
+
+    try:
+        catalog = discover_catalog()
+    except Exception:  # noqa: BLE001 - manual fallback must work offline after catalog cache exists.
+        catalog = load_cached_catalog()
+
+    resources = {item["source_id"]: item for item in catalog["resources"]}
+    resource = resources.get(source_id)
+    if source_file.suffix:
+        suffix = source_file.suffix
+    elif resource:
+        suffix = suffix_for(str(resource.get("format", "")), str(resource.get("url", "")))
+    else:
+        suffix = ".dat"
+    target = RAW_DIR / f"{source_id}{suffix}"
+    shutil.copyfile(source_file, target)
+
+    return {
+        "metadata": {
+            "registered_at": utc_now(),
+            "raw_directory": str(RAW_DIR.relative_to(PROJECT_ROOT)),
+            "git_policy": "Raw downloads are ignored by Git.",
+            "note": note,
+        },
+        "source": {
+            "source_id": source_id,
+            "status": "manual_registered",
+            "original_path": str(source_file),
+            "path": str(target.relative_to(PROJECT_ROOT)),
+            "bytes": target.stat().st_size,
+            "sha256": sha256_file(target),
+            "expected_url": resource.get("url") if resource else None,
+            "title": resource.get("title") if resource else None,
+        },
     }
 
 
 def inspect_raw_sources() -> dict[str, object]:
     files = []
     for path in sorted(RAW_DIR.glob("*")):
-        if not path.is_file():
+        if not path.is_file() or path.suffix == ".part":
             continue
         entry: dict[str, object] = {
             "path": str(path.relative_to(PROJECT_ROOT)),
@@ -288,6 +479,7 @@ def normalize_official_sources() -> dict[str, object]:
     population_rows = parse_ibge_population_ods(population_path)
     municipalities = fetch_ibge_municipalities()
     validation = validate_municipality_keys(population_rows, municipalities)
+    sinesp = normalize_sinesp_sources(municipalities)
 
     write_csv(
         PROCESSED_DIR / "ibge_population_2025.csv",
@@ -311,10 +503,11 @@ def normalize_official_sources() -> dict[str, object]:
             "population": "data/processed/ibge_population_2025.csv",
             "municipalities": "data/processed/ibge_municipalities.csv",
             "validation": "data/processed/municipality_key_validation.json",
+            "sinesp_status": "data/processed/sinesp_normalization_status.json",
         },
         "limitations": [
             "Dataset processado ainda nao alimenta o MVP visual.",
-            "SINESP/MJSP ainda precisa de download bruto local e validacao de schema antes de normalizacao criminal.",
+            "SINESP/MJSP so gera dataset criminal quando arquivos brutos locais estao disponiveis e o schema e reconhecido.",
             "Populacao 2025 e usada apenas para preparar taxa por 100 mil em etapa futura.",
         ],
     }
@@ -324,7 +517,225 @@ def normalize_official_sources() -> dict[str, object]:
         "population_rows": population_rows,
         "municipalities": municipalities,
         "validation": validation,
+        "sinesp": sinesp,
         "metadata": metadata,
+    }
+
+
+def normalize_sinesp_sources(municipalities: list[dict[str, str]]) -> dict[str, object]:
+    files = find_sinesp_raw_files()
+    all_rows: list[dict[str, object]] = []
+    file_results = []
+    for path in files:
+        try:
+            rows, result = normalize_sinesp_file(path)
+            all_rows.extend(rows)
+            file_results.append(result)
+        except Exception as error:  # noqa: BLE001 - status file should explain per-file blockers.
+            file_results.append(
+                {
+                    "path": str(path.relative_to(PROJECT_ROOT)),
+                    "status": "failed",
+                    "error": str(error),
+                }
+            )
+
+    if all_rows:
+        write_csv(PROCESSED_DIR / "sinesp_indicators_normalized.csv", all_rows, SINESP_NORMALIZED_FIELDNAMES)
+
+    key_validation = validate_sinesp_municipality_keys(all_rows, municipalities)
+    status = {
+        "metadata": {
+            "generated_at": utc_now(),
+            "source_family": "MJSP/SINESP",
+            "git_policy": "Raw and full processed outputs remain ignored by Git.",
+            "limitations": [
+                "Normalizacao inicial e tolerante a schema; revisar dicionario oficial antes de uso publico.",
+                "Linhas sem ano, indicador ou valor numerico nao entram no CSV normalizado.",
+                "id_ibge so e validado quando a fonte traz codigo municipal de 7 digitos.",
+                "O MVP visual continua usando dados demonstrativos.",
+            ],
+        },
+        "summary": {
+            "raw_files": len(files),
+            "normalized_rows": len(all_rows),
+            "files_with_rows": sum(1 for item in file_results if item.get("normalized_rows", 0)),
+            "key_validation": key_validation["summary"],
+        },
+        "outputs": {
+            "normalized_csv": "data/processed/sinesp_indicators_normalized.csv" if all_rows else None,
+            "status": "data/processed/sinesp_normalization_status.json",
+        },
+        "files": file_results,
+        "municipality_key_validation": key_validation,
+    }
+    write_json(PROCESSED_DIR / "sinesp_normalization_status.json", status)
+    return {"rows": all_rows, "status": status}
+
+
+def find_sinesp_raw_files() -> list[Path]:
+    files: list[Path] = []
+    for source_id in SINESP_SOURCE_IDS:
+        files.extend(
+            path
+            for path in sorted(RAW_DIR.glob(f"{source_id}.*"))
+            if path.is_file() and path.suffix != ".part"
+        )
+    return files
+
+
+def normalize_sinesp_file(path: Path) -> tuple[list[dict[str, object]], dict[str, object]]:
+    source_id = path.stem
+    suffix = path.suffix.lower()
+    if suffix == ".xlsx":
+        return normalize_sinesp_xlsx(path, source_id)
+    if suffix == ".csv":
+        rows = csv_rows_to_indexed(read_csv_file_rows(path))
+        normalized = normalize_sinesp_table_rows(rows, source_id=source_id, source_file=path)
+        return normalized, sinesp_file_result(path, source_id, normalized, "csv")
+    if suffix == ".zip":
+        return normalize_sinesp_zip(path, source_id)
+    return [], {
+        "path": str(path.relative_to(PROJECT_ROOT)),
+        "status": "skipped",
+        "reason": f"unsupported SINESP raw format: {suffix}",
+    }
+
+
+def normalize_sinesp_xlsx(path: Path, source_id: str) -> tuple[list[dict[str, object]], dict[str, object]]:
+    all_rows: list[dict[str, object]] = []
+    sheets = []
+    for sheet_path in list_xlsx_sheet_paths(path):
+        rows = list(read_xlsx_rows(path, sheet_path=sheet_path))
+        normalized = normalize_sinesp_table_rows(rows, source_id=source_id, source_file=path)
+        all_rows.extend(normalized)
+        sheets.append({"sheet_path": sheet_path, "normalized_rows": len(normalized)})
+    result = sinesp_file_result(path, source_id, all_rows, "xlsx")
+    result["sheets"] = sheets
+    return all_rows, result
+
+
+def normalize_sinesp_zip(path: Path, source_id: str) -> tuple[list[dict[str, object]], dict[str, object]]:
+    all_rows: list[dict[str, object]] = []
+    members = []
+    with zipfile.ZipFile(path) as archive:
+        for member in archive.infolist():
+            suffix = Path(member.filename).suffix.lower()
+            if suffix not in {".csv", ".xlsx"}:
+                continue
+            if member.file_size > 100_000_000:
+                members.append(
+                    {
+                        "name": member.filename,
+                        "status": "skipped",
+                        "reason": "member larger than 100 MB; inspect manually before local normalization",
+                    }
+                )
+                continue
+            if suffix == ".csv":
+                text = archive.read(member).decode("utf-8-sig", errors="replace")
+                indexed_rows = csv_rows_to_indexed(read_csv_text_rows(text))
+                normalized = normalize_sinesp_table_rows(
+                    indexed_rows,
+                    source_id=source_id,
+                    source_file=path,
+                    member_name=member.filename,
+                )
+                all_rows.extend(normalized)
+                members.append({"name": member.filename, "status": "normalized", "normalized_rows": len(normalized)})
+            else:
+                members.append(
+                    {
+                        "name": member.filename,
+                        "status": "skipped",
+                        "reason": "xlsx inside zip is listed for inspection; extract/register manually if needed",
+                    }
+                )
+    result = sinesp_file_result(path, source_id, all_rows, "zip")
+    result["members"] = members
+    return all_rows, result
+
+
+def sinesp_file_result(
+    path: Path,
+    source_id: str,
+    rows: list[dict[str, object]],
+    format_name: str,
+) -> dict[str, object]:
+    return {
+        "path": str(path.relative_to(PROJECT_ROOT)),
+        "source_id": source_id,
+        "format": format_name,
+        "status": "normalized" if rows else "no_rows",
+        "normalized_rows": len(rows),
+        "sha256": sha256_file(path),
+    }
+
+
+def normalize_sinesp_table_rows(
+    rows: list[tuple[int, list[str]]],
+    source_id: str,
+    source_file: Path,
+    member_name: str | None = None,
+) -> list[dict[str, object]]:
+    header = detect_tabular_header(rows)
+    if not header:
+        return []
+
+    header_index = int(header["row_index"])
+    header_values = [str(value) for value in header["values"]]
+    normalized_headers = make_unique_headers([normalize_header(value) for value in header_values])
+    output_rows: list[dict[str, object]] = []
+    for row_index, values in rows:
+        if row_index <= header_index:
+            continue
+        row = {
+            normalized_headers[index]: values[index].strip() if index < len(values) else ""
+            for index in range(len(normalized_headers))
+        }
+        record = normalize_sinesp_row(row, source_id, source_file, member_name=member_name)
+        if record:
+            output_rows.append(record)
+    return output_rows
+
+
+def normalize_sinesp_row(
+    row: Mapping[str, str],
+    source_id: str,
+    source_file: Path,
+    member_name: str | None = None,
+) -> dict[str, object] | None:
+    indicator_name = pick_field(row, SINESP_COLUMN_ALIASES["indicador"])
+    year = parse_optional_year(pick_field(row, SINESP_COLUMN_ALIASES["ano"]))
+    month = parse_optional_month(pick_field(row, SINESP_COLUMN_ALIASES["mes"]))
+    occurrences = parse_optional_int(pick_field(row, SINESP_COLUMN_ALIASES["ocorrencias"]))
+    if not indicator_name or year is None or occurrences is None:
+        return None
+
+    id_ibge = normalize_sinesp_id_ibge(pick_field(row, SINESP_COLUMN_ALIASES["id_ibge"]))
+    municipality = clean_text(pick_field(row, SINESP_COLUMN_ALIASES["municipio"]))
+    uf = clean_text(pick_field(row, SINESP_COLUMN_ALIASES["uf"])).upper()
+    victims = parse_optional_int(pick_field(row, SINESP_COLUMN_ALIASES["vitimas"]))
+    source_label = project_relative_path(source_file)
+    if member_name:
+        source_label = f"{source_label}!{member_name}"
+
+    return {
+        "source_id": source_id,
+        "source_file": source_label,
+        "nivel_geografico": "municipio" if id_ibge or municipality else "uf",
+        "id_ibge": id_ibge or "",
+        "uf": uf if re.fullmatch(r"[A-Z]{2}", uf) else "",
+        "municipio": municipality,
+        "ano": year,
+        "mes": month or "",
+        "indicador_codigo": canonical_indicator_code(indicator_name),
+        "indicador_nome": clean_text(indicator_name),
+        "ocorrencias": occurrences,
+        "vitimas": victims if victims is not None else "",
+        "fonte": "MJSP/SINESP",
+        "data_coleta": utc_now(),
+        "limitacoes": "Normalizacao inicial; revisar dicionario oficial antes de uso no app.",
     }
 
 
@@ -429,6 +840,147 @@ def validate_municipality_keys(
     }
 
 
+def validate_sinesp_municipality_keys(
+    sinesp_rows: list[dict[str, object]],
+    municipalities: list[dict[str, str]],
+) -> dict[str, object]:
+    registry_ids = {row["id_ibge"] for row in municipalities}
+    sinesp_ids = [str(row["id_ibge"]) for row in sinesp_rows if str(row.get("id_ibge") or "")]
+    unknown_ids = sorted(set(sinesp_ids) - registry_ids)
+    duplicate_rows = len(sinesp_ids) - len(set(sinesp_ids))
+    return {
+        "summary": {
+            "sinesp_rows": len(sinesp_rows),
+            "rows_with_id_ibge": len(sinesp_ids),
+            "matched_id_count": len(set(sinesp_ids) & registry_ids),
+            "unknown_id_count": len(unknown_ids),
+            "duplicate_id_row_count": duplicate_rows,
+            "can_join_by_id_ibge": bool(sinesp_rows) and not unknown_ids and bool(sinesp_ids),
+        },
+        "unknown_ids": unknown_ids[:50],
+    }
+
+
+def detect_tabular_header(rows: list[tuple[int, list[str]]]) -> dict[str, object] | None:
+    best: dict[str, object] | None = None
+    for row_index, values in rows[:100]:
+        normalized = [normalize_header(value) for value in trim_trailing_empty(values)]
+        if not normalized:
+            continue
+        score = sinesp_header_score(normalized)
+        if best is None or score > int(best["score"]):
+            best = {
+                "row_index": row_index,
+                "score": score,
+                "values": trim_trailing_empty(values),
+                "normalized_values": normalized,
+            }
+    if best and int(best["score"]) >= 3:
+        return best
+    return None
+
+
+def sinesp_header_score(normalized_headers: list[str]) -> int:
+    score = 0
+    for aliases in SINESP_COLUMN_ALIASES.values():
+        if any(alias in normalized_headers for alias in aliases):
+            score += 1
+    return score
+
+
+def make_unique_headers(headers: list[str]) -> list[str]:
+    seen: dict[str, int] = {}
+    unique = []
+    for index, header in enumerate(headers):
+        name = header or f"coluna_{index + 1}"
+        count = seen.get(name, 0)
+        seen[name] = count + 1
+        unique.append(name if count == 0 else f"{name}_{count + 1}")
+    return unique
+
+
+def pick_field(row: Mapping[str, str], aliases: list[str]) -> str:
+    for alias in aliases:
+        value = row.get(alias)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def normalize_sinesp_id_ibge(value: str) -> str:
+    digits = only_digits(value)
+    if len(digits) == 7:
+        return digits
+    return ""
+
+
+def canonical_indicator_code(value: str) -> str:
+    normalized = normalize_header(value)
+    for code, aliases in SINESP_INDICATOR_ALIASES.items():
+        if normalized in aliases:
+            return code
+    return normalized[:80]
+
+
+def parse_optional_int(value: str) -> int | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    text = text.replace(".", "").replace(",", ".")
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
+
+
+def parse_optional_year(value: str) -> int | None:
+    number = parse_optional_int(value)
+    if number is None or number < 2000 or number > 2100:
+        return None
+    return number
+
+
+def parse_optional_month(value: str) -> int | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    normalized = normalize_header(text)
+    if normalized in MONTH_NAMES:
+        return MONTH_NAMES[normalized]
+    number = parse_optional_int(text)
+    if number is None or number < 1 or number > 12:
+        return None
+    return number
+
+
+def clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def read_csv_file_rows(path: Path) -> list[dict[str, str]]:
+    text = path.read_text(encoding="utf-8-sig", errors="replace")
+    return read_csv_text_rows(text)
+
+
+def read_csv_text_rows(text: str) -> list[dict[str, str]]:
+    sample = text[:4096]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t|")
+    except csv.Error:
+        dialect = csv.excel
+    return list(csv.DictReader(text.splitlines(), dialect=dialect))
+
+
+def csv_rows_to_indexed(rows: list[dict[str, str]]) -> list[tuple[int, list[str]]]:
+    if not rows:
+        return []
+    headers = list(rows[0].keys())
+    indexed = [(0, headers)]
+    for index, row in enumerate(rows, start=1):
+        indexed.append((index, [row.get(header, "") for header in headers]))
+    return indexed
+
+
 def iter_ods_rows(path: Path) -> Iterator[tuple[int, list[str]]]:
     with zipfile.ZipFile(path) as archive:
         root = ET.fromstring(archive.read("content.xml"))
@@ -471,18 +1023,40 @@ def inspect_ods(path: Path) -> dict[str, object]:
 
 
 def inspect_xlsx(path: Path) -> dict[str, object]:
-    rows = list(read_xlsx_rows(path, max_rows=20))
+    sheets = []
+    for sheet_path in list_xlsx_sheet_paths(path)[:5]:
+        rows = list(read_xlsx_rows(path, sheet_path=sheet_path, max_rows=50))
+        sheets.append(
+            {
+                "sheet_path": sheet_path,
+                "sample_rows": [{"row_index": index, "values": row[:12]} for index, row in rows[:20]],
+                "header_candidate": detect_tabular_header(rows),
+            }
+        )
     return {
-        "sample_rows": [{"row_index": index, "values": row[:12]} for index, row in rows],
-        "note": "XLSX inspection is limited to first worksheet and first rows.",
+        "sheets": sheets,
+        "note": "XLSX inspection reads worksheet XML directly and samples up to five sheets.",
     }
 
 
-def read_xlsx_rows(path: Path, max_rows: int | None = None) -> Iterator[tuple[int, list[str]]]:
+def list_xlsx_sheet_paths(path: Path) -> list[str]:
+    with zipfile.ZipFile(path) as archive:
+        sheet_paths = sorted(
+            name
+            for name in archive.namelist()
+            if name.startswith("xl/worksheets/") and name.endswith(".xml")
+        )
+    return sheet_paths or ["xl/worksheets/sheet1.xml"]
+
+
+def read_xlsx_rows(
+    path: Path,
+    sheet_path: str = "xl/worksheets/sheet1.xml",
+    max_rows: int | None = None,
+) -> Iterator[tuple[int, list[str]]]:
     with zipfile.ZipFile(path) as archive:
         shared_strings = read_xlsx_shared_strings(archive)
-        sheet_name = "xl/worksheets/sheet1.xml"
-        root = ET.fromstring(archive.read(sheet_name))
+        root = ET.fromstring(archive.read(sheet_path))
 
     namespace = {"main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
     for index, row in enumerate(root.findall(".//main:sheetData/main:row", namespace)):
@@ -490,17 +1064,40 @@ def read_xlsx_rows(path: Path, max_rows: int | None = None) -> Iterator[tuple[in
             break
         values = []
         for cell in row.findall("main:c", namespace):
-            cell_type = cell.attrib.get("t")
-            value_element = cell.find("main:v", namespace)
-            if value_element is None:
+            column_index = xlsx_column_index(cell.attrib.get("r"))
+            while len(values) < column_index:
                 values.append("")
-                continue
-            raw_value = value_element.text or ""
-            if cell_type == "s":
-                values.append(shared_strings[int(raw_value)])
-            else:
-                values.append(raw_value)
+            values.append(xlsx_cell_value(cell, shared_strings, namespace))
         yield index, values
+
+
+def xlsx_cell_value(cell: ET.Element, shared_strings: list[str], namespace: Mapping[str, str]) -> str:
+    cell_type = cell.attrib.get("t")
+    if cell_type == "inlineStr":
+        text_parts = [node.text or "" for node in cell.findall(".//main:t", namespace)]
+        return "".join(text_parts)
+
+    value_element = cell.find("main:v", namespace)
+    if value_element is None:
+        return ""
+
+    raw_value = value_element.text or ""
+    if cell_type == "s" and raw_value.isdigit():
+        index = int(raw_value)
+        return shared_strings[index] if index < len(shared_strings) else ""
+    return raw_value
+
+
+def xlsx_column_index(cell_reference: str | None) -> int:
+    if not cell_reference:
+        return 0
+    match = re.match(r"([A-Z]+)", cell_reference)
+    if not match:
+        return 0
+    index = 0
+    for character in match.group(1):
+        index = index * 26 + (ord(character) - ord("A") + 1)
+    return index - 1
 
 
 def read_xlsx_shared_strings(archive: zipfile.ZipFile) -> list[str]:
@@ -519,12 +1116,22 @@ def read_xlsx_shared_strings(archive: zipfile.ZipFile) -> list[str]:
 def inspect_zip(path: Path) -> dict[str, object]:
     with zipfile.ZipFile(path) as archive:
         members = archive.infolist()
+        tabular_members = [
+            member
+            for member in members
+            if Path(member.filename).suffix.lower() in {".csv", ".xlsx", ".xls", ".ods"}
+        ]
         return {
             "file_count": len(members),
             "sample_members": [
                 {"name": member.filename, "bytes": member.file_size}
                 for member in members[:25]
             ],
+            "tabular_members": [
+                {"name": member.filename, "bytes": member.file_size}
+                for member in tabular_members[:25]
+            ],
+            "note": "ZIP inspection lists likely tabular members; extraction/normalization happens only for supported tabular files.",
         }
 
 
@@ -535,6 +1142,19 @@ def write_population_sample(rows: list[dict[str, object]]) -> None:
         sample_rows,
         ["id_ibge", "uf", "cod_uf", "cod_municipio", "municipio", "populacao", "ano", "fonte"],
     )
+
+
+def write_sinesp_samples(sinesp: dict[str, object]) -> None:
+    rows = list(sinesp.get("rows", []))
+    if rows:
+        write_csv(
+            SAMPLES_DIR / "sinesp_indicators_normalized.sample.csv",
+            rows[:25],
+            SINESP_NORMALIZED_FIELDNAMES,
+        )
+    status = sinesp.get("status")
+    if status:
+        write_json(SAMPLES_DIR / "sinesp_normalization_status.sample.json", status)
 
 
 def write_csv(path: Path, rows: Iterable[dict[str, object]], fieldnames: list[str]) -> None:
@@ -563,6 +1183,65 @@ def load_cached_catalog() -> dict[str, object]:
 
 def fetch_json(url: str) -> object:
     return json.loads(fetch_bytes(url, timeout=60).decode("utf-8"))
+
+
+def download_url_to_path(
+    url: str,
+    target: Path,
+    timeout: int,
+    retries: int,
+    backoff_seconds: int,
+) -> int:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    partial = target.with_name(f"{target.name}.part")
+    attempts = max(1, retries)
+    try:
+        subprocess.run(
+            [
+                "curl",
+                "-fsSL",
+                "-A",
+                USER_AGENT,
+                "--connect-timeout",
+                str(min(timeout, 20)),
+                "--max-time",
+                str(timeout),
+                "--retry",
+                str(max(0, attempts - 1)),
+                "--retry-delay",
+                str(max(0, backoff_seconds)),
+                "--retry-all-errors",
+                "-C",
+                "-",
+                "-o",
+                str(partial),
+                url,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as error:
+        payload = fetch_bytes_with_retry(url, timeout=timeout, attempts=attempts, backoff_seconds=backoff_seconds)
+        target.write_bytes(payload)
+        return attempts
+    except subprocess.CalledProcessError as error:
+        stderr = (error.stderr or "").strip()
+        raise RuntimeError(f"failed to download {url}: {stderr or error}") from error
+    partial.replace(target)
+    return attempts
+
+
+def fetch_bytes_with_retry(url: str, timeout: int, attempts: int, backoff_seconds: int) -> bytes:
+    errors = []
+    for attempt in range(1, attempts + 1):
+        try:
+            return fetch_bytes(url, timeout=timeout)
+        except Exception as error:  # noqa: BLE001 - retries need to preserve final context.
+            errors.append(f"attempt {attempt}: {error}")
+            if attempt < attempts:
+                time.sleep(max(0, backoff_seconds))
+    raise RuntimeError("; ".join(errors))
 
 
 def discover_latest_ibge_population_ods() -> str:
@@ -614,8 +1293,23 @@ def string_or_none(value: object) -> str | None:
     return text or None
 
 
+def project_relative_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def sha256_bytes(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def fetch_bytes(url: str, timeout: int) -> bytes:

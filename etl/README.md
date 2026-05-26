@@ -45,15 +45,30 @@ Amostras leves versionaveis:
 - `etl/samples/ibge_population_2025.sample.csv`
 - `etl/samples/municipality_key_validation.sample.json`
 - `etl/samples/normalization_metadata.sample.json`
+- `etl/samples/sinesp_normalization_status.sample.json`
+- `etl/samples/sinesp_indicators_normalized.sample.csv` quando houver arquivo SINESP bruto reconhecido localmente
 
 O download dos recursos SINESP/MJSP tambem e suportado pelos ids `sinesp_municipios`,
-`sinesp_uf` e `sinesp_vde`, mas a normalizacao criminal so deve ser considerada pronta
-depois de baixar os arquivos brutos localmente e validar o schema real.
+`sinesp_uf`, `sinesp_vde`, `sinesp_dictionary_municipios` e
+`sinesp_dictionary_uf`. A normalizacao criminal so deve ser considerada pronta
+depois de baixar os arquivos brutos localmente, inspecionar o schema real e
+validar as chaves municipais.
 
 Exemplo com timeout curto para registrar indisponibilidade temporaria do portal:
 
 ```bash
-python3 -m etl.official_data download --source sinesp_municipios --timeout 20
+python3 -m etl.official_data download --source sinesp_municipios --timeout 20 --retries 3
+```
+
+Fallback manual, quando o portal oficial estiver lento no ambiente de execucao:
+
+```bash
+python3 -m etl.official_data register-manual \
+  --source sinesp_municipios \
+  --file ~/Downloads/indicadoressegurancapublicamunic.xlsx \
+  --note "Baixado manualmente do portal oficial MJSP"
+python3 -m etl.official_data inspect --write-samples
+python3 -m etl.official_data normalize --write-samples
 ```
 
 ## Formato canonico

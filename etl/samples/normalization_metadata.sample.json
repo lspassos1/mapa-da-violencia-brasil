@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-26T20:13:37Z",
+  "generated_at": "2026-05-26T20:39:15Z",
   "sources": {
     "population": "data/raw/ibge_population.ods",
     "municipalities": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
@@ -7,11 +7,12 @@
   "outputs": {
     "population": "data/processed/ibge_population_2025.csv",
     "municipalities": "data/processed/ibge_municipalities.csv",
-    "validation": "data/processed/municipality_key_validation.json"
+    "validation": "data/processed/municipality_key_validation.json",
+    "sinesp_status": "data/processed/sinesp_normalization_status.json"
   },
   "limitations": [
     "Dataset processado ainda nao alimenta o MVP visual.",
-    "SINESP/MJSP ainda precisa de download bruto local e validacao de schema antes de normalizacao criminal.",
+    "SINESP/MJSP so gera dataset criminal quando arquivos brutos locais estao disponiveis e o schema e reconhecido.",
     "Populacao 2025 e usada apenas para preparar taxa por 100 mil em etapa futura."
   ]
 }

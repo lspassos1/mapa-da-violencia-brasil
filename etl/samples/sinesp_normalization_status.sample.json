@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "generated_at": "2026-05-26T20:39:15Z",
+    "source_family": "MJSP/SINESP",
+    "git_policy": "Raw and full processed outputs remain ignored by Git.",
+    "limitations": [
+      "Normalizacao inicial e tolerante a schema; revisar dicionario oficial antes de uso publico.",
+      "Linhas sem ano, indicador ou valor numerico nao entram no CSV normalizado.",
+      "id_ibge so e validado quando a fonte traz codigo municipal de 7 digitos.",
+      "O MVP visual continua usando dados demonstrativos."
+    ]
+  },
+  "summary": {
+    "raw_files": 0,
+    "normalized_rows": 0,
+    "files_with_rows": 0,
+    "key_validation": {
+      "sinesp_rows": 0,
+      "rows_with_id_ibge": 0,
+      "matched_id_count": 0,
+      "unknown_id_count": 0,
+      "duplicate_id_row_count": 0,
+      "can_join_by_id_ibge": false
+    }
+  },
+  "outputs": {
+    "normalized_csv": null,
+    "status": "data/processed/sinesp_normalization_status.json"
+  },
+  "files": [],
+  "municipality_key_validation": {
+    "summary": {
+      "sinesp_rows": 0,
+      "rows_with_id_ibge": 0,
+      "matched_id_count": 0,
+      "unknown_id_count": 0,
+      "duplicate_id_row_count": 0,
+      "can_join_by_id_ibge": false
+    },
+    "unknown_ids": []
+  }
+}
