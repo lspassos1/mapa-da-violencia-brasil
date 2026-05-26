@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-05-26T20:39:15Z",
+    "generated_at": "2026-05-26T21:04:58Z",
     "source_family": "MJSP/SINESP",
     "git_policy": "Raw and full processed outputs remain ignored by Git.",
     "limitations": [
@@ -11,32 +11,157 @@
     ]
   },
   "summary": {
-    "raw_files": 0,
-    "normalized_rows": 0,
-    "files_with_rows": 0,
+    "raw_files": 1,
+    "normalized_rows": 294706,
+    "files_with_rows": 1,
     "key_validation": {
-      "sinesp_rows": 0,
-      "rows_with_id_ibge": 0,
-      "matched_id_count": 0,
-      "unknown_id_count": 0,
-      "duplicate_id_row_count": 0,
-      "can_join_by_id_ibge": false
+      "sinesp_rows": 294706,
+      "rows_with_id_ibge": 292798,
+      "unique_id_count": 5561,
+      "matched_id_count": 5560,
+      "unknown_id_count": 1,
+      "repeated_time_series_id_rows": 287237,
+      "is_complete_id_match": false,
+      "can_join_known_ids_by_id_ibge": true
     }
   },
   "outputs": {
-    "normalized_csv": null,
+    "normalized_csv": "data/processed/sinesp_indicators_normalized.csv",
     "status": "data/processed/sinesp_normalization_status.json"
   },
-  "files": [],
+  "files": [
+    {
+      "path": "data/raw/sinesp_municipios.xlsx",
+      "source_id": "sinesp_municipios",
+      "format": "xlsx",
+      "status": "normalized",
+      "normalized_rows": 294706,
+      "sha256": "9fbb5582e4857eb05c5bf52ce24abe38412ce311524b43da6c5a8d873b323fe8",
+      "sheets": [
+        {
+          "sheet_path": "xl/worksheets/sheet1.xml",
+          "normalized_rows": 823
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet2.xml",
+          "normalized_rows": 2322
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet3.xml",
+          "normalized_rows": 397
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet4.xml",
+          "normalized_rows": 3717
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet5.xml",
+          "normalized_rows": 25020
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet6.xml",
+          "normalized_rows": 11040
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet7.xml",
+          "normalized_rows": 1908
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet8.xml",
+          "normalized_rows": 4680
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet9.xml",
+          "normalized_rows": 3145
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet10.xml",
+          "normalized_rows": 12880
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet11.xml",
+          "normalized_rows": 8460
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet12.xml",
+          "normalized_rows": 3967
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet13.xml",
+          "normalized_rows": 51180
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet14.xml",
+          "normalized_rows": 4512
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet15.xml",
+          "normalized_rows": 13380
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet16.xml",
+          "normalized_rows": 23940
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet17.xml",
+          "normalized_rows": 5638
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet18.xml",
+          "normalized_rows": 13440
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet19.xml",
+          "normalized_rows": 5520
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet20.xml",
+          "normalized_rows": 5680
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet21.xml",
+          "normalized_rows": 29784
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet22.xml",
+          "normalized_rows": 2530
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet23.xml",
+          "normalized_rows": 373
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet24.xml",
+          "normalized_rows": 17700
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet25.xml",
+          "normalized_rows": 38700
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet26.xml",
+          "normalized_rows": 2707
+        },
+        {
+          "sheet_path": "xl/worksheets/sheet27.xml",
+          "normalized_rows": 1263
+        }
+      ]
+    }
+  ],
   "municipality_key_validation": {
     "summary": {
-      "sinesp_rows": 0,
-      "rows_with_id_ibge": 0,
-      "matched_id_count": 0,
-      "unknown_id_count": 0,
-      "duplicate_id_row_count": 0,
-      "can_join_by_id_ibge": false
+      "sinesp_rows": 294706,
+      "rows_with_id_ibge": 292798,
+      "unique_id_count": 5561,
+      "matched_id_count": 5560,
+      "unknown_id_count": 1,
+      "repeated_time_series_id_rows": 287237,
+      "is_complete_id_match": false,
+      "can_join_known_ids_by_id_ibge": true
     },
-    "unknown_ids": []
+    "unknown_ids": [
+      "2899999"
+    ]
   }
 }

@@ -54,13 +54,15 @@ O download dos recursos SINESP/MJSP tambem e suportado pelos ids `sinesp_municip
 depois de baixar os arquivos brutos localmente, inspecionar o schema real e
 validar as chaves municipais.
 
-Exemplo com timeout curto para registrar indisponibilidade temporaria do portal:
+Exemplo para baixar o XLSX municipal oficial. O portal pode ser lento; use
+timeout alto para permitir a retomada do `.part` local.
 
 ```bash
-python3 -m etl.official_data download --source sinesp_municipios --timeout 20 --retries 3
+python3 -m etl.official_data download --source sinesp_municipios --timeout 600 --retries 3
 ```
 
-Fallback manual, quando o portal oficial estiver lento no ambiente de execucao:
+Fallback manual continua disponivel para contingencia, mas nao e necessario
+quando o download automatizado acima conclui:
 
 ```bash
 python3 -m etl.official_data register-manual \
@@ -87,5 +89,31 @@ Os conectores retornam `CrimeRecord` com:
 - `raw_indicator`
 
 O carregamento em banco, deduplicacao, precedencia entre fontes e calculo de taxa/score devem ficar em etapas posteriores do ETL.
+
+## SINESP municipal XLSX
+
+O arquivo municipal real baixado do MJSP/SINESP tem 27 abas por UF e schema:
+
+- `Cód_IBGE`
+- `Município`
+- `Sigla UF`
+- `Região`
+- `Mês/Ano`
+- `Vítimas`
+
+Como o XLSX municipal nao traz uma coluna explicita de tipo de crime/indicador,
+o normalizador usa:
+
+- `indicador_codigo`: `vitimas_indicador_nao_informado`
+- `unidade_medida`: `vitimas`
+- `valor`: valor da coluna `Vítimas`
+
+A pipeline tambem gera um dataset combinado com populacao IBGE 2025 quando a
+linha traz `id_ibge` municipal valido:
+
+- `data/processed/sinesp_indicators_normalized.csv`
+- `data/processed/sinesp_municipal_indicators_with_population.csv`
+
+Esses arquivos continuam ignorados pelo Git.
 
 Observacao: algumas fontes estaduais publicam codigo municipal com 6 digitos. O conector preserva o codigo original normalizado, sem inventar o digito final do IBGE. A conversao para `id_ibge` de 7 digitos deve acontecer em uma etapa posterior, usando a tabela oficial de municipios do IBGE e, quando necessario, nome + UF como apoio auditavel.

@@ -17,7 +17,7 @@ import subprocess
 import time
 import zipfile
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Iterable, Iterator, Mapping
 from xml.etree import ElementTree as ET
@@ -57,10 +57,30 @@ SINESP_NORMALIZED_FIELDNAMES = [
     "mes",
     "indicador_codigo",
     "indicador_nome",
+    "valor",
+    "unidade_medida",
     "ocorrencias",
     "vitimas",
     "fonte",
     "data_coleta",
+    "limitacoes",
+]
+SINESP_WITH_POPULATION_FIELDNAMES = [
+    "source_id",
+    "id_ibge",
+    "uf",
+    "municipio",
+    "ano",
+    "mes",
+    "indicador_codigo",
+    "indicador_nome",
+    "valor",
+    "unidade_medida",
+    "vitimas",
+    "populacao",
+    "taxa_100k",
+    "fonte",
+    "fonte_populacao",
     "limitacoes",
 ]
 
@@ -78,6 +98,7 @@ SINESP_COLUMN_ALIASES = {
     "municipio": ["municipio", "nome_municipio", "nome_do_municipio", "cidade"],
     "ano": ["ano", "ano_referencia", "ano_do_fato"],
     "mes": ["mes", "mes_referencia", "mes_do_fato"],
+    "mes_ano": ["mes_ano", "competencia", "periodo"],
     "indicador": [
         "indicador",
         "indicador_criminal",
@@ -234,6 +255,7 @@ def main() -> int:
             write_json(SAMPLES_DIR / "municipality_key_validation.sample.json", result["validation"])
             write_json(SAMPLES_DIR / "normalization_metadata.sample.json", result["metadata"])
             write_sinesp_samples(result["sinesp"])
+            write_combined_samples(result["combined"])
         print(json.dumps(result["validation"]["summary"], ensure_ascii=False, indent=2))
         return 0
 
@@ -480,6 +502,7 @@ def normalize_official_sources() -> dict[str, object]:
     municipalities = fetch_ibge_municipalities()
     validation = validate_municipality_keys(population_rows, municipalities)
     sinesp = normalize_sinesp_sources(municipalities)
+    combined = combine_sinesp_with_population(sinesp["rows"], population_rows)
 
     write_csv(
         PROCESSED_DIR / "ibge_population_2025.csv",
@@ -504,6 +527,7 @@ def normalize_official_sources() -> dict[str, object]:
             "municipalities": "data/processed/ibge_municipalities.csv",
             "validation": "data/processed/municipality_key_validation.json",
             "sinesp_status": "data/processed/sinesp_normalization_status.json",
+            "sinesp_with_population": combined["outputs"]["combined_csv"],
         },
         "limitations": [
             "Dataset processado ainda nao alimenta o MVP visual.",
@@ -518,8 +542,78 @@ def normalize_official_sources() -> dict[str, object]:
         "municipalities": municipalities,
         "validation": validation,
         "sinesp": sinesp,
+        "combined": combined,
         "metadata": metadata,
     }
+
+
+def combine_sinesp_with_population(
+    sinesp_rows: list[dict[str, object]],
+    population_rows: list[dict[str, object]],
+) -> dict[str, object]:
+    population_by_id = {str(row["id_ibge"]): row for row in population_rows}
+    combined_rows: list[dict[str, object]] = []
+    for row in sinesp_rows:
+        id_ibge = str(row.get("id_ibge") or "")
+        population_row = population_by_id.get(id_ibge)
+        if not population_row:
+            continue
+        population = int(population_row["populacao"])
+        value = int(row["valor"])
+        combined_rows.append(
+            {
+                "source_id": row["source_id"],
+                "id_ibge": id_ibge,
+                "uf": row["uf"] or population_row["uf"],
+                "municipio": row["municipio"] or population_row["municipio"],
+                "ano": row["ano"],
+                "mes": row["mes"],
+                "indicador_codigo": row["indicador_codigo"],
+                "indicador_nome": row["indicador_nome"],
+                "valor": value,
+                "unidade_medida": row["unidade_medida"],
+                "vitimas": row["vitimas"],
+                "populacao": population,
+                "taxa_100k": round((value / population) * 100000, 4) if population else "",
+                "fonte": row["fonte"],
+                "fonte_populacao": population_row["fonte"],
+                "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+            }
+        )
+
+    if combined_rows:
+        write_csv(
+            PROCESSED_DIR / "sinesp_municipal_indicators_with_population.csv",
+            combined_rows,
+            SINESP_WITH_POPULATION_FIELDNAMES,
+        )
+
+    status = {
+        "metadata": {
+            "generated_at": utc_now(),
+            "join_key": "id_ibge",
+            "rate_formula": "taxa_100k = (valor / populacao) * 100000",
+        },
+        "summary": {
+            "sinesp_rows": len(sinesp_rows),
+            "combined_rows": len(combined_rows),
+            "rows_without_population": len(sinesp_rows) - len(combined_rows),
+            "can_calculate_taxa_100k": bool(combined_rows),
+        },
+        "outputs": {
+            "combined_csv": (
+                "data/processed/sinesp_municipal_indicators_with_population.csv" if combined_rows else None
+            ),
+            "status": "data/processed/sinesp_population_join_status.json",
+        },
+        "limitations": [
+            "Dataset combinado ainda nao alimenta o MVP visual.",
+            "Taxas usam populacao IBGE 2025 para todos os anos ate definirmos serie historica populacional.",
+            "Comparacoes historicas exigem revisao metodologica antes de publicacao.",
+        ],
+    }
+    write_json(PROCESSED_DIR / "sinesp_population_join_status.json", status)
+    return {"rows": combined_rows, "status": status, "outputs": status["outputs"]}
 
 
 def normalize_sinesp_sources(municipalities: list[dict[str, str]]) -> dict[str, object]:
@@ -708,14 +802,23 @@ def normalize_sinesp_row(
     indicator_name = pick_field(row, SINESP_COLUMN_ALIASES["indicador"])
     year = parse_optional_year(pick_field(row, SINESP_COLUMN_ALIASES["ano"]))
     month = parse_optional_month(pick_field(row, SINESP_COLUMN_ALIASES["mes"]))
+    if year is None or month is None:
+        period = parse_optional_month_year(pick_field(row, SINESP_COLUMN_ALIASES["mes_ano"]))
+        if period:
+            year = year or period[0]
+            month = month or period[1]
     occurrences = parse_optional_int(pick_field(row, SINESP_COLUMN_ALIASES["ocorrencias"]))
-    if not indicator_name or year is None or occurrences is None:
+    victims = parse_optional_int(pick_field(row, SINESP_COLUMN_ALIASES["vitimas"]))
+    metric_value = occurrences if occurrences is not None else victims
+    unit = "ocorrencias" if occurrences is not None else "vitimas"
+    if not indicator_name and victims is not None:
+        indicator_name = "Vítimas (indicador não informado no XLSX municipal)"
+    if not indicator_name or year is None or metric_value is None:
         return None
 
     id_ibge = normalize_sinesp_id_ibge(pick_field(row, SINESP_COLUMN_ALIASES["id_ibge"]))
     municipality = clean_text(pick_field(row, SINESP_COLUMN_ALIASES["municipio"]))
     uf = clean_text(pick_field(row, SINESP_COLUMN_ALIASES["uf"])).upper()
-    victims = parse_optional_int(pick_field(row, SINESP_COLUMN_ALIASES["vitimas"]))
     source_label = project_relative_path(source_file)
     if member_name:
         source_label = f"{source_label}!{member_name}"
@@ -731,11 +834,13 @@ def normalize_sinesp_row(
         "mes": month or "",
         "indicador_codigo": canonical_indicator_code(indicator_name),
         "indicador_nome": clean_text(indicator_name),
-        "ocorrencias": occurrences,
+        "valor": metric_value,
+        "unidade_medida": unit,
+        "ocorrencias": occurrences if occurrences is not None else "",
         "vitimas": victims if victims is not None else "",
         "fonte": "MJSP/SINESP",
         "data_coleta": utc_now(),
-        "limitacoes": "Normalizacao inicial; revisar dicionario oficial antes de uso no app.",
+        "limitacoes": sinesp_row_limitation(indicator_name, unit),
     }
 
 
@@ -846,16 +951,19 @@ def validate_sinesp_municipality_keys(
 ) -> dict[str, object]:
     registry_ids = {row["id_ibge"] for row in municipalities}
     sinesp_ids = [str(row["id_ibge"]) for row in sinesp_rows if str(row.get("id_ibge") or "")]
+    unique_sinesp_ids = set(sinesp_ids)
     unknown_ids = sorted(set(sinesp_ids) - registry_ids)
     duplicate_rows = len(sinesp_ids) - len(set(sinesp_ids))
     return {
         "summary": {
             "sinesp_rows": len(sinesp_rows),
             "rows_with_id_ibge": len(sinesp_ids),
-            "matched_id_count": len(set(sinesp_ids) & registry_ids),
+            "unique_id_count": len(unique_sinesp_ids),
+            "matched_id_count": len(unique_sinesp_ids & registry_ids),
             "unknown_id_count": len(unknown_ids),
-            "duplicate_id_row_count": duplicate_rows,
-            "can_join_by_id_ibge": bool(sinesp_rows) and not unknown_ids and bool(sinesp_ids),
+            "repeated_time_series_id_rows": duplicate_rows,
+            "is_complete_id_match": bool(sinesp_rows) and not unknown_ids and bool(sinesp_ids),
+            "can_join_known_ids_by_id_ibge": bool(unique_sinesp_ids & registry_ids),
         },
         "unknown_ids": unknown_ids[:50],
     }
@@ -916,6 +1024,8 @@ def normalize_sinesp_id_ibge(value: str) -> str:
 
 def canonical_indicator_code(value: str) -> str:
     normalized = normalize_header(value)
+    if "indicador_nao_informado" in normalized:
+        return "vitimas_indicador_nao_informado"
     for code, aliases in SINESP_INDICATOR_ALIASES.items():
         if normalized in aliases:
             return code
@@ -951,6 +1061,42 @@ def parse_optional_month(value: str) -> int | None:
     if number is None or number < 1 or number > 12:
         return None
     return number
+
+
+def parse_optional_month_year(value: str) -> tuple[int, int] | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+
+    if re.fullmatch(r"\d+(\.0)?", text):
+        serial = int(float(text))
+        if serial > 30000:
+            date_value = datetime(1899, 12, 30) + timedelta(days=serial)
+            return date_value.year, date_value.month
+
+    match = re.fullmatch(r"(\d{1,2})[/.-](\d{4})", text)
+    if match:
+        month = int(match.group(1))
+        year = int(match.group(2))
+        if 1 <= month <= 12 and 2000 <= year <= 2100:
+            return year, month
+
+    match = re.fullmatch(r"(\d{4})[/.-](\d{1,2})", text)
+    if match:
+        year = int(match.group(1))
+        month = int(match.group(2))
+        if 1 <= month <= 12 and 2000 <= year <= 2100:
+            return year, month
+    return None
+
+
+def sinesp_row_limitation(indicator_name: str, unit: str) -> str:
+    limitations = ["Normalizacao inicial; revisar dicionario oficial antes de uso no app."]
+    if canonical_indicator_code(indicator_name) == "vitimas_indicador_nao_informado":
+        limitations.append("XLSX municipal informa vitimas, mas nao explicita o tipo de crime/indicador.")
+    if unit == "vitimas":
+        limitations.append("Valor canonico usa a coluna Vitimas porque nao ha coluna de ocorrencias no arquivo.")
+    return " ".join(limitations)
 
 
 def clean_text(value: str) -> str:
@@ -1024,11 +1170,12 @@ def inspect_ods(path: Path) -> dict[str, object]:
 
 def inspect_xlsx(path: Path) -> dict[str, object]:
     sheets = []
-    for sheet_path in list_xlsx_sheet_paths(path)[:5]:
-        rows = list(read_xlsx_rows(path, sheet_path=sheet_path, max_rows=50))
+    for sheet in list_xlsx_sheets(path)[:5]:
+        rows = list(read_xlsx_rows(path, sheet_path=sheet["path"], max_rows=50))
         sheets.append(
             {
-                "sheet_path": sheet_path,
+                "sheet_name": sheet["name"],
+                "sheet_path": sheet["path"],
                 "sample_rows": [{"row_index": index, "values": row[:12]} for index, row in rows[:20]],
                 "header_candidate": detect_tabular_header(rows),
             }
@@ -1040,13 +1187,43 @@ def inspect_xlsx(path: Path) -> dict[str, object]:
 
 
 def list_xlsx_sheet_paths(path: Path) -> list[str]:
+    return [sheet["path"] for sheet in list_xlsx_sheets(path)]
+
+
+def list_xlsx_sheets(path: Path) -> list[dict[str, str]]:
     with zipfile.ZipFile(path) as archive:
-        sheet_paths = sorted(
-            name
-            for name in archive.namelist()
-            if name.startswith("xl/worksheets/") and name.endswith(".xml")
-        )
-    return sheet_paths or ["xl/worksheets/sheet1.xml"]
+        try:
+            workbook = ET.fromstring(archive.read("xl/workbook.xml"))
+            relationships = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+        except KeyError:
+            sheet_paths = sorted(
+                name
+                for name in archive.namelist()
+                if name.startswith("xl/worksheets/") and name.endswith(".xml")
+            )
+            return [{"name": Path(sheet_path).stem, "path": sheet_path} for sheet_path in sheet_paths]
+
+    workbook_ns = {
+        "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+        "rel": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+    }
+    rel_ns = {"rel": "http://schemas.openxmlformats.org/package/2006/relationships"}
+    targets = {
+        relationship.attrib["Id"]: relationship.attrib["Target"]
+        for relationship in relationships.findall("rel:Relationship", rel_ns)
+        if relationship.attrib.get("Type", "").endswith("/worksheet")
+    }
+    sheets = []
+    for sheet in workbook.findall(".//main:sheet", workbook_ns):
+        relationship_id = sheet.attrib.get(f"{{{workbook_ns['rel']}}}id", "")
+        target = targets.get(relationship_id)
+        if not target:
+            continue
+        sheet_path = target.lstrip("/")
+        if not sheet_path.startswith("xl/"):
+            sheet_path = f"xl/{sheet_path}"
+        sheets.append({"name": sheet.attrib.get("name", Path(sheet_path).stem), "path": sheet_path})
+    return sheets or [{"name": "sheet1", "path": "xl/worksheets/sheet1.xml"}]
 
 
 def read_xlsx_rows(
@@ -1155,6 +1332,19 @@ def write_sinesp_samples(sinesp: dict[str, object]) -> None:
     status = sinesp.get("status")
     if status:
         write_json(SAMPLES_DIR / "sinesp_normalization_status.sample.json", status)
+
+
+def write_combined_samples(combined: dict[str, object]) -> None:
+    rows = list(combined.get("rows", []))
+    if rows:
+        write_csv(
+            SAMPLES_DIR / "sinesp_municipal_indicators_with_population.sample.csv",
+            rows[:25],
+            SINESP_WITH_POPULATION_FIELDNAMES,
+        )
+    status = combined.get("status")
+    if status:
+        write_json(SAMPLES_DIR / "sinesp_population_join_status.sample.json", status)
 
 
 def write_csv(path: Path, rows: Iterable[dict[str, object]], fieldnames: list[str]) -> None:

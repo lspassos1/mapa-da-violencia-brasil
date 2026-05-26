@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-26T20:39:15Z",
+  "generated_at": "2026-05-26T21:05:00Z",
   "sources": {
     "population": "data/raw/ibge_population.ods",
     "municipalities": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
@@ -8,7 +8,8 @@
     "population": "data/processed/ibge_population_2025.csv",
     "municipalities": "data/processed/ibge_municipalities.csv",
     "validation": "data/processed/municipality_key_validation.json",
-    "sinesp_status": "data/processed/sinesp_normalization_status.json"
+    "sinesp_status": "data/processed/sinesp_normalization_status.json",
+    "sinesp_with_population": "data/processed/sinesp_municipal_indicators_with_population.csv"
   },
   "limitations": [
     "Dataset processado ainda nao alimenta o MVP visual.",

@@ -27,7 +27,20 @@ Recursos descobertos:
 - Base de Dados VDE, ZIP.
 - Dicionarios de dados, PDF.
 
-Status: metadados oficiais descobertos. Nesta execucao, o download direto do recurso municipal XLSX do MJSP/SINESP retornou timeout a partir deste ambiente. A pipeline agora registra essas falhas em `data/processed/download_manifest.json`, tenta novamente com `curl`, usa arquivo `.part` para permitir retomada local e oferece fallback manual auditavel.
+Status: metadados oficiais descobertos e arquivo municipal XLSX baixado automaticamente.
+O endpoint direto do MJSP respondeu `200 OK`, `Content-Type:
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
+`Accept-Ranges: bytes` e tamanho total de 9.690.152 bytes. O download foi feito
+por `curl` com retomada em `.part` e registrado em
+`data/processed/download_manifest.json`.
+
+Arquivo local bruto:
+
+```txt
+data/raw/sinesp_municipios.xlsx
+bytes: 9690152
+sha256: 9fbb5582e4857eb05c5bf52ce24abe38412ce311524b43da6c5a8d873b323fe8
+```
 
 ### IBGE populacao
 
@@ -54,7 +67,7 @@ python3 -m etl.official_data normalize --write-samples
 Para tentar baixar recursos SINESP/MJSP:
 
 ```bash
-python3 -m etl.official_data download --source sinesp_municipios --timeout 120 --retries 3
+python3 -m etl.official_data download --source sinesp_municipios --timeout 600 --retries 3
 python3 -m etl.official_data download --source sinesp_uf --timeout 120 --retries 3
 python3 -m etl.official_data download --source sinesp_vde --timeout 120 --retries 3
 ```
@@ -89,6 +102,8 @@ data/processed/ibge_municipalities.csv
 data/processed/municipality_key_validation.json
 data/processed/sinesp_indicators_normalized.csv
 data/processed/sinesp_normalization_status.json
+data/processed/sinesp_municipal_indicators_with_population.csv
+data/processed/sinesp_population_join_status.json
 data/processed/normalization_metadata.json
 ```
 
@@ -101,6 +116,8 @@ etl/samples/ibge_population_2025.sample.csv
 etl/samples/municipality_key_validation.sample.json
 etl/samples/sinesp_normalization_status.sample.json
 etl/samples/sinesp_indicators_normalized.sample.csv
+etl/samples/sinesp_population_join_status.sample.json
+etl/samples/sinesp_municipal_indicators_with_population.sample.csv
 etl/samples/normalization_metadata.sample.json
 ```
 
@@ -118,7 +135,36 @@ A validacao compara essa chave contra a API oficial de municipios do IBGE.
 
 ## Normalizacao inicial SINESP/MJSP
 
-A normalizacao SINESP procura um schema tabular com colunas equivalentes a:
+O XLSX municipal real foi inspecionado. Ele tem 27 abas, uma por UF, com schema:
+
+```txt
+Cód_IBGE
+Município
+Sigla UF
+Região
+Mês/Ano
+Vítimas
+```
+
+O campo `Mês/Ano` vem como serial de data do Excel. Exemplo: `43101` equivale
+a janeiro de 2018.
+
+Este arquivo municipal nao traz coluna explicita de tipo de crime/indicador.
+Por isso a pipeline normaliza o valor com:
+
+```txt
+indicador_codigo = vitimas_indicador_nao_informado
+unidade_medida = vitimas
+valor = Vítimas
+```
+
+Isso evita inventar o tipo de crime. O arquivo pode ser usado para validar
+geografia municipal, datas e taxas por 100 mil habitantes, mas ainda nao deve
+ser apresentado como homicidio/feminicidio/roubo/etc. sem um dicionario ou outra
+fonte oficial que explicite o indicador.
+
+Para arquivos SINESP com schema mais completo, a normalizacao tambem procura
+colunas equivalentes a:
 
 ```txt
 UF
@@ -144,6 +190,8 @@ ano
 mes
 indicador_codigo
 indicador_nome
+valor
+unidade_medida
 ocorrencias
 vitimas
 fonte
@@ -159,11 +207,31 @@ Se o schema real vier diferente, a pipeline nao inventa dados: registra
 `no_rows`, `skipped` ou `failed` em `data/processed/sinesp_normalization_status.json`
 para orientar a proxima correcao.
 
+## Resultado da normalizacao municipal SINESP
+
+Resultado local desta etapa:
+
+```txt
+data/processed/sinesp_indicators_normalized.csv
+linhas normalizadas: 294.706
+
+data/processed/sinesp_municipal_indicators_with_population.csv
+linhas combinadas com populacao IBGE: 292.791
+```
+
+Observacoes de chave:
+
+- 292.798 linhas SINESP trazem `id_ibge`.
+- 5.560 IDs unicos bateram com a API oficial de municipios do IBGE.
+- 1 ID nao existe na base municipal atual: `2899999`, municipio `N/I`, UF `SE`.
+- 1.908 linhas nao trazem `id_ibge`, principalmente regioes administrativas do DF; elas ficam fora do dataset combinado por municipio para nao forcar join indevido.
+- A taxa inicial usa `taxa_100k = (valor / populacao_2025) * 100000`.
+
 ## Limitacoes
 
 - O MVP visual continua usando dados demonstrativos.
-- O dataset de criminalidade SINESP ainda nao foi normalizado para substituir mocks.
-- A normalizacao SINESP e inicial e depende de arquivo bruto local baixado ou registrado manualmente.
+- O dataset SINESP municipal foi normalizado, mas o indicador de crime nao esta explicito no XLSX municipal.
+- A normalizacao SINESP municipal ainda nao deve substituir mocks por tipo de crime.
 - Populacao IBGE 2025 foi preparada para calculo futuro de taxa por 100 mil habitantes.
-- Download de recursos MJSP pode exigir reexecucao quando o host estiver disponivel.
+- Download de recursos MJSP pode ser lento e exigir timeout alto.
 - Os arquivos processados desta etapa nao devem ser apresentados como base oficial do app ate a metodologia de integracao criminal estar validada.

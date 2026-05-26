@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "generated_at": "2026-05-26T21:05:00Z",
+    "join_key": "id_ibge",
+    "rate_formula": "taxa_100k = (valor / populacao) * 100000"
+  },
+  "summary": {
+    "sinesp_rows": 294706,
+    "combined_rows": 292791,
+    "rows_without_population": 1915,
+    "can_calculate_taxa_100k": true
+  },
+  "outputs": {
+    "combined_csv": "data/processed/sinesp_municipal_indicators_with_population.csv",
+    "status": "data/processed/sinesp_population_join_status.json"
+  },
+  "limitations": [
+    "Dataset combinado ainda nao alimenta o MVP visual.",
+    "Taxas usam populacao IBGE 2025 para todos os anos ate definirmos serie historica populacional.",
+    "Comparacoes historicas exigem revisao metodologica antes de publicacao."
+  ]
+}

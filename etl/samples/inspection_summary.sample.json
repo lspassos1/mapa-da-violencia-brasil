@@ -1,14 +1,15 @@
 {
   "metadata": {
-    "inspected_at": "2026-05-26T20:38:39Z",
+    "inspected_at": "2026-05-26T21:02:32Z",
     "limitations": [
       "Inspection does not certify methodology; it only records file shape and basic schema signals."
     ]
   },
   "summary": {
-    "file_count": 1,
+    "file_count": 2,
     "files": [
-      "data/raw/ibge_population.ods"
+      "data/raw/ibge_population.ods",
+      "data/raw/sinesp_municipios.xlsx"
     ]
   },
   "files": [
@@ -90,6 +91,1247 @@
             ]
           }
         ]
+      }
+    },
+    {
+      "path": "data/raw/sinesp_municipios.xlsx",
+      "bytes": 9690152,
+      "sha256": "9fbb5582e4857eb05c5bf52ce24abe38412ce311524b43da6c5a8d873b323fe8",
+      "format": "xlsx",
+      "xlsx": {
+        "sheets": [
+          {
+            "sheet_name": "AC",
+            "sheet_path": "xl/worksheets/sheet1.xml",
+            "sample_rows": [
+              {
+                "row_index": 0,
+                "values": [
+                  "Cód_IBGE",
+                  "Município",
+                  "Sigla UF",
+                  "Região",
+                  "Mês/Ano",
+                  "Vítimas"
+                ]
+              },
+              {
+                "row_index": 1,
+                "values": [
+                  "1200138",
+                  "Bujari",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 2,
+                "values": [
+                  "1200203",
+                  "Cruzeiro Do Sul",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "8"
+                ]
+              },
+              {
+                "row_index": 3,
+                "values": [
+                  "1200302",
+                  "Feijó",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "3"
+                ]
+              },
+              {
+                "row_index": 4,
+                "values": [
+                  "1200328",
+                  "Jordão",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 5,
+                "values": [
+                  "1200336",
+                  "Mâncio Lima",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 6,
+                "values": [
+                  "1200401",
+                  "Rio Branco",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "31"
+                ]
+              },
+              {
+                "row_index": 7,
+                "values": [
+                  "1200427",
+                  "Rodrigues Alves",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "2"
+                ]
+              },
+              {
+                "row_index": 8,
+                "values": [
+                  "1200500",
+                  "Sena Madureira",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 9,
+                "values": [
+                  "1200450",
+                  "Senador Guiomard",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 10,
+                "values": [
+                  "1200609",
+                  "Tarauacá",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 11,
+                "values": [
+                  "1200708",
+                  "Xapuri",
+                  "AC",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 12,
+                "values": [
+                  "1200179",
+                  "Capixaba",
+                  "AC",
+                  "NORTE",
+                  "43132",
+                  "3"
+                ]
+              },
+              {
+                "row_index": 13,
+                "values": [
+                  "1200203",
+                  "Cruzeiro Do Sul",
+                  "AC",
+                  "NORTE",
+                  "43132",
+                  "4"
+                ]
+              },
+              {
+                "row_index": 14,
+                "values": [
+                  "1200302",
+                  "Feijó",
+                  "AC",
+                  "NORTE",
+                  "43132",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 15,
+                "values": [
+                  "1200807",
+                  "Porto Acre",
+                  "AC",
+                  "NORTE",
+                  "43132",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 16,
+                "values": [
+                  "1200401",
+                  "Rio Branco",
+                  "AC",
+                  "NORTE",
+                  "43132",
+                  "18"
+                ]
+              },
+              {
+                "row_index": 17,
+                "values": [
+                  "1200609",
+                  "Tarauacá",
+                  "AC",
+                  "NORTE",
+                  "43132",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 18,
+                "values": [
+                  "1200138",
+                  "Bujari",
+                  "AC",
+                  "NORTE",
+                  "43160",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 19,
+                "values": [
+                  "1200179",
+                  "Capixaba",
+                  "AC",
+                  "NORTE",
+                  "43160",
+                  "1"
+                ]
+              }
+            ],
+            "header_candidate": {
+              "row_index": 0,
+              "score": 5,
+              "values": [
+                "Cód_IBGE",
+                "Município",
+                "Sigla UF",
+                "Região",
+                "Mês/Ano",
+                "Vítimas"
+              ],
+              "normalized_values": [
+                "cod_ibge",
+                "municipio",
+                "sigla_uf",
+                "regiao",
+                "mes_ano",
+                "vitimas"
+              ]
+            }
+          },
+          {
+            "sheet_name": "AL",
+            "sheet_path": "xl/worksheets/sheet2.xml",
+            "sample_rows": [
+              {
+                "row_index": 0,
+                "values": [
+                  "Cód_IBGE",
+                  "Município",
+                  "Sigla UF",
+                  "Região",
+                  "Mês/Ano",
+                  "Vítimas"
+                ]
+              },
+              {
+                "row_index": 1,
+                "values": [
+                  "2700102",
+                  "Água Branca",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 2,
+                "values": [
+                  "2700300",
+                  "Arapiraca",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "11"
+                ]
+              },
+              {
+                "row_index": 3,
+                "values": [
+                  "2700409",
+                  "Atalaia",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "2"
+                ]
+              },
+              {
+                "row_index": 4,
+                "values": [
+                  "2700607",
+                  "Barra De São Miguel",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 5,
+                "values": [
+                  "2700805",
+                  "Belém",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 6,
+                "values": [
+                  "2701001",
+                  "Boca Da Mata",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "3"
+                ]
+              },
+              {
+                "row_index": 7,
+                "values": [
+                  "2701100",
+                  "Branquinha",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 8,
+                "values": [
+                  "2701506",
+                  "Campo Grande",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 9,
+                "values": [
+                  "2701704",
+                  "Capela",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 10,
+                "values": [
+                  "2702009",
+                  "Coité Do Nóia",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 11,
+                "values": [
+                  "2702108",
+                  "Colônia Leopoldina",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "4"
+                ]
+              },
+              {
+                "row_index": 12,
+                "values": [
+                  "2702207",
+                  "Coqueiro Seco",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 13,
+                "values": [
+                  "2702306",
+                  "Coruripe",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "8"
+                ]
+              },
+              {
+                "row_index": 14,
+                "values": [
+                  "2702355",
+                  "Craíbas",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 15,
+                "values": [
+                  "2702405",
+                  "Delmiro Gouveia",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "2"
+                ]
+              },
+              {
+                "row_index": 16,
+                "values": [
+                  "2702603",
+                  "Feira Grande",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 17,
+                "values": [
+                  "2702801",
+                  "Flexeiras",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 18,
+                "values": [
+                  "2703106",
+                  "Igaci",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 19,
+                "values": [
+                  "2703205",
+                  "Igreja Nova",
+                  "AL",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              }
+            ],
+            "header_candidate": {
+              "row_index": 0,
+              "score": 5,
+              "values": [
+                "Cód_IBGE",
+                "Município",
+                "Sigla UF",
+                "Região",
+                "Mês/Ano",
+                "Vítimas"
+              ],
+              "normalized_values": [
+                "cod_ibge",
+                "municipio",
+                "sigla_uf",
+                "regiao",
+                "mes_ano",
+                "vitimas"
+              ]
+            }
+          },
+          {
+            "sheet_name": "AP",
+            "sheet_path": "xl/worksheets/sheet3.xml",
+            "sample_rows": [
+              {
+                "row_index": 0,
+                "values": [
+                  "Cód_IBGE",
+                  "Município",
+                  "Sigla UF",
+                  "Região",
+                  "Mês/Ano",
+                  "Vítimas"
+                ]
+              },
+              {
+                "row_index": 1,
+                "values": [
+                  "1600204",
+                  "Calçoene",
+                  "AP",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 2,
+                "values": [
+                  "1600303",
+                  "Macapá",
+                  "AP",
+                  "NORTE",
+                  "43101",
+                  "18"
+                ]
+              },
+              {
+                "row_index": 3,
+                "values": [
+                  "1600600",
+                  "Santana",
+                  "AP",
+                  "NORTE",
+                  "43101",
+                  "4"
+                ]
+              },
+              {
+                "row_index": 4,
+                "values": [
+                  "1600709",
+                  "Tartarugalzinho",
+                  "AP",
+                  "NORTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 5,
+                "values": [
+                  "1600238",
+                  "Ferreira Gomes",
+                  "AP",
+                  "NORTE",
+                  "43132",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 6,
+                "values": [
+                  "1600303",
+                  "Macapá",
+                  "AP",
+                  "NORTE",
+                  "43132",
+                  "10"
+                ]
+              },
+              {
+                "row_index": 7,
+                "values": [
+                  "1600402",
+                  "Mazagão",
+                  "AP",
+                  "NORTE",
+                  "43132",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 8,
+                "values": [
+                  "1600501",
+                  "Oiapoque",
+                  "AP",
+                  "NORTE",
+                  "43132",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 9,
+                "values": [
+                  "1600600",
+                  "Santana",
+                  "AP",
+                  "NORTE",
+                  "43132",
+                  "2"
+                ]
+              },
+              {
+                "row_index": 10,
+                "values": [
+                  "1600238",
+                  "Ferreira Gomes",
+                  "AP",
+                  "NORTE",
+                  "43160",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 11,
+                "values": [
+                  "1600253",
+                  "Itaubal",
+                  "AP",
+                  "NORTE",
+                  "43160",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 12,
+                "values": [
+                  "1600303",
+                  "Macapá",
+                  "AP",
+                  "NORTE",
+                  "43160",
+                  "15"
+                ]
+              },
+              {
+                "row_index": 13,
+                "values": [
+                  "1600402",
+                  "Mazagão",
+                  "AP",
+                  "NORTE",
+                  "43160",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 14,
+                "values": [
+                  "1600535",
+                  "Porto Grande",
+                  "AP",
+                  "NORTE",
+                  "43160",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 15,
+                "values": [
+                  "1600600",
+                  "Santana",
+                  "AP",
+                  "NORTE",
+                  "43160",
+                  "3"
+                ]
+              },
+              {
+                "row_index": 16,
+                "values": [
+                  "1600709",
+                  "Tartarugalzinho",
+                  "AP",
+                  "NORTE",
+                  "43160",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 17,
+                "values": [
+                  "1600303",
+                  "Macapá",
+                  "AP",
+                  "NORTE",
+                  "43191",
+                  "15"
+                ]
+              },
+              {
+                "row_index": 18,
+                "values": [
+                  "1600501",
+                  "Oiapoque",
+                  "AP",
+                  "NORTE",
+                  "43191",
+                  "2"
+                ]
+              },
+              {
+                "row_index": 19,
+                "values": [
+                  "1600600",
+                  "Santana",
+                  "AP",
+                  "NORTE",
+                  "43191",
+                  "7"
+                ]
+              }
+            ],
+            "header_candidate": {
+              "row_index": 0,
+              "score": 5,
+              "values": [
+                "Cód_IBGE",
+                "Município",
+                "Sigla UF",
+                "Região",
+                "Mês/Ano",
+                "Vítimas"
+              ],
+              "normalized_values": [
+                "cod_ibge",
+                "municipio",
+                "sigla_uf",
+                "regiao",
+                "mes_ano",
+                "vitimas"
+              ]
+            }
+          },
+          {
+            "sheet_name": "AM",
+            "sheet_path": "xl/worksheets/sheet4.xml",
+            "sample_rows": [
+              {
+                "row_index": 0,
+                "values": [
+                  "Cód_IBGE",
+                  "Município",
+                  "Sigla UF",
+                  "Região",
+                  "Mês/Ano",
+                  "Vítimas"
+                ]
+              },
+              {
+                "row_index": 1,
+                "values": [
+                  "1300029",
+                  "Alvarães",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 2,
+                "values": [
+                  "1300060",
+                  "Amaturá",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 3,
+                "values": [
+                  "1300086",
+                  "Anamã",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 4,
+                "values": [
+                  "1300102",
+                  "Anori",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 5,
+                "values": [
+                  "1300144",
+                  "Apuí",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 6,
+                "values": [
+                  "1300201",
+                  "Atalaia Do Norte",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 7,
+                "values": [
+                  "1300300",
+                  "Autazes",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "2"
+                ]
+              },
+              {
+                "row_index": 8,
+                "values": [
+                  "1300409",
+                  "Barcelos",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 9,
+                "values": [
+                  "1300508",
+                  "Barreirinha",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 10,
+                "values": [
+                  "1300607",
+                  "Benjamin Constant",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 11,
+                "values": [
+                  "1300631",
+                  "Beruri",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 12,
+                "values": [
+                  "1300680",
+                  "Boa Vista Do Ramos",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 13,
+                "values": [
+                  "1300706",
+                  "Boca Do Acre",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 14,
+                "values": [
+                  "1300805",
+                  "Borba",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 15,
+                "values": [
+                  "1300839",
+                  "Caapiranga",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 16,
+                "values": [
+                  "1300904",
+                  "Canutama",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 17,
+                "values": [
+                  "1301001",
+                  "Carauari",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 18,
+                "values": [
+                  "1301100",
+                  "Careiro",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 19,
+                "values": [
+                  "1301159",
+                  "Careiro Da Várzea",
+                  "AM",
+                  "NORTE",
+                  "43101",
+                  "0"
+                ]
+              }
+            ],
+            "header_candidate": {
+              "row_index": 0,
+              "score": 5,
+              "values": [
+                "Cód_IBGE",
+                "Município",
+                "Sigla UF",
+                "Região",
+                "Mês/Ano",
+                "Vítimas"
+              ],
+              "normalized_values": [
+                "cod_ibge",
+                "municipio",
+                "sigla_uf",
+                "regiao",
+                "mes_ano",
+                "vitimas"
+              ]
+            }
+          },
+          {
+            "sheet_name": "BA",
+            "sheet_path": "xl/worksheets/sheet5.xml",
+            "sample_rows": [
+              {
+                "row_index": 0,
+                "values": [
+                  "Cód_IBGE",
+                  "Município",
+                  "Sigla UF",
+                  "Região",
+                  "Mês/Ano",
+                  "Vítimas"
+                ]
+              },
+              {
+                "row_index": 1,
+                "values": [
+                  "2900108",
+                  "Abaíra",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 2,
+                "values": [
+                  "2900207",
+                  "Abaré",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 3,
+                "values": [
+                  "2900306",
+                  "Acajutiba",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 4,
+                "values": [
+                  "2900355",
+                  "Adustina",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 5,
+                "values": [
+                  "2900405",
+                  "Água Fria",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 6,
+                "values": [
+                  "2900603",
+                  "Aiquara",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 7,
+                "values": [
+                  "2900702",
+                  "Alagoinhas",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "7"
+                ]
+              },
+              {
+                "row_index": 8,
+                "values": [
+                  "2900801",
+                  "Alcobaça",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 9,
+                "values": [
+                  "2900900",
+                  "Almadina",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 10,
+                "values": [
+                  "2901007",
+                  "Amargosa",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 11,
+                "values": [
+                  "2901106",
+                  "Amélia Rodrigues",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 12,
+                "values": [
+                  "2901155",
+                  "América Dourada",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 13,
+                "values": [
+                  "2901205",
+                  "Anagé",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "1"
+                ]
+              },
+              {
+                "row_index": 14,
+                "values": [
+                  "2901304",
+                  "Andaraí",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 15,
+                "values": [
+                  "2901353",
+                  "Andorinha",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 16,
+                "values": [
+                  "2901403",
+                  "Angical",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 17,
+                "values": [
+                  "2901502",
+                  "Anguera",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 18,
+                "values": [
+                  "2901601",
+                  "Antas",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              },
+              {
+                "row_index": 19,
+                "values": [
+                  "2901700",
+                  "Antônio Cardoso",
+                  "BA",
+                  "NORDESTE",
+                  "43101",
+                  "0"
+                ]
+              }
+            ],
+            "header_candidate": {
+              "row_index": 0,
+              "score": 5,
+              "values": [
+                "Cód_IBGE",
+                "Município",
+                "Sigla UF",
+                "Região",
+                "Mês/Ano",
+                "Vítimas"
+              ],
+              "normalized_values": [
+                "cod_ibge",
+                "municipio",
+                "sigla_uf",
+                "regiao",
+                "mes_ano",
+                "vitimas"
+              ]
+            }
+          }
+        ],
+        "note": "XLSX inspection reads worksheet XML directly and samples up to five sheets."
       }
     }
   ]
