@@ -4,6 +4,12 @@ Aplicacao web experimental para visualizar indicadores de violencia no Brasil em
 
 > Esta versao usa dados demonstrativos/mockados. Os dados nao representam estatisticas oficiais reais.
 
+## Demo
+
+Deploy Vercel: em preparacao.
+
+![Screenshot do MVP visual do Mapa da Violencia Brasil](docs/assets/mvp-screenshot.jpg)
+
 ## Funcionalidades atuais
 
 - Mapa dinamico com MapLibre GL JS.
@@ -54,6 +60,10 @@ npm run typecheck
 npm run test
 npm run build
 ```
+
+## Deploy
+
+O projeto esta pronto para deploy demo na Vercel como aplicacao Next.js, sem variaveis de ambiente obrigatorias nesta fase. Veja [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Estrutura do projeto
 
