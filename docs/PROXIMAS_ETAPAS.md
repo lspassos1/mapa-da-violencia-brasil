@@ -6,6 +6,8 @@ Data: 2026-05-25
 
 Antes de conectar Supabase/PostGIS ou expor dados reais no app, a proxima fase deve integrar dados oficiais em modo offline/local.
 
+Proxima fase tecnica: integracao de dados reais em modo offline/local antes de conectar banco em producao.
+
 Escopo recomendado:
 
 - Conectar dados reais primeiro em modo offline/local.
