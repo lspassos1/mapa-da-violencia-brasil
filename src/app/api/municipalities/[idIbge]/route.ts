@@ -7,7 +7,7 @@ export async function GET(
   context: { params: Promise<{ idIbge: string }> },
 ) {
   const { searchParams } = new URL(request.url);
-  const period = searchParams.get("periodo") ?? getDefaultCrimeMapFilters().period;
+  const period = searchParams.get("periodo") ?? searchParams.get("period") ?? getDefaultCrimeMapFilters().period;
   const { idIbge } = await context.params;
   const item = getMunicipalityById(idIbge, period);
 

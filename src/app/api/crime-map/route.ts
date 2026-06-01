@@ -9,9 +9,9 @@ import {
 export function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const defaults = getDefaultCrimeMapFilters();
-  const period = searchParams.get("periodo") ?? defaults.period;
-  const indicatorParam = searchParams.get("indicador") ?? defaults.indicator;
-  const modeParam = searchParams.get("modo") ?? defaults.viewMode;
+  const period = searchParams.get("periodo") ?? searchParams.get("period") ?? defaults.period;
+  const indicatorParam = searchParams.get("indicador") ?? searchParams.get("indicator") ?? defaults.indicator;
+  const modeParam = searchParams.get("modo") ?? searchParams.get("viewMode") ?? searchParams.get("mode") ?? defaults.viewMode;
   const uf = searchParams.get("uf");
 
   if (!isCrimeIndicatorKey(indicatorParam) || !isViewMode(modeParam)) {
