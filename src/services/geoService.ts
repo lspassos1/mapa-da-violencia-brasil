@@ -1,6 +1,6 @@
 import { brazilBounds, stateMapData } from "@/data/stateGeometries";
 import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
-import { getMetricValue } from "@/lib/crimeMetrics";
+import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import type { Bounds, GeoFeatureCollection, StateMapInfo } from "@/types/geo";
 
@@ -58,8 +58,12 @@ export function createCityFeatureCollection(
 ): GeoFeatureCollection {
   return {
     type: "FeatureCollection",
-    features: data.map((item) => {
+    features: data.flatMap((item) => {
       const metric = item.indicadores[indicator];
+      if (!metric) {
+        return [];
+      }
+
       return {
         type: "Feature",
         properties: {
@@ -67,7 +71,7 @@ export function createCityFeatureCollection(
           municipio: item.municipio,
           uf: item.uf,
           score: metric.score,
-          value: getMetricValue(item, indicator, viewMode),
+          value: getMetricValueFromMetric(metric, viewMode),
           color: getScoreColor(metric.score),
           radius: getScoreRadius(metric.score),
         },

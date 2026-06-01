@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
-import { getMetricValue } from "@/lib/crimeMetrics";
+import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
 import { getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
 import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
@@ -323,7 +323,7 @@ export function BrazilCrimeMap({
 
   return (
     <div className="relative h-full min-h-[620px]">
-      <div ref={containerRef} className="absolute inset-0" />
+      <div ref={containerRef} className="absolute inset-0 z-0" />
       {useStaticFallback ? (
         <StaticCrimeMapFallback
           data={data}
@@ -343,14 +343,14 @@ export function BrazilCrimeMap({
           </div>
         </div>
       ) : null}
-      {mapError ? (
+      {mapError && !useStaticFallback ? (
         <div className="absolute right-4 top-20 z-20 flex max-w-sm items-start gap-3 rounded-lg border border-red-300/20 bg-red-950/80 p-3 text-sm text-red-100">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           {mapError}
         </div>
       ) : null}
       {!isLoading && data.length === 0 ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/50">
+        <div className="absolute inset-0 z-[2] flex items-center justify-center bg-slate-950/50">
           <p className="rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-300">
             Nenhum dado demonstrativo encontrado para este periodo.
           </p>
@@ -373,7 +373,7 @@ function StaticCrimeMapFallback({
   const states = useMemo(() => Array.from(new Set(data.map((item) => item.uf))).sort(), [data]);
 
   return (
-    <div className="absolute inset-0 z-10 overflow-hidden bg-[radial-gradient(circle_at_50%_45%,rgba(14,165,233,0.18),rgba(15,23,42,0.96)_58%)]">
+    <div className="absolute inset-0 z-[1] overflow-hidden bg-[radial-gradient(circle_at_50%_45%,rgba(14,165,233,0.18),rgba(15,23,42,0.96)_58%)]">
       <div className="absolute inset-x-10 bottom-16 top-24 rounded-[42%] border border-cyan-300/15 bg-cyan-300/[0.03]" />
       <div className="absolute right-4 top-20 max-w-[260px] rounded-lg border border-white/10 bg-slate-950/85 p-3 text-xs leading-5 text-slate-300 shadow-xl backdrop-blur">
         <p className="font-semibold text-slate-100">Mapa estatico</p>
@@ -397,6 +397,11 @@ function StaticCrimeMapFallback({
       </div>
       {data.map((item) => {
         const metric = item.indicadores[indicator];
+        if (!metric) {
+          return null;
+        }
+
+        const metricValue = getMetricValueFromMetric(metric, viewMode);
         const size = Math.round(getScoreRadius(metric.score) * 1.45);
         const isSelected = selectedMunicipality?.idIbge === item.idIbge;
         const style = {
@@ -410,7 +415,7 @@ function StaticCrimeMapFallback({
         return (
           <button
             key={item.idIbge}
-            aria-label={`${item.municipio}, ${item.uf}: ${formatMetricValue(getMetricValue(item, indicator, viewMode), viewMode)}`}
+            aria-label={`${item.municipio}, ${item.uf}: ${formatMetricValue(metricValue, viewMode)}`}
             className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-lg transition hover:scale-110 ${
               isSelected ? "border-white ring-4 ring-cyan-200/40" : "border-slate-100/90"
             }`}
