@@ -4,10 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
+import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
 import { getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
 import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
-import type { CrimeIndicatorKey, CrimeMetric, MunicipalityCrimeData, ViewMode } from "@/types/crime";
+import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import { MapTooltip } from "./MapTooltip";
 
 interface BrazilCrimeMapProps {
@@ -400,7 +401,7 @@ function StaticCrimeMapFallback({
           return null;
         }
 
-        const metricValue = getFallbackMetricValue(metric, viewMode);
+        const metricValue = getMetricValueFromMetric(metric, viewMode);
         const size = Math.round(getScoreRadius(metric.score) * 1.45);
         const isSelected = selectedMunicipality?.idIbge === item.idIbge;
         const style = {
@@ -431,13 +432,6 @@ function StaticCrimeMapFallback({
       })}
     </div>
   );
-}
-
-function getFallbackMetricValue(metric: CrimeMetric, viewMode: ViewMode): number {
-  if (viewMode === "total") return metric.total;
-  if (viewMode === "taxa100k") return metric.taxa100k;
-  if (viewMode === "variacaoMensal") return metric.variacaoMensal;
-  return metric.score;
 }
 
 function hasWebGlSupport(): boolean {
