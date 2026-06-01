@@ -1,0 +1,100 @@
+# Retomada local
+
+## Estado reconstruído
+
+- Data da reconstrução: 2026-06-01.
+- Caminho local: `/Users/lucaspassos/Documents/Mapa do crime`.
+- Repositório remoto: `https://github.com/lspassos1/mapa-da-violencia-brasil.git`.
+- Branch: `main`.
+- Último commit validado no clone: `09cd505 feat(etl): resolve SINESP municipal indicator`.
+- Status pós-clone: worktree limpo antes da criação deste documento.
+- Ajuste local feito na retomada: `.gitignore` passou a ignorar `data/manual/` e `*.part`, além dos diretórios de dados já ignorados.
+
+## Resultado das validações
+
+| Validação | Resultado |
+| --- | --- |
+| `git status --short --branch` | `## main...origin/main` no clone inicial |
+| `git remote -v` | `origin` apontando para o GitHub oficial |
+| `git log --oneline -20` | histórico recente presente até `09cd505` |
+| `npm ci` | passou com npm local 11.16.0 |
+| `npm run lint` | passou |
+| `npm run typecheck` | passou |
+| `npm run test` | passou com Python 3.12.13 |
+| `npm run build` | passou com Node 24.14.0 e npm local |
+| `python3 -m unittest discover -s etl/tests` | passou com Python 3.12.13 |
+| `python3 -m etl.official_data inspect --write-samples` | passou; retornou `file_count: 0` porque `data/raw/` foi apagado no reset |
+| `python3 -m etl.official_data normalize --write-samples` | bloqueado por falta de `data/raw/ibge_population.ods`; é necessário baixar novamente pelo pipeline |
+| `git check-ignore -v data/raw/example.csv data/manual/example.csv download.part` | confirmou ignore de `data/raw/`, `data/manual/` e `*.part` |
+| `npm run dev -- --hostname 127.0.0.1 --port 3000` | servidor abriu em `http://127.0.0.1:3000` |
+| `/`, `/metodologia`, `/api/crime-map`, `/api/municipalities/3550308` | todos retornaram HTTP 200 localmente |
+
+Observações de ambiente:
+
+- O `python3` do sistema era Python 3.9.6 e falhou nos testes por não ter `datetime.UTC`.
+- As validações Python foram feitas com Python 3.12.13 do runtime local do Codex.
+- O sistema não tinha `npm` global no `PATH`; foi usado npm 11.16.0 local para instalar dependências e rodar scripts.
+
+## O que já está feito
+
+- Repositório público GitHub.
+- Demo pública Vercel: `https://mapa-da-violencia-brasil.vercel.app`.
+- MVP visual Next.js + TypeScript + Tailwind + MapLibre.
+- Mapa com centroides e estados.
+- Filtros, ranking, breadcrumb e painel de município.
+- Dados mockados no app.
+- README, roadmap, contributing e deploy docs.
+- CI GitHub Actions.
+- Pipeline ETL offline/local.
+- IBGE população 2025 validado.
+- 5.571 municípios IBGE validados.
+- Download automatizado SINESP municipal.
+- XLSX municipal SINESP inspecionado.
+- SINESP municipal normalizado.
+- Dataset combinado com população.
+- Dicionário oficial resolveu que `Vítimas` no XLSX municipal representa `homicidio_doloso` medido em `vitimas`.
+
+## Decisão técnica já tomada
+
+O XLSX municipal SINESP/MJSP deve ser tratado como homicídio doloso por município/mês, medido em vítimas.
+
+O MVP visual ainda usa dados demonstrativos/mockados.
+
+## Próxima etapa recomendada
+
+Retomar automaticamente o download da Base VDE do SINESP/MJSP para verificar se ela traz múltiplos indicadores/crimes por município.
+
+Objetivo da próxima etapa:
+
+- Baixar ou retomar a VDE.
+- Inspecionar o schema real.
+- Verificar se tem município.
+- Verificar se tem código IBGE.
+- Verificar se tem mês/ano.
+- Verificar se tem indicador/crime explícito.
+- Verificar se tem múltiplos crimes.
+- Se viável, criar normalizador VDE.
+- Se não viável, integrar apenas homicídio doloso real ao MVP.
+
+## Comando planejado para próxima etapa
+
+```bash
+python3 -m etl.official_data fetch-sinesp-vde --timeout 900 --retries 5 --backoff-seconds 5 --resume --write-samples
+python3 -m etl.official_data inspect-vde --write-samples
+```
+
+Se VDE for viável:
+
+```bash
+python3 -m etl.official_data normalize-vde --write-samples
+```
+
+## Bloqueios conhecidos
+
+- Arquivos brutos foram apagados no reset local.
+- `data/raw/` precisa ser baixado novamente pelo pipeline.
+- VDE ainda não foi completamente baixado/inspecionado.
+- App ainda não consome dataset real.
+- Supabase/PostGIS ainda não foram implementados.
+- Polígonos municipais reais ainda não foram integrados.
+- MVP ainda usa centroides, não malha municipal real.

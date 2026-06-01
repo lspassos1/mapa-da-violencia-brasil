@@ -12,8 +12,10 @@ tsconfig.tsbuildinfo
 
 # Local data artifacts
 data/raw/
+data/manual/
 data/processed/
 data/geo/
+*.part
 
 # Local environment
 .env
