@@ -1,8 +1,10 @@
 import { brazilBounds, stateMapData } from "@/data/stateGeometries";
 import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
 import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
+import { getNewsConfidenceColor, getNewsPointRadius } from "@/lib/newsIncidents";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import type { Bounds, GeoFeatureCollection, StateMapInfo } from "@/types/geo";
+import type { NewsIncident } from "@/types/news";
 
 export function getBrazilBounds(): Bounds {
   return [...brazilBounds];
@@ -81,5 +83,27 @@ export function createCityFeatureCollection(
         },
       };
     }),
+  };
+}
+
+export function createNewsIncidentFeatureCollection(data: NewsIncident[]): GeoFeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: data.map((incident) => ({
+      type: "Feature",
+      properties: {
+        id: incident.id,
+        municipio: incident.municipality,
+        uf: incident.uf,
+        type: incident.type,
+        confidence: incident.confidence,
+        color: getNewsConfidenceColor(incident.confidence),
+        radius: getNewsPointRadius(incident.confidence),
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [incident.lng, incident.lat],
+      },
+    })),
   };
 }

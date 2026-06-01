@@ -6,18 +6,28 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
 import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
+import { getNewsConfidenceColor, getNewsPointRadius } from "@/lib/newsIncidents";
 import { getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
-import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
+import {
+  createCityFeatureCollection,
+  createNewsIncidentFeatureCollection,
+  createStateFeatureCollection,
+} from "@/services/geoService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
+import type { NewsIncident } from "@/types/news";
 import { MapTooltip } from "./MapTooltip";
+import { NewsMapTooltip } from "./NewsMapTooltip";
 
 interface BrazilCrimeMapProps {
   data: MunicipalityCrimeData[];
   indicator: CrimeIndicatorKey;
+  newsIncidents?: NewsIncident[];
   selectedMunicipality: MunicipalityCrimeData | null;
+  selectedNewsIncident?: NewsIncident | null;
   selectedState: string | null;
   viewMode: ViewMode;
   onMunicipalitySelect: (item: MunicipalityCrimeData) => void;
+  onNewsIncidentSelect?: (item: NewsIncident) => void;
   onStateSelect: (uf: string) => void;
 }
 
@@ -31,10 +41,13 @@ const BRAZIL_VIEWPORT = {
 export function BrazilCrimeMap({
   data,
   indicator,
+  newsIncidents = [],
   selectedMunicipality,
+  selectedNewsIncident = null,
   selectedState,
   viewMode,
   onMunicipalitySelect,
+  onNewsIncidentSelect,
   onStateSelect,
 }: BrazilCrimeMapProps) {
   const cityCollection = useMemo(() => createCityFeatureCollection(data, indicator, viewMode), [data, indicator, viewMode]);
@@ -42,21 +55,35 @@ export function BrazilCrimeMap({
     () => createCityFeatureCollection(selectedMunicipality ? [selectedMunicipality] : [], indicator, viewMode),
     [indicator, selectedMunicipality, viewMode],
   );
+  const newsCollection = useMemo(() => createNewsIncidentFeatureCollection(newsIncidents), [newsIncidents]);
+  const selectedNewsCollection = useMemo(
+    () => createNewsIncidentFeatureCollection(selectedNewsIncident ? [selectedNewsIncident] : []),
+    [selectedNewsIncident],
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const dataRef = useRef(data);
+  const newsIncidentsRef = useRef(newsIncidents);
   const onMunicipalitySelectRef = useRef(onMunicipalitySelect);
+  const onNewsIncidentSelectRef = useRef(onNewsIncidentSelect);
   const onStateSelectRef = useRef(onStateSelect);
   const cityCollectionRef = useRef(cityCollection);
   const selectedCityCollectionRef = useRef(selectedCityCollection);
+  const newsCollectionRef = useRef(newsCollection);
+  const selectedNewsCollectionRef = useRef(selectedNewsCollection);
   const [isLoading, setIsLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const [useStaticFallback, setUseStaticFallback] = useState(false);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; item: MunicipalityCrimeData } | null>(null);
+  const [newsTooltip, setNewsTooltip] = useState<{ x: number; y: number; item: NewsIncident } | null>(null);
 
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
+
+  useEffect(() => {
+    newsIncidentsRef.current = newsIncidents;
+  }, [newsIncidents]);
 
   useEffect(() => {
     cityCollectionRef.current = cityCollection;
@@ -67,8 +94,20 @@ export function BrazilCrimeMap({
   }, [selectedCityCollection]);
 
   useEffect(() => {
+    newsCollectionRef.current = newsCollection;
+  }, [newsCollection]);
+
+  useEffect(() => {
+    selectedNewsCollectionRef.current = selectedNewsCollection;
+  }, [selectedNewsCollection]);
+
+  useEffect(() => {
     onMunicipalitySelectRef.current = onMunicipalitySelect;
   }, [onMunicipalitySelect]);
+
+  useEffect(() => {
+    onNewsIncidentSelectRef.current = onNewsIncidentSelect;
+  }, [onNewsIncidentSelect]);
 
   useEffect(() => {
     onStateSelectRef.current = onStateSelect;
@@ -146,6 +185,15 @@ export function BrazilCrimeMap({
             type: "geojson",
             data: selectedCityCollectionRef.current,
           });
+          map.addSource("news-incidents", {
+            type: "geojson",
+            data: newsCollectionRef.current,
+            promoteId: "id",
+          });
+          map.addSource("selected-news-incident", {
+            type: "geojson",
+            data: selectedNewsCollectionRef.current,
+          });
 
           map.addLayer({
             id: "states-fill",
@@ -201,6 +249,40 @@ export function BrazilCrimeMap({
               "circle-opacity": 0.45,
             },
           });
+          map.addLayer({
+            id: "news-incidents-halo",
+            type: "circle",
+            source: "news-incidents",
+            paint: {
+              "circle-color": "#fbbf24",
+              "circle-radius": ["+", ["get", "radius"], 7],
+              "circle-opacity": 0.18,
+            },
+          });
+          map.addLayer({
+            id: "news-incidents",
+            type: "circle",
+            source: "news-incidents",
+            paint: {
+              "circle-color": ["get", "color"],
+              "circle-radius": ["get", "radius"],
+              "circle-stroke-width": 2.2,
+              "circle-stroke-color": "#111827",
+              "circle-opacity": 0.96,
+            },
+          });
+          map.addLayer({
+            id: "selected-news-incident",
+            type: "circle",
+            source: "selected-news-incident",
+            paint: {
+              "circle-color": "#f59e0b",
+              "circle-radius": 22,
+              "circle-stroke-width": 4,
+              "circle-stroke-color": "#f8fafc",
+              "circle-opacity": 0.42,
+            },
+          });
 
           map.on("click", "states-fill", (event) => {
             const feature = event.features?.[0];
@@ -217,18 +299,41 @@ export function BrazilCrimeMap({
               onMunicipalitySelectRef.current(item);
             }
           });
+          map.on("click", "news-incidents", (event) => {
+            const feature = event.features?.[0];
+            const id = feature?.properties?.id;
+            const item = newsIncidentsRef.current.find((incident) => incident.id === id);
+            if (item) {
+              onNewsIncidentSelectRef.current?.(item);
+            }
+          });
           map.on("mousemove", "city-points", (event) => {
             map.getCanvas().style.cursor = "pointer";
             const feature = event.features?.[0];
             const idIbge = feature?.properties?.idIbge;
             const item = dataRef.current.find((municipality) => municipality.idIbge === idIbge);
             if (item) {
+              setNewsTooltip(null);
               setTooltip({ x: event.point.x, y: event.point.y, item });
             }
           });
           map.on("mouseleave", "city-points", () => {
             map.getCanvas().style.cursor = "";
             setTooltip(null);
+          });
+          map.on("mousemove", "news-incidents", (event) => {
+            map.getCanvas().style.cursor = "pointer";
+            const feature = event.features?.[0];
+            const id = feature?.properties?.id;
+            const item = newsIncidentsRef.current.find((incident) => incident.id === id);
+            if (item) {
+              setTooltip(null);
+              setNewsTooltip({ x: event.point.x, y: event.point.y, item });
+            }
+          });
+          map.on("mouseleave", "news-incidents", () => {
+            map.getCanvas().style.cursor = "";
+            setNewsTooltip(null);
           });
           map.on("mousemove", "states-fill", () => {
             map.getCanvas().style.cursor = "pointer";
@@ -291,6 +396,24 @@ export function BrazilCrimeMap({
     if (!map?.isStyleLoaded()) {
       return;
     }
+    const news = map.getSource("news-incidents") as GeoJSONSource | undefined;
+    news?.setData(newsCollection);
+  }, [newsCollection]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded()) {
+      return;
+    }
+    const selectedNews = map.getSource("selected-news-incident") as GeoJSONSource | undefined;
+    selectedNews?.setData(selectedNewsCollection);
+  }, [selectedNewsCollection]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded()) {
+      return;
+    }
     map.setFilter("selected-state-line", ["==", ["get", "uf"], selectedState ?? ""]);
     map.setPaintProperty("states-fill", "fill-opacity", [
       "case",
@@ -311,6 +434,18 @@ export function BrazilCrimeMap({
       return;
     }
 
+    if (selectedNewsIncident) {
+      const [west, south, east, north] = getMunicipalityBounds(selectedNewsIncident.lng, selectedNewsIncident.lat);
+      map.fitBounds(
+        [
+          [west, south],
+          [east, north],
+        ],
+        { padding: 120, duration: 900 },
+      );
+      return;
+    }
+
     const [west, south, east, north] = getBoundsForState(selectedState);
     map.fitBounds(
       [
@@ -319,7 +454,7 @@ export function BrazilCrimeMap({
       ],
       { padding: selectedState ? 96 : 42, duration: 900 },
     );
-  }, [selectedMunicipality, selectedState]);
+  }, [selectedMunicipality, selectedNewsIncident, selectedState]);
 
   return (
     <div className="relative h-full min-h-[620px]">
@@ -328,10 +463,13 @@ export function BrazilCrimeMap({
         <StaticCrimeMapFallback
           data={data}
           indicator={indicator}
+          newsIncidents={newsIncidents}
           selectedMunicipality={selectedMunicipality}
+          selectedNewsIncident={selectedNewsIncident}
           selectedState={selectedState}
           viewMode={viewMode}
           onMunicipalitySelect={onMunicipalitySelect}
+          onNewsIncidentSelect={onNewsIncidentSelect}
           onStateSelect={onStateSelect}
         />
       ) : null}
@@ -349,7 +487,7 @@ export function BrazilCrimeMap({
           {mapError}
         </div>
       ) : null}
-      {!isLoading && data.length === 0 ? (
+      {!isLoading && data.length === 0 && newsIncidents.length === 0 ? (
         <div className="absolute inset-0 z-[2] flex items-center justify-center bg-slate-950/50">
           <p className="rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-300">
             Nenhum dado demonstrativo encontrado para este periodo.
@@ -357,6 +495,7 @@ export function BrazilCrimeMap({
         </div>
       ) : null}
       <MapTooltip indicator={indicator} tooltip={tooltip} />
+      <NewsMapTooltip tooltip={newsTooltip} />
     </div>
   );
 }
@@ -364,13 +503,20 @@ export function BrazilCrimeMap({
 function StaticCrimeMapFallback({
   data,
   indicator,
+  newsIncidents = [],
   selectedMunicipality,
+  selectedNewsIncident = null,
   selectedState,
   viewMode,
   onMunicipalitySelect,
+  onNewsIncidentSelect,
   onStateSelect,
 }: BrazilCrimeMapProps) {
   const states = useMemo(() => Array.from(new Set(data.map((item) => item.uf))).sort(), [data]);
+  const visibleStates = useMemo(
+    () => Array.from(new Set([...data.map((item) => item.uf), ...newsIncidents.map((item) => item.uf)])).sort(),
+    [data, newsIncidents],
+  );
 
   return (
     <div className="absolute inset-0 z-[1] overflow-hidden bg-[radial-gradient(circle_at_50%_45%,rgba(14,165,233,0.18),rgba(15,23,42,0.96)_58%)]">
@@ -380,7 +526,7 @@ function StaticCrimeMapFallback({
         <p className="mt-1">WebGL indisponivel; exibindo posicoes aproximadas dos municipios.</p>
       </div>
       <div className="absolute bottom-8 right-4 flex max-w-[300px] flex-wrap justify-end gap-2">
-        {states.map((uf) => (
+        {(visibleStates.length > 0 ? visibleStates : states).map((uf) => (
           <button
             key={uf}
             className={`h-8 rounded-md border px-2 text-xs font-semibold transition ${
@@ -426,6 +572,35 @@ function StaticCrimeMapFallback({
           >
             <span className="sr-only">
               {item.municipio} / {item.uf}
+            </span>
+          </button>
+        );
+      })}
+      {newsIncidents.map((item) => {
+        const size = Math.round(getNewsPointRadius(item.confidence) * 1.35);
+        const isSelected = selectedNewsIncident?.id === item.id;
+        const style = {
+          backgroundColor: getNewsConfidenceColor(item.confidence),
+          height: `${size}px`,
+          left: `${longitudeToPercent(item.lng)}%`,
+          top: `${latitudeToPercent(item.lat)}%`,
+          width: `${size}px`,
+        };
+
+        return (
+          <button
+            key={item.id}
+            aria-label={`${item.municipality}, ${item.uf}: noticia com ${Math.round(item.confidence * 100)}% de confianca`}
+            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-md border-2 shadow-lg transition hover:scale-110 ${
+              isSelected ? "border-white ring-4 ring-amber-200/40" : "border-slate-950"
+            }`}
+            style={style}
+            title={`${item.municipality} / ${item.uf}`}
+            type="button"
+            onClick={() => onNewsIncidentSelect?.(item)}
+          >
+            <span className="sr-only">
+              {item.municipality} / {item.uf}
             </span>
           </button>
         );

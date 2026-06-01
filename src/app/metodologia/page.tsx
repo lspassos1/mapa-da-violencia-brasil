@@ -25,6 +25,20 @@ export default function MethodologyPage() {
           </p>
         </section>
 
+        <section className="space-y-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-6">
+          <h2 className="text-xl font-semibold">Camada OSINT por noticias</h2>
+          <p className="leading-7 text-slate-300">
+            A camada de noticias usa registros demonstrativos para prototipar ocorrencias reportadas
+            por fontes abertas. Cada ponto preserva fonte, link, data, tipo e confianca estimada.
+            Esses pontos representam indicios jornalisticos e nao devem ser somados como estatistica
+            oficial.
+          </p>
+          <p className="leading-7 text-slate-300">
+            Em producao, a extracao por IA deve passar por deduplicacao, score de confianca,
+            auditoria de prompt/modelo e revisao humana antes de ser usada em analises publicas.
+          </p>
+        </section>
+
         <section className="space-y-4 rounded-lg border border-white/10 bg-white/[0.04] p-6">
           <h2 className="text-xl font-semibold">Como ler os scores</h2>
           <p className="leading-7 text-slate-300">
@@ -46,4 +60,3 @@ export default function MethodologyPage() {
     </main>
   );
 }
-

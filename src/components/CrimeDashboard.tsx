@@ -8,6 +8,7 @@ import { BrazilCrimeMap } from "@/components/map/BrazilCrimeMap";
 import { MapLegend } from "@/components/map/MapLegend";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { MunicipalityDetailsPanel } from "@/components/panels/MunicipalityDetailsPanel";
+import { NewsIncidentsPanel } from "@/components/panels/NewsIncidentsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
 import {
   getAvailableIndicators,
@@ -16,19 +17,34 @@ import {
   getDefaultCrimeMapFilters,
   getDemoDataStatus,
 } from "@/services/crimeDataService";
+import {
+  getAvailableNewsIncidentTypes,
+  getDefaultNewsIncidentFilters,
+  getNewsDataStatus,
+  getNewsIncidentData,
+} from "@/services/newsIncidentService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
+import type { MapDataLayer } from "@/types/map";
+import type { NewsIncident, NewsIncidentTypeFilter } from "@/types/news";
 
 const defaultFilters = getDefaultCrimeMapFilters();
+const defaultNewsFilters = getDefaultNewsIncidentFilters();
 const indicators = getAvailableIndicators();
+const newsTypes = getAvailableNewsIncidentTypes();
 const periods = getAvailablePeriods();
 const demoStatus = getDemoDataStatus();
+const newsStatus = getNewsDataStatus();
 
 export function CrimeDashboard() {
   const [indicator, setIndicator] = useState<CrimeIndicatorKey>(defaultFilters.indicator);
+  const [mapLayer, setMapLayer] = useState<MapDataLayer>("official");
+  const [newsConfidenceMin, setNewsConfidenceMin] = useState(defaultNewsFilters.minConfidence);
+  const [newsType, setNewsType] = useState<NewsIncidentTypeFilter>(defaultNewsFilters.type);
   const [viewMode, setViewMode] = useState<ViewMode>(defaultFilters.viewMode);
   const [period, setPeriod] = useState(defaultFilters.period);
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [selectedMunicipality, setSelectedMunicipality] = useState<MunicipalityCrimeData | null>(null);
+  const [selectedNewsIncident, setSelectedNewsIncident] = useState<NewsIncident | null>(null);
 
   const mapResult = useMemo(
     () => getCrimeMapData({ indicator, period, viewMode, uf: null }),
@@ -38,8 +54,20 @@ export function CrimeDashboard() {
     () => getCrimeMapData({ indicator, period, viewMode, uf: selectedState }),
     [indicator, period, selectedState, viewMode],
   );
+  const newsResult = useMemo(
+    () =>
+      getNewsIncidentData({
+        period,
+        type: newsType,
+        minConfidence: newsConfidenceMin,
+        uf: selectedState,
+      }),
+    [newsConfidenceMin, newsType, period, selectedState],
+  );
   const currentData = mapResult.items;
   const visibleMapData = selectedState ? rankingResult.items : currentData;
+  const officialLayerData = mapLayer === "news" ? [] : visibleMapData;
+  const visibleNewsIncidents = mapLayer === "official" ? [] : newsResult.items;
   const ranking = rankingResult.ranking;
 
   const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
@@ -47,20 +75,30 @@ export function CrimeDashboard() {
   function handleStateSelect(uf: string) {
     setSelectedState(uf);
     setSelectedMunicipality(null);
+    setSelectedNewsIncident(null);
   }
 
   function handleMunicipalitySelect(item: MunicipalityCrimeData) {
     setSelectedState(item.uf);
     setSelectedMunicipality(item);
+    setSelectedNewsIncident(null);
+  }
+
+  function handleNewsIncidentSelect(item: NewsIncident) {
+    setSelectedState(item.uf);
+    setSelectedMunicipality(null);
+    setSelectedNewsIncident(item);
   }
 
   function handleBackToBrazil() {
     setSelectedState(null);
     setSelectedMunicipality(null);
+    setSelectedNewsIncident(null);
   }
 
   function handleBackToState() {
     setSelectedMunicipality(null);
+    setSelectedNewsIncident(null);
   }
 
   return (
@@ -71,6 +109,10 @@ export function CrimeDashboard() {
           <CrimeFilters
             indicator={indicator}
             indicators={indicators}
+            mapLayer={mapLayer}
+            newsConfidenceMin={newsConfidenceMin}
+            newsType={newsType}
+            newsTypes={newsTypes}
             period={period}
             periods={periods}
             viewMode={viewMode}
@@ -78,9 +120,23 @@ export function CrimeDashboard() {
               setIndicator(next);
               setSelectedMunicipality(null);
             }}
+            onMapLayerChange={(next) => {
+              setMapLayer(next);
+              setSelectedMunicipality(null);
+              setSelectedNewsIncident(null);
+            }}
+            onNewsConfidenceMinChange={(next) => {
+              setNewsConfidenceMin(next);
+              setSelectedNewsIncident(null);
+            }}
+            onNewsTypeChange={(next) => {
+              setNewsType(next);
+              setSelectedNewsIncident(null);
+            }}
             onPeriodChange={(next) => {
               setPeriod(next);
               setSelectedMunicipality(null);
+              setSelectedNewsIncident(null);
             }}
             onViewModeChange={(next) => {
               setViewMode(next);
@@ -111,18 +167,30 @@ export function CrimeDashboard() {
           </div>
 
           <BrazilCrimeMap
-            data={visibleMapData}
+            data={officialLayerData}
             indicator={indicator}
+            newsIncidents={visibleNewsIncidents}
             selectedMunicipality={selectedMunicipality}
+            selectedNewsIncident={selectedNewsIncident}
             selectedState={selectedState}
             viewMode={viewMode}
             onMunicipalitySelect={handleMunicipalitySelect}
+            onNewsIncidentSelect={handleNewsIncidentSelect}
             onStateSelect={handleStateSelect}
           />
 
-          <div className="absolute bottom-4 left-4 z-10">
-            <MapLegend />
-          </div>
+          {mapLayer !== "news" ? (
+            <div className="absolute bottom-4 left-4 z-10">
+              <MapLegend />
+            </div>
+          ) : (
+            <div className="absolute bottom-4 left-4 z-10 rounded-lg border border-amber-300/20 bg-slate-950/85 px-3 py-2 text-xs text-slate-300 backdrop-blur">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-sm border border-slate-950 bg-amber-400" />
+                Noticias OSINT demonstrativas
+              </div>
+            </div>
+          )}
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4">
@@ -140,6 +208,15 @@ export function CrimeDashboard() {
               </p>
             </div>
           </div>
+          {mapLayer !== "official" ? (
+            <NewsIncidentsPanel
+              incidents={visibleNewsIncidents}
+              selectedIncident={selectedNewsIncident}
+              status={newsStatus}
+              summary={newsResult.summary}
+              onSelect={handleNewsIncidentSelect}
+            />
+          ) : null}
           <MunicipalityDetailsPanel
             allData={currentData}
             indicator={indicator}

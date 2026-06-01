@@ -11,10 +11,13 @@ export function formatDecimal(value: number): string {
   }).format(value);
 }
 
+export function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(new Date(value));
+}
+
 export function formatMetricValue(value: number, viewMode: ViewMode): string {
   if (viewMode === "total") return formatNumber(value);
   if (viewMode === "taxa100k") return `${formatDecimal(value)} / 100 mil`;
   if (viewMode === "variacaoMensal") return `${value > 0 ? "+" : ""}${formatDecimal(value)}%`;
   return `${Math.round(value)}/100`;
 }
-
