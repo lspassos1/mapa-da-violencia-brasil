@@ -39,6 +39,7 @@ export function CrimeDashboard() {
     [indicator, period, selectedState, viewMode],
   );
   const currentData = mapResult.items;
+  const visibleMapData = selectedState ? rankingResult.items : currentData;
   const ranking = rankingResult.ranking;
 
   const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
@@ -110,7 +111,7 @@ export function CrimeDashboard() {
           </div>
 
           <BrazilCrimeMap
-            data={currentData}
+            data={visibleMapData}
             indicator={indicator}
             selectedMunicipality={selectedMunicipality}
             selectedState={selectedState}
