@@ -1,8 +1,8 @@
 # Mapa da Violencia Brasil
 
-Aplicacao web experimental para visualizar indicadores de violencia no Brasil em um mapa dinamico. A versao atual valida a experiencia de produto com dados demonstrativos locais, navegacao Brasil -> Estado -> Municipio e uma arquitetura preparada para futuras fontes oficiais.
+Aplicacao web experimental para visualizar indicadores de violencia no Brasil em um mapa dinamico. A versao atual valida a experiencia de produto com navegacao Brasil -> Estado -> Municipio e inicia a transicao para dados oficiais agregados.
 
-> Esta versao usa dados demonstrativos/mockados. Os dados nao representam estatisticas oficiais reais.
+> A camada oficial atual usa uma amostra versionada do SINESP/MJSP para homicidio doloso municipal, medido em vitimas. A carga nacional completa ainda deve ser gerada localmente antes de publicacao ampla.
 
 ## Demo
 
@@ -15,13 +15,14 @@ Deploy Vercel: https://mapa-da-violencia-brasil.vercel.app
 - Mapa dinamico com MapLibre GL JS.
 - Visao Brasil -> Estado -> Municipio.
 - Centroides municipais coloridos por score de 0 a 100.
-- Filtros por indicador de violencia.
+- Filtros por indicador de violencia disponivel na camada ativa.
 - Filtros por modo de visualizacao: indice, total, taxa por 100 mil e variacao mensal.
 - Ranking de municipios mais criticos conforme o filtro atual.
 - Painel de detalhes por municipio.
 - Pagina de metodologia em `/metodologia`.
-- APIs mockadas para mapa e municipio.
-- Aviso visivel de dados demonstrativos na interface.
+- APIs para mapa, municipio, metadata, health e status de fontes.
+- Aviso visivel sobre amostra oficial ou dados demonstrativos conforme a camada ativa.
+- Camada OSINT demonstrativa separada dos dados oficiais.
 
 ## Stack
 
@@ -30,7 +31,7 @@ Deploy Vercel: https://mapa-da-violencia-brasil.vercel.app
 - Tailwind CSS
 - MapLibre GL JS
 - ESLint
-- Dados mockados locais
+- Dados oficiais agregados em modo offline/local e fallback demonstrativo
 
 ## Como rodar localmente
 
@@ -61,6 +62,19 @@ npm run test
 npm run build
 ```
 
+Se `npm` nao estiver disponivel no `PATH` desta maquina, use o script local de
+validacao com fallback para o runtime Node do Codex:
+
+```bash
+bash scripts/validate-local.sh
+```
+
+Gerar JSON app-ready a partir do CSV SINESP municipal combinado com populacao:
+
+```bash
+python3 -m etl.official_data generate-app-ready --write-samples
+```
+
 ## Deploy
 
 O projeto esta publicado na Vercel como aplicacao Next.js, sem variaveis de ambiente obrigatorias nesta fase. Veja [docs/DEPLOY.md](docs/DEPLOY.md).
@@ -68,9 +82,9 @@ O projeto esta publicado na Vercel como aplicacao Next.js, sem variaveis de ambi
 ## Estrutura do projeto
 
 ```txt
-src/app        Rotas Next.js, pagina principal, metodologia e APIs mockadas
+src/app        Rotas Next.js, pagina principal, metodologia e APIs
 src/components Componentes visuais do dashboard, mapa, filtros e paineis
-src/data       Dados demonstrativos locais e placeholders geograficos
+src/data       Amostra oficial versionada, dados demonstrativos e placeholders geograficos
 src/lib        Utilitarios de calculo, formatacao, ranking, risco e navegacao
 src/services   Camada de leitura preparada para substituir mocks por API real
 src/types      Tipos compartilhados de crime, mapa e geografia

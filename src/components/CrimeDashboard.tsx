@@ -34,6 +34,12 @@ const newsTypes = getAvailableNewsIncidentTypes();
 const periods = getAvailablePeriods();
 const demoStatus = getDemoDataStatus();
 const newsStatus = getNewsDataStatus();
+const officialDataLabel =
+  demoStatus.mode === "official_sample"
+    ? "Amostra oficial: homicidio doloso (vitimas)"
+    : demoStatus.mode === "official"
+      ? "Dados oficiais agregados"
+      : "Dados demonstrativos nesta versao";
 
 export function CrimeDashboard() {
   const [indicator, setIndicator] = useState<CrimeIndicatorKey>(defaultFilters.indicator);
@@ -162,7 +168,7 @@ export function CrimeDashboard() {
             />
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-medium text-amber-100 backdrop-blur">
               <AlertTriangle className="h-4 w-4" />
-              Dados demonstrativos nesta versao
+              {officialDataLabel}
             </div>
           </div>
 
@@ -199,6 +205,10 @@ export function CrimeDashboard() {
             <div className="mt-3 space-y-2 text-sm text-slate-300">
               <p>
                 <span className="text-slate-500">Fonte:</span> {demoStatus.source}
+              </p>
+              <p>
+                <span className="text-slate-500">Modo:</span>{" "}
+                {demoStatus.mode === "official_sample" ? "amostra oficial" : demoStatus.mode ?? "demo"}
               </p>
               <p>
                 <span className="text-slate-500">Periodo:</span> {selectedPeriod.label}

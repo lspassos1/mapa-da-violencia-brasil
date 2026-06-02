@@ -27,6 +27,7 @@ npm run lint
 npm run typecheck
 npm run test
 npm run build
+python3 -m unittest discover -s etl/tests
 git diff --check
 ```
 
@@ -59,7 +60,9 @@ refactor(data): isolate mock service
 - Nao adicione enderecos, coordenadas de ocorrencias ou qualquer dado que permita identificar vitimas, autores ou eventos especificos.
 - Prefira sempre dados agregados por municipio, periodo e indicador.
 - Registre fonte, URL, periodo, orgao responsavel e observacoes de licenca/uso.
+- Nao commite arquivos brutos, ZIPs, shapefiles, tiles, CSVs processados grandes ou `.part`.
+- Versione apenas amostras pequenas e auditaveis.
 
 ## Escopo atual
 
-A versao atual usa dados demonstrativos. A proxima fase tecnica deve integrar dados reais primeiro em modo offline/local, antes de conectar banco de producao ou automacoes.
+A versao atual usa uma amostra oficial SINESP/MJSP para validar contratos e interface, alem de dados demonstrativos/OSINT separados. A carga nacional completa deve passar pelo modo offline/local antes de conectar banco de producao ou automacoes.

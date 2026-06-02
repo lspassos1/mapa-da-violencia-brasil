@@ -1,4 +1,4 @@
-"""ETL package for Radar da Violencia Brasil."""
+"""ETL package for Mapa da Violencia Brasil."""
 
 import datetime as _datetime
 

@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "inspected_at": "2026-06-02T21:02:23Z",
+    "source_id": "sinesp_vde",
+    "path": "data/raw/sinesp_vde.zip.part"
+  },
+  "summary": {
+    "status": "incomplete_download",
+    "bytes": 28750733,
+    "tabular_member_count": 0,
+    "can_attempt_normalization": false
+  },
+  "decision": "resume_download_before_schema_assumption",
+  "reason": "partial download present; resume before inspection",
+  "resume_command": "python3 -m etl.official_data download --source sinesp_vde --timeout 900 --retries 5 --backoff-seconds 5"
+}

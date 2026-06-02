@@ -10,7 +10,7 @@ export function AppHeader() {
         </div>
         <div>
           <h1 className="text-lg font-semibold tracking-wide">Mapa da Violencia Brasil</h1>
-          <p className="text-xs text-slate-400">Inteligencia geografica demonstrativa</p>
+          <p className="text-xs text-slate-400">Indicadores oficiais agregados e camadas separadas</p>
         </div>
       </div>
       <Link
@@ -22,4 +22,3 @@ export function AppHeader() {
     </header>
   );
 }
-

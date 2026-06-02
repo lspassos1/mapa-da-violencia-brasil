@@ -25,6 +25,13 @@ Output Directory: padrao do Next.js
 
 Nao e necessario adicionar `vercel.json` nesta fase: a Vercel detecta Next.js automaticamente.
 
+Runtime esperado:
+
+```txt
+Node.js: 22.x
+Python CI/ETL: 3.12
+```
+
 ## Variaveis de ambiente
 
 Nenhuma variavel de ambiente e obrigatoria nesta fase.
@@ -42,7 +49,8 @@ O deploy demo ainda usa dados demonstrativos/mockados. Os dados nao representam 
 - Ranking funciona.
 - Painel de municipio abre.
 - `/metodologia` abre.
-- Aviso de dados demonstrativos aparece.
+- `/api/health`, `/api/metadata`, `/api/crime-map` e `/api/sources/status` retornam 200.
+- Aviso de amostra oficial ou dados demonstrativos aparece conforme a camada ativa.
 
 ## Validacao local antes do deploy
 
@@ -51,5 +59,6 @@ npm run lint
 npm run typecheck
 npm run test
 npm run build
+npm run smoke
 git diff --check
 ```

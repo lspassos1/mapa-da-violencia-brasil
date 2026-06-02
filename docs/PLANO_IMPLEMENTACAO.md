@@ -1,4 +1,4 @@
-# Plano de Implementacao - Radar da Violencia Brasil
+# Plano de Implementacao - Mapa da Violencia Brasil
 
 Data do plano: 2026-05-25
 
