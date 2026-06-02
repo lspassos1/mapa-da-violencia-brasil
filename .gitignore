@@ -16,6 +16,15 @@ data/manual/
 data/processed/
 data/geo/
 *.part
+*.zip
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.mbtiles
+*.pmtiles
 
 # Local environment
 .env

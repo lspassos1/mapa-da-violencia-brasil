@@ -79,7 +79,7 @@ Objetivo da próxima etapa:
 ## Comando planejado para próxima etapa
 
 ```bash
-python3 -m etl.official_data fetch-sinesp-vde --timeout 900 --retries 5 --backoff-seconds 5 --resume --write-samples
+python3 -m etl.official_data fetch-sinesp-vde --timeout 900 --retries 5 --backoff-seconds 5 --write-samples
 python3 -m etl.official_data inspect-vde --write-samples
 ```
 
@@ -87,6 +87,28 @@ Se VDE for viável:
 
 ```bash
 python3 -m etl.official_data normalize-vde --write-samples
+```
+
+Para gerar a camada offline consumivel pelo app a partir do CSV SINESP municipal
+com populacao:
+
+```bash
+python3 -m etl.official_data generate-app-ready --write-samples
+```
+
+Para validar o repositório local com fallback para o runtime Node empacotado do
+Codex quando `npm` nao estiver no `PATH`:
+
+```bash
+bash scripts/validate-local.sh
+```
+
+Observacao: `fetch-sinesp-vde`, `inspect-vde`, `normalize-vde` e
+`generate-app-ready` sao comandos do modulo `etl.official_data`. O download VDE
+tambem pode ser retomado pelo comando generico:
+
+```bash
+python3 -m etl.official_data download --source sinesp_vde --timeout 900 --retries 5 --backoff-seconds 5
 ```
 
 ## Bloqueios conhecidos

@@ -44,10 +44,22 @@ export function MunicipalityDetailsPanel({
   }
 
   const metric = municipality.indicadores[indicator];
-  const general = municipality.indicadores.indiceGeral;
   const indicatorLabel = indicatorOptions.find((option) => option.key === indicator)?.label ?? "Indicador";
   const stateRank = getMunicipalityRank(allData, municipality.idIbge, indicator, viewMode, municipality.uf);
   const nationalRank = getMunicipalityRank(allData, municipality.idIbge, indicator, viewMode);
+  if (!metric) {
+    return (
+      <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
+        <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Municipio</p>
+        <h2 className="mt-1 text-2xl font-semibold text-white">{municipality.municipio}</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-400">
+          Este indicador nao esta disponivel para o municipio e periodo selecionados.
+        </p>
+      </section>
+    );
+  }
+  const general = municipality.indicadores.indiceGeral;
+  const unitLabel = metric.unidade === "vitimas" ? "Vitimas" : metric.unidade === "ocorrencias" ? "Ocorrencias" : "Indice";
 
   return (
     <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
@@ -66,12 +78,18 @@ export function MunicipalityDetailsPanel({
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <MetricCard label="Indice geral" value={`${general.score}/100`} />
+        <MetricCard label="Indice geral" value={general ? `${general.score}/100` : "Nao aplicavel"} />
         <MetricCard label="Populacao" value={formatNumber(municipality.populacao)} />
-        <MetricCard label={indicatorLabel} value={formatNumber(metric.total)} />
+        <MetricCard label={`${indicatorLabel} (${unitLabel.toLowerCase()})`} value={formatNumber(metric.total)} />
         <MetricCard label="Taxa por 100 mil" value={formatDecimal(metric.taxa100k)} />
-        <MetricCard label="Variacao mensal" value={`${metric.variacaoMensal > 0 ? "+" : ""}${formatDecimal(metric.variacaoMensal)}%`} />
-        <MetricCard label="Variacao anual" value={`${metric.variacaoAnual > 0 ? "+" : ""}${formatDecimal(metric.variacaoAnual)}%`} />
+        <MetricCard
+          label="Variacao mensal"
+          value={metric.variacaoMensal === null ? "Sem serie" : `${metric.variacaoMensal > 0 ? "+" : ""}${formatDecimal(metric.variacaoMensal)}%`}
+        />
+        <MetricCard
+          label="Variacao anual"
+          value={metric.variacaoAnual === null ? "Sem serie" : `${metric.variacaoAnual > 0 ? "+" : ""}${formatDecimal(metric.variacaoAnual)}%`}
+        />
         <MetricCard label="Ranking estadual" value={stateRank ? `${stateRank}º` : "-"} />
         <MetricCard label="Ranking nacional" value={nationalRank ? `${nationalRank}º` : "-"} />
       </div>
@@ -82,8 +100,8 @@ export function MunicipalityDetailsPanel({
           Fonte e atualizacao
         </div>
         <p className="text-sm leading-6 text-slate-400">
-          {demoDataStatus.source}. Ultima atualizacao mockada em {demoDataStatus.lastUpdated}. Os
-          dados desta tela sao agregados e ficticios para demonstracao de interface.
+          {metric.fonte}. Atualizado em {demoDataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.
+          {metric.limitacoes ? ` ${metric.limitacoes}` : ""}
         </p>
       </div>
     </section>

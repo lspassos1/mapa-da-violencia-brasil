@@ -3,6 +3,7 @@ import type { Bounds, StateMapInfo } from "@/types/geo";
 export const brazilBounds: Bounds = [-74.1, -34.2, -34.7, 5.4];
 
 export const stateMapData: StateMapInfo[] = [
+  { uf: "AC", nome: "Acre", bounds: [-74.1, -11.2, -66.6, -7.1], centroid: [-70.3, -9.2] },
   { uf: "AM", nome: "Amazonas", bounds: [-73.8, -9.8, -56.0, 2.4], centroid: [-63.3, -4.1] },
   { uf: "PA", nome: "Para", bounds: [-58.9, -9.9, -46.1, 2.7], centroid: [-52.5, -4.4] },
   { uf: "CE", nome: "Ceara", bounds: [-41.4, -7.9, -37.2, -2.7], centroid: [-39.6, -5.1] },
@@ -16,4 +17,3 @@ export const stateMapData: StateMapInfo[] = [
   { uf: "PR", nome: "Parana", bounds: [-54.6, -26.8, -48.0, -22.5], centroid: [-51.3, -24.7] },
   { uf: "RS", nome: "Rio Grande do Sul", bounds: [-57.7, -33.8, -49.7, -27.1], centroid: [-53.6, -30.2] },
 ];
-

@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from etl.official_data import (
     canonical_indicator_code,
     detect_tabular_header,
+    generate_app_ready_dataset,
     normalize_sinesp_table_rows,
     parse_optional_month_year,
     parse_ibge_population_ods,
@@ -126,6 +127,45 @@ class OfficialDataTests(unittest.TestCase):
 
     def test_parse_optional_month_year_supports_excel_serial(self):
         self.assertEqual(parse_optional_month_year("43101"), (2018, 1))
+
+    def test_generate_app_ready_dataset_distinguishes_zero_registered(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            csv_path = root / "combined.csv"
+            output_path = root / "crime-map.json"
+            csv_path.write_text(
+                "source_id,id_ibge,uf,municipio,ano,mes,indicador_codigo,indicador_nome,"
+                "valor,unidade_medida,vitimas,populacao,taxa_100k,fonte,fonte_populacao,limitacoes\n"
+                "sinesp_municipios,1200401,AC,Rio Branco,2018,3,homicidio_doloso,"
+                "Homicídio doloso,0,vitimas,0,389001,0,MJSP/SINESP,IBGE,teste\n",
+                encoding="utf-8",
+            )
+
+            result = generate_app_ready_dataset(input_path=csv_path, output_path=output_path)
+
+        self.assertEqual(result["summary"]["app_rows"], 1)
+        item = result["payload"]["items"][0]
+        metric = item["indicadores"]["homicidioDoloso"]
+        self.assertEqual(metric["dataStatus"], "zero_registrado")
+        self.assertEqual(metric["total"], 0)
+
+    def test_generate_app_ready_dataset_skips_rows_without_centroid(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            csv_path = root / "combined.csv"
+            output_path = root / "crime-map.json"
+            csv_path.write_text(
+                "source_id,id_ibge,uf,municipio,ano,mes,indicador_codigo,indicador_nome,"
+                "valor,unidade_medida,vitimas,populacao,taxa_100k,fonte,fonte_populacao,limitacoes\n"
+                "sinesp_municipios,9999999,ZZ,Sem Centroide,2018,3,homicidio_doloso,"
+                "Homicídio doloso,1,vitimas,1,1000,100,MJSP/SINESP,IBGE,teste\n",
+                encoding="utf-8",
+            )
+
+            result = generate_app_ready_dataset(input_path=csv_path, output_path=output_path)
+
+        self.assertEqual(result["summary"]["app_rows"], 0)
+        self.assertEqual(result["summary"]["skipped_without_centroid"], 1)
 
 
 if __name__ == "__main__":

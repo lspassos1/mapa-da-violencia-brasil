@@ -9,7 +9,8 @@ export function getRankedMunicipalities(
   limit = 10,
 ): MunicipalityCrimeData[] {
   const filtered = uf ? data.filter((item) => item.uf === uf) : data;
-  return [...filtered]
+  return filtered
+    .filter((item) => Number.isFinite(getMetricValue(item, indicator, viewMode)))
     .sort((a, b) => getMetricValue(b, indicator, viewMode) - getMetricValue(a, indicator, viewMode))
     .slice(0, limit);
 }

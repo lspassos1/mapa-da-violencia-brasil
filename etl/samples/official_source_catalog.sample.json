@@ -5,7 +5,9 @@
       "Catalogo registra metadados e URLs oficiais; arquivos brutos ficam fora do Git.",
       "SINESP/MJSP deve ser baixado localmente para confirmar schema tabular antes de uso no MVP.",
       "Dados ainda nao substituem os mocks da interface."
-    ]
+    ],
+    "discovery_warning": "failed to fetch https://dados.mj.gov.br/api/3/action/package_show?id=sistema-nacional-de-estatisticas-de-seguranca-publica",
+    "used_cached_catalog": true
   },
   "summary": {
     "resource_count": 7,

@@ -11,26 +11,36 @@ export default function MethodologyPage() {
           <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Metodologia</p>
           <h1 className="text-4xl font-semibold">Mapa da Violencia Brasil</h1>
           <p className="max-w-3xl text-base leading-7 text-slate-300">
-            Esta versao usa dados demonstrativos para validar a experiencia visual. Os valores nao
-            representam ocorrencias oficiais e nao devem ser usados para conclusoes sobre municipios.
+            Esta versao inicia a transicao para dados oficiais agregados. A camada principal usa uma
+            amostra versionada do SINESP/MJSP para homicidio doloso municipal, medida em vitimas, e
+            mantem avisos claros ate a carga nacional completa ser publicada.
           </p>
         </header>
 
         <section className="space-y-4 rounded-lg border border-white/10 bg-white/[0.04] p-6">
           <h2 className="text-xl font-semibold">O que o mapa mostra</h2>
           <p className="leading-7 text-slate-300">
-            O MVP mostra municipios selecionados por centroide, com score de 0 a 100, filtros por
-            indicador e modos de visualizacao. A arquitetura esta preparada para receber dados
-            oficiais agregados por municipio, mes e indicador.
+            O mapa mostra municipios por centroide, com score de 0 a 100, filtros por indicador e
+            modos de visualizacao. O primeiro recorte oficial e homicidio doloso do SINESP/MJSP; o
+            valor exibido representa vitimas registradas, nao ocorrencias.
+          </p>
+          <p className="leading-7 text-slate-300">
+            A taxa por 100 mil habitantes usa populacao IBGE 2025 enquanto a serie populacional
+            historica nao estiver integrada. Comparacoes historicas devem ser lidas com essa
+            limitacao metodologica.
           </p>
         </section>
 
         <section className="space-y-4 rounded-lg border border-white/10 bg-white/[0.04] p-6">
           <h2 className="text-xl font-semibold">Como ler os scores</h2>
           <p className="leading-7 text-slate-300">
-            A escala demonstrativa usa cinco niveis: baixo, moderado, atencao, alto e critico. Em
-            producao, a taxa por 100 mil habitantes deve ser priorizada para evitar comparar cidades
-            apenas pelo volume absoluto de registros.
+            A escala usa cinco niveis: baixo, moderado, atencao, alto e critico. Para indicadores
+            individuais, a taxa por 100 mil habitantes deve ser priorizada para evitar comparar
+            municipios apenas pelo volume absoluto de registros.
+          </p>
+          <p className="leading-7 text-slate-300">
+            Municipios sem dado informado pela fonte devem aparecer como sem dados. Isso e diferente
+            de zero registrado, que significa que a fonte informou explicitamente valor 0.
           </p>
         </section>
 
@@ -39,7 +49,8 @@ export default function MethodologyPage() {
           <p className="leading-7 text-slate-300">
             O produto deve usar linguagem de incidencia registrada e nivel do indicador. Dados
             oficiais podem ter subnotificacao, revisoes e diferencas metodologicas entre fontes. O
-            mapa nao mede risco individual em tempo real.
+            mapa nao mede risco individual em tempo real e nao deve ser usado para vigilancia,
+            previsao de crime ou conclusoes sobre eventos individuais.
           </p>
         </section>
       </div>

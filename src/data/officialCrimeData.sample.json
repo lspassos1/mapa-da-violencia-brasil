@@ -1,0 +1,233 @@
+{
+  "status": {
+    "source": "MJSP/SINESP - amostra oficial local",
+    "lastUpdated": "26/05/2026",
+    "latestPeriod": "Mar/2018",
+    "status": "Amostra oficial versionada",
+    "mode": "official_sample",
+    "sourceId": "sinesp_municipios",
+    "unit": "vitimas",
+    "limitations": [
+      "Amostra leve gerada a partir de etl/samples/sinesp_municipal_indicators_with_population.sample.csv.",
+      "O XLSX municipal SINESP/MJSP representa vitimas de homicidio doloso, nao ocorrencias.",
+      "Taxas usam populacao IBGE 2025 ate haver serie populacional historica.",
+      "Esta amostra valida contratos e interface; a carga nacional completa deve ser gerada em data/processed/app-ready/."
+    ]
+  },
+  "indicators": [
+    {
+      "key": "homicidioDoloso",
+      "codigo": "homicidio_doloso",
+      "label": "Homicidio doloso",
+      "unidade": "vitimas",
+      "oficial": true
+    }
+  ],
+  "periods": [
+    { "key": "2018-03", "label": "Mar/2018", "updatedAt": "26/05/2026" },
+    { "key": "2018-02", "label": "Fev/2018", "updatedAt": "26/05/2026" },
+    { "key": "2018-01", "label": "Jan/2018", "updatedAt": "26/05/2026" }
+  ],
+  "items": [
+    {
+      "idIbge": "1200179",
+      "municipio": "Capixaba",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.566,
+      "lng": -67.686,
+      "populacao": 10981,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 100,
+          "nivel": "critico",
+          "total": 1,
+          "taxa100k": 9.1066,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    },
+    {
+      "idIbge": "1200203",
+      "municipio": "Cruzeiro Do Sul",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -7.627,
+      "lng": -72.675,
+      "populacao": 98916,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 96,
+          "nivel": "critico",
+          "total": 9,
+          "taxa100k": 9.0986,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    },
+    {
+      "idIbge": "1200450",
+      "municipio": "Senador Guiomard",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.149,
+      "lng": -67.736,
+      "populacao": 22402,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 92,
+          "nivel": "critico",
+          "total": 2,
+          "taxa100k": 8.9278,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    },
+    {
+      "idIbge": "1200138",
+      "municipio": "Bujari",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.821,
+      "lng": -67.949,
+      "populacao": 13928,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 78,
+          "nivel": "alto",
+          "total": 1,
+          "taxa100k": 7.1798,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    },
+    {
+      "idIbge": "1200401",
+      "municipio": "Rio Branco",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.975,
+      "lng": -67.824,
+      "populacao": 389001,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 30,
+          "nivel": "moderado",
+          "total": 11,
+          "taxa100k": 2.8278,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    },
+    {
+      "idIbge": "1200203",
+      "municipio": "Cruzeiro Do Sul",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -7.627,
+      "lng": -72.675,
+      "populacao": 98916,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 45,
+          "nivel": "atencao",
+          "total": 4,
+          "taxa100k": 4.0438,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    },
+    {
+      "idIbge": "1200401",
+      "municipio": "Rio Branco",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.975,
+      "lng": -67.824,
+      "populacao": 389001,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 51,
+          "nivel": "atencao",
+          "total": 18,
+          "taxa100k": 4.6272,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    },
+    {
+      "idIbge": "1200401",
+      "municipio": "Rio Branco",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.975,
+      "lng": -67.824,
+      "populacao": 389001,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "score": 88,
+          "nivel": "critico",
+          "total": 31,
+          "taxa100k": 7.9691,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Valor canonico usa a coluna Vitimas; taxa calculada com populacao IBGE 2025."
+        }
+      }
+    }
+  ]
+}

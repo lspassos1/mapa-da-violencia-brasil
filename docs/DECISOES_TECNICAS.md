@@ -1,4 +1,4 @@
-# Decisoes Tecnicas - Radar da Violencia Brasil
+# Decisoes Tecnicas - Mapa da Violencia Brasil
 
 Data do plano: 2026-05-25
 
@@ -249,3 +249,28 @@ Consequencias:
 - O MVP atual nao representa limites reais de municipios.
 - Cores municipais ainda sao aplicadas em centroides, nao em poligonos.
 - A futura integracao com IBGE deve preservar `id_ibge` como chave de join entre dados e geometria.
+
+## ADR-014 - Primeiro dado oficial publicado
+
+Status: Aceita
+
+Decisao:
+
+- A primeira entrega com dado oficial deve usar o XLSX municipal SINESP/MJSP ja validado.
+- O indicador publicado nesse recorte e `homicidio_doloso`.
+- A unidade e `vitimas`, usando a coluna `Vítimas`; o valor nao deve ser tratado como ocorrencias.
+- Indicadores sem dado oficial validado devem ficar ocultos da camada oficial.
+- A Base VDE continua como trilha P0 paralela para descobrir se ha multiplos indicadores municipais.
+
+Motivo:
+
+- O app visual ja pode consumir dados agregados, mas a VDE ainda nao foi baixada e inspecionada integralmente.
+- O dicionario municipal SINESP/MJSP resolveu a ambiguidade do XLSX municipal com confianca alta.
+- Publicar um recorte oficial estreito e metodologicamente honesto e mais seguro do que manter multiplos indicadores mockados como se fossem oficiais.
+
+Consequencias:
+
+- O filtro oficial inicial mostra apenas homicidio doloso.
+- A taxa por 100 mil usa populacao IBGE 2025 ate a serie populacional historica ser integrada.
+- O app precisa diferenciar `sem_dados`, `zero_registrado` e `populacao_indisponivel`.
+- A camada OSINT de noticias permanece separada dos dados oficiais e nao entra em ranking, score ou indicador estatistico.

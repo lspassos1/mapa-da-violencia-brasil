@@ -2,13 +2,21 @@
   "name": "mapa-da-violencia-brasil",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "python3 -m unittest discover -s etl/tests"
+    "test": "npm run test:etl && npm run test:app",
+    "test:etl": "python3 -m unittest discover -s etl/tests",
+    "test:app": "node --test tests/*.test.mjs",
+    "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "smoke": "node scripts/smoke-public-routes.mjs"
   },
   "dependencies": {
     "lucide-react": "1.16.0",

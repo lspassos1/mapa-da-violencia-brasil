@@ -33,6 +33,9 @@ export function RankingPanel({
         <div className="space-y-2">
           {data.map((item, index) => {
             const metric = item.indicadores[indicator];
+            if (!metric) {
+              return null;
+            }
             const active = item.idIbge === selectedMunicipalityId;
             return (
               <button

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  getCrimeMetadata,
   getCrimeMapData,
   getDefaultCrimeMapFilters,
   isCrimeIndicatorKey,
@@ -30,5 +31,13 @@ export function GET(request: Request) {
     periodo: result.filters.period,
     indicador: result.filters.indicator,
     modo: result.filters.viewMode,
+    fonteResumo: {
+      nome: result.status.source,
+      ultimaAtualizacao: result.status.lastUpdated,
+      ultimoPeriodoDisponivel: result.status.latestPeriod,
+      unidade: result.status.unit ?? null,
+      modo: result.status.mode ?? "demo",
+    },
+    metadata: getCrimeMetadata(),
   });
 }

@@ -16,7 +16,7 @@ export async function GET(
   }
 
   return NextResponse.json({
-    demo: true,
+    demo: getDemoDataStatus().mode === "demo",
     status: getDemoDataStatus(),
     item,
   });

@@ -62,6 +62,7 @@ python3 -m etl.official_data discover --write-samples
 python3 -m etl.official_data download --source ibge_population
 python3 -m etl.official_data inspect --write-samples
 python3 -m etl.official_data normalize --write-samples
+python3 -m etl.official_data generate-app-ready --write-samples
 ```
 
 Para tentar baixar recursos SINESP/MJSP:
@@ -105,6 +106,8 @@ data/processed/sinesp_normalization_status.json
 data/processed/sinesp_municipal_indicators_with_population.csv
 data/processed/sinesp_population_join_status.json
 data/processed/normalization_metadata.json
+data/processed/app-ready/crime-map.json
+data/processed/app-ready/crime-map.status.json
 ```
 
 Amostras leves versionaveis:
@@ -119,6 +122,7 @@ etl/samples/sinesp_indicators_normalized.sample.csv
 etl/samples/sinesp_population_join_status.sample.json
 etl/samples/sinesp_municipal_indicators_with_population.sample.csv
 etl/samples/normalization_metadata.sample.json
+etl/samples/crime_map_app_ready.sample.json
 ```
 
 ## Regra de chave municipal
@@ -260,6 +264,43 @@ Resultado desta execucao:
 - a transferencia terminou com `curl: (28) Operation timed out after 900004 milliseconds`;
 - o `.part` foi preservado em `data/raw/` para retomada automatizada futura;
 - o schema interno do VDE ainda nao foi assumido, porque o ZIP nao foi completado.
+
+Comandos atuais para retomada segura:
+
+```bash
+python3 -m etl.official_data fetch-sinesp-vde --timeout 900 --retries 5 --backoff-seconds 5 --write-samples
+python3 -m etl.official_data inspect-vde --write-samples
+```
+
+Se existir apenas `data/raw/sinesp_vde.zip.part`, `inspect-vde` registra
+`incomplete_download` e orienta a retomada. O schema do VDE so deve ser assumido
+depois de existir `data/raw/sinesp_vde.zip` completo e valido.
+
+Se a inspecao confirmar schema tabular municipal com indicador explicito:
+
+```bash
+python3 -m etl.official_data normalize-vde --write-samples
+```
+
+## Camada app-ready
+
+O comando `generate-app-ready` transforma o CSV combinado SINESP+IBGE em JSON
+compacto para o app:
+
+```txt
+data/processed/app-ready/crime-map.json
+```
+
+Esse arquivo continua ignorado pelo Git quando for grande. Para revisao publica,
+usar apenas amostras leves em `etl/samples/` e o snapshot pequeno versionado em
+`src/data/officialCrimeData.sample.json`.
+
+Estados de dado obrigatorios:
+
+- `amostra_oficial` ou `oficial`: valor real agregado com fonte conhecida.
+- `zero_registrado`: a fonte informou explicitamente valor 0.
+- `sem_dados`: nao ha linha da fonte para municipio/periodo.
+- `populacao_indisponivel`: existe valor, mas nao ha populacao para taxa.
 
 ## Limitacoes
 

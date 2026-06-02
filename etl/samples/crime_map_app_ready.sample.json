@@ -1,0 +1,550 @@
+{
+  "status": {
+    "source": "MJSP/SINESP - amostra oficial local",
+    "lastUpdated": "2026-06-02T20:59:25Z",
+    "latestPeriod": "Mar/2018",
+    "status": "Amostra oficial versionada",
+    "mode": "official_sample",
+    "sourceId": "sinesp_municipios",
+    "unit": "vitimas",
+    "limitations": [
+      "O XLSX municipal SINESP/MJSP representa vitimas de homicidio doloso, nao ocorrencias.",
+      "Taxas usam populacao IBGE 2025 ate haver serie populacional historica.",
+      "Linhas sem centroide conhecido ficam fora do JSON do mapa ate a malha IBGE real ser integrada."
+    ]
+  },
+  "indicators": [
+    {
+      "key": "homicidioDoloso",
+      "codigo": "homicidio_doloso",
+      "label": "Homicidio doloso",
+      "unidade": "vitimas",
+      "oficial": true
+    }
+  ],
+  "periods": [
+    {
+      "key": "2018-03",
+      "label": "Mar/2018",
+      "updatedAt": "2026-06-02"
+    },
+    {
+      "key": "2018-02",
+      "label": "Fev/2018",
+      "updatedAt": "2026-06-02"
+    },
+    {
+      "key": "2018-01",
+      "label": "Jan/2018",
+      "updatedAt": "2026-06-02"
+    }
+  ],
+  "items": [
+    {
+      "idIbge": "1200138",
+      "municipio": "Bujari",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.821,
+      "lng": -67.949,
+      "populacao": 13928,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 7.1798,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 62,
+          "nivel": "alto"
+        }
+      }
+    },
+    {
+      "idIbge": "1200203",
+      "municipio": "Cruzeiro Do Sul",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -7.627,
+      "lng": -72.675,
+      "populacao": 98916,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 8,
+          "taxa100k": 8.0877,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 100,
+          "nivel": "critico"
+        }
+      }
+    },
+    {
+      "idIbge": "1200302",
+      "municipio": "Feijó",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -8.166,
+      "lng": -70.354,
+      "populacao": 37764,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 3,
+          "taxa100k": 7.9441,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 75,
+          "nivel": "alto"
+        }
+      }
+    },
+    {
+      "idIbge": "1200401",
+      "municipio": "Rio Branco",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.975,
+      "lng": -67.824,
+      "populacao": 389001,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 31,
+          "taxa100k": 7.9691,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 88,
+          "nivel": "critico"
+        }
+      }
+    },
+    {
+      "idIbge": "1200500",
+      "municipio": "Sena Madureira",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.066,
+      "lng": -68.657,
+      "populacao": 44049,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 2.2702,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 25,
+          "nivel": "moderado"
+        }
+      }
+    },
+    {
+      "idIbge": "1200450",
+      "municipio": "Senador Guiomard",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.149,
+      "lng": -67.736,
+      "populacao": 22402,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 4.4639,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 38,
+          "nivel": "moderado"
+        }
+      }
+    },
+    {
+      "idIbge": "1200609",
+      "municipio": "Tarauacá",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -8.161,
+      "lng": -70.765,
+      "populacao": 46816,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 2.136,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 12,
+          "nivel": "baixo"
+        }
+      }
+    },
+    {
+      "idIbge": "1200708",
+      "municipio": "Xapuri",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.651,
+      "lng": -68.496,
+      "populacao": 19170,
+      "periodo": "2018-01",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 5.2165,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 50,
+          "nivel": "atencao"
+        }
+      }
+    },
+    {
+      "idIbge": "1200179",
+      "municipio": "Capixaba",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.566,
+      "lng": -67.686,
+      "populacao": 10981,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 3,
+          "taxa100k": 27.3199,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 100,
+          "nivel": "critico"
+        }
+      }
+    },
+    {
+      "idIbge": "1200203",
+      "municipio": "Cruzeiro Do Sul",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -7.627,
+      "lng": -72.675,
+      "populacao": 98916,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 4,
+          "taxa100k": 4.0438,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 50,
+          "nivel": "atencao"
+        }
+      }
+    },
+    {
+      "idIbge": "1200302",
+      "municipio": "Feijó",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -8.166,
+      "lng": -70.354,
+      "populacao": 37764,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 2.648,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 33,
+          "nivel": "moderado"
+        }
+      }
+    },
+    {
+      "idIbge": "1200807",
+      "municipio": "Porto Acre",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.581,
+      "lng": -67.547,
+      "populacao": 17523,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 5.7068,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 83,
+          "nivel": "critico"
+        }
+      }
+    },
+    {
+      "idIbge": "1200401",
+      "municipio": "Rio Branco",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.975,
+      "lng": -67.824,
+      "populacao": 389001,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 18,
+          "taxa100k": 4.6272,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 67,
+          "nivel": "alto"
+        }
+      }
+    },
+    {
+      "idIbge": "1200609",
+      "municipio": "Tarauacá",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -8.161,
+      "lng": -70.765,
+      "populacao": 46816,
+      "periodo": "2018-02",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 2.136,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 17,
+          "nivel": "baixo"
+        }
+      }
+    },
+    {
+      "idIbge": "1200138",
+      "municipio": "Bujari",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.821,
+      "lng": -67.949,
+      "populacao": 13928,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 7.1798,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 62,
+          "nivel": "alto"
+        }
+      }
+    },
+    {
+      "idIbge": "1200179",
+      "municipio": "Capixaba",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.566,
+      "lng": -67.686,
+      "populacao": 10981,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 9.1066,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 100,
+          "nivel": "critico"
+        }
+      }
+    },
+    {
+      "idIbge": "1200203",
+      "municipio": "Cruzeiro Do Sul",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -7.627,
+      "lng": -72.675,
+      "populacao": 98916,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 9,
+          "taxa100k": 9.0986,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 88,
+          "nivel": "critico"
+        }
+      }
+    },
+    {
+      "idIbge": "1200385",
+      "municipio": "Plácido De Castro",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.335,
+      "lng": -67.185,
+      "populacao": 17107,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 1,
+          "taxa100k": 5.8456,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 50,
+          "nivel": "atencao"
+        }
+      }
+    },
+    {
+      "idIbge": "1200401",
+      "municipio": "Rio Branco",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.975,
+      "lng": -67.824,
+      "populacao": 389001,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 11,
+          "taxa100k": 2.8278,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 12,
+          "nivel": "baixo"
+        }
+      }
+    },
+    {
+      "idIbge": "1200500",
+      "municipio": "Sena Madureira",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -9.066,
+      "lng": -68.657,
+      "populacao": 44049,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 2,
+          "taxa100k": 4.5404,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 38,
+          "nivel": "moderado"
+        }
+      }
+    },
+    {
+      "idIbge": "1200450",
+      "municipio": "Senador Guiomard",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -10.149,
+      "lng": -67.736,
+      "populacao": 22402,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 2,
+          "taxa100k": 8.9278,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 75,
+          "nivel": "alto"
+        }
+      }
+    },
+    {
+      "idIbge": "1200609",
+      "municipio": "Tarauacá",
+      "uf": "AC",
+      "estado": "Acre",
+      "lat": -8.161,
+      "lng": -70.765,
+      "populacao": 46816,
+      "periodo": "2018-03",
+      "indicadores": {
+        "homicidioDoloso": {
+          "total": 2,
+          "taxa100k": 4.272,
+          "dataStatus": "amostra_oficial",
+          "unidade": "vitimas",
+          "fonte": "MJSP/SINESP",
+          "sourceId": "sinesp_municipios",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "score": 25,
+          "nivel": "moderado"
+        }
+      }
+    }
+  ]
+}

@@ -1,19 +1,42 @@
 import { demoDataStatus, indicatorOptions, mockCrimeData, periodOptions } from "@/data/mockCrimeData";
+import officialCrimeDataset from "@/data/officialCrimeData.sample.json";
 import { getRankedMunicipalities } from "@/lib/ranking";
 import type {
+  CrimeMetadata,
   CrimeIndicatorKey,
   CrimeMapFilters,
   CrimeMapResult,
+  DataStatus,
   IndicatorOption,
   MunicipalityCrimeData,
   PeriodOption,
   ViewMode,
 } from "@/types/crime";
 
+interface OfficialCrimeDataset {
+  status: DataStatus;
+  indicators: IndicatorOption[];
+  periods: PeriodOption[];
+  items: MunicipalityCrimeData[];
+}
+
+const officialData = officialCrimeDataset as OfficialCrimeDataset;
+const viewModeOptions: CrimeMetadata["viewModes"] = [
+  { key: "score", label: "Indice 0-100" },
+  { key: "total", label: "Total" },
+  { key: "taxa100k", label: "Taxa por 100 mil" },
+  { key: "variacaoMensal", label: "Variacao mensal" },
+];
+const dataMode = process.env.NEXT_PUBLIC_CRIME_DATA_MODE === "demo" ? "demo" : "official_sample";
+const activeIndicators = dataMode === "demo" ? indicatorOptions : officialData.indicators;
+const activePeriods = dataMode === "demo" ? periodOptions : officialData.periods;
+const activeData = dataMode === "demo" ? mockCrimeData : officialData.items;
+const activeStatus: DataStatus = dataMode === "demo" ? demoDataStatus : officialData.status;
+
 const defaultFilters: CrimeMapFilters = {
-  indicator: "indiceGeral",
-  period: periodOptions[0].key,
-  viewMode: "score",
+  indicator: activeIndicators[0]?.key ?? "homicidioDoloso",
+  period: activePeriods[0]?.key ?? "2018-03",
+  viewMode: dataMode === "demo" ? "score" : "taxa100k",
   uf: null,
 };
 
@@ -22,38 +45,50 @@ export function getDefaultCrimeMapFilters(): CrimeMapFilters {
 }
 
 export function getAvailableIndicators(): IndicatorOption[] {
-  return [...indicatorOptions];
+  return [...activeIndicators];
 }
 
 export function getAvailablePeriods(): PeriodOption[] {
-  return [...periodOptions];
+  return [...activePeriods];
 }
 
-export function getDemoDataStatus() {
-  return demoDataStatus;
+export function getDemoDataStatus(): DataStatus {
+  return activeStatus;
+}
+
+export function getCrimeMetadata(): CrimeMetadata {
+  return {
+    indicators: getAvailableIndicators(),
+    periods: getAvailablePeriods(),
+    viewModes: [...viewModeOptions],
+    ufs: getAvailableUfs(),
+    defaultFilters: getDefaultCrimeMapFilters(),
+    dataMode,
+  };
 }
 
 export function getCrimeMapData(filters: Partial<CrimeMapFilters> = {}): CrimeMapResult {
   const resolved = resolveFilters(filters);
-  const items = mockCrimeData.filter(
+  const items = activeData.filter(
     (item) => item.periodo === resolved.period && (!resolved.uf || item.uf === resolved.uf),
   );
 
   return {
-    demo: true,
-    status: demoDataStatus,
+    demo: dataMode === "demo",
+    status: activeStatus,
     filters: resolved,
     items,
     ranking: getRankedMunicipalities(items, resolved.indicator, resolved.viewMode, null, 10),
+    metadata: getCrimeMetadata(),
   };
 }
 
 export function getMunicipalityById(idIbge: string, period = defaultFilters.period): MunicipalityCrimeData | null {
-  return mockCrimeData.find((municipality) => municipality.idIbge === idIbge && municipality.periodo === period) ?? null;
+  return activeData.find((municipality) => municipality.idIbge === idIbge && municipality.periodo === period) ?? null;
 }
 
 export function isCrimeIndicatorKey(value: string): value is CrimeIndicatorKey {
-  return indicatorOptions.some((option) => option.key === value);
+  return activeIndicators.some((option) => option.key === value);
 }
 
 export function isViewMode(value: string): value is ViewMode {
@@ -61,10 +96,24 @@ export function isViewMode(value: string): value is ViewMode {
 }
 
 function resolveFilters(filters: Partial<CrimeMapFilters>): CrimeMapFilters {
+  const indicator = filters.indicator && isCrimeIndicatorKey(filters.indicator)
+    ? filters.indicator
+    : defaultFilters.indicator;
+  const viewMode = filters.viewMode && isViewMode(filters.viewMode)
+    ? filters.viewMode
+    : defaultFilters.viewMode;
   return {
-    indicator: filters.indicator ?? defaultFilters.indicator,
+    indicator,
     period: filters.period ?? defaultFilters.period,
-    viewMode: filters.viewMode ?? defaultFilters.viewMode,
+    viewMode,
     uf: filters.uf ? filters.uf.toUpperCase() : defaultFilters.uf,
   };
+}
+
+function getAvailableUfs(): CrimeMetadata["ufs"] {
+  const byUf = new Map<string, string>();
+  for (const item of activeData) {
+    byUf.set(item.uf, item.estado);
+  }
+  return Array.from(byUf, ([uf, nome]) => ({ uf, nome })).sort((a, b) => a.uf.localeCompare(b.uf));
 }
