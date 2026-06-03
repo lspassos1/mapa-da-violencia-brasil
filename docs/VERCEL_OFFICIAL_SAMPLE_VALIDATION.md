@@ -21,6 +21,9 @@ Preview:
 - Deployment de redeploy: `dpl_8TUFTSXfEniyQV1oNz9iq97HidNp`
 - Commit de redeploy: `47f645f chore(preview): redeploy official sample with env`
 - URL direta do redeploy: https://mapa-da-violencia-brasil-jz1sem4au-lspassos1s-projects.vercel.app
+- Deployment adicional avaliado apos documentacao: `dpl_8RJZwZj8Xq89e4eyZMQpitKCNBE9`
+- Commit adicional avaliado: `45ad2d7 docs(deploy): record official sample preview validation`
+- URL direta adicional: https://mapa-da-violencia-brasil-r40lwjasn-lspassos1s-projects.vercel.app
 
 Production:
 
@@ -47,7 +50,8 @@ No PR #23, apos o redeploy:
 
 ## Resultado detectado
 
-O Preview foi criado e redeployado com sucesso, mas o endpoint
+O Preview foi criado e redeployado com sucesso. Um deployment adicional do PR
+tambem foi validado via Vercel MCP. Em ambos os casos, o endpoint
 `/api/metadata` ainda reporta:
 
 ```json
@@ -122,6 +126,8 @@ Rotas confirmadas em Production:
 - O Preview publico direto responde 401 por Vercel Authentication.
 - O Vercel MCP conseguiu ler a URL direta do redeploy, mas o modo detectado foi
   `demo`, nao `official_sample`.
+- Commits posteriores de documentacao podem gerar novos Previews, mas nao devem
+  mudar o modo detectado enquanto a variavel Preview/branch nao estiver aplicada.
 
 ## Recomendacao
 
@@ -137,4 +143,3 @@ Vercel:
 3. Redeployar a branch.
 4. Confirmar que `/api/metadata` retorna `modoDados: "official_sample"`.
 5. Rodar o checklist publico completo.
-
