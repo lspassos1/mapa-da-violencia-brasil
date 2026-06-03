@@ -74,6 +74,27 @@ Rotas cobertas pelo smoke atual:
   o erro de assinatura do SWC Darwin ARM64. Usar Node.js 22.x via `.nvmrc`, CI
   ou runtime empacotado do Codex evita esse problema.
 
+## Validacao complementar - 2026-06-03
+
+- `npm` continuou ausente do `PATH`.
+- `node_modules/.bin/tsc --noEmit` passou.
+- `node_modules/.bin/eslint .` passou.
+- `python3 -m unittest discover -s etl/tests` passou.
+- `node --test tests/*.test.mjs` passou.
+- `git diff --check` passou.
+- `node node_modules/next/dist/bin/next build --webpack` falhou com erro local
+  de assinatura do `@next/swc-darwin-arm64`.
+- `/Users/lucaspassos/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/next/dist/bin/next build --webpack` passou.
+- `bash scripts/validate-local.sh` passou usando o runtime Node de fallback.
+- `scripts/smoke-public-routes.mjs` passou em `official_sample` e tambem em
+  `demo` com `SMOKE_MUNICIPALITY_ID=3550308`.
+- Supabase CLI nao estava instalada; a migration segue sem aplicacao local.
+
+Documentos novos desta rodada:
+
+- `docs/SUPABASE_SCHEMA.md`
+- `docs/ISSUES_PLANEJADAS.md`
+
 ## Politica de versionamento de dados
 
 - Versionar apenas amostras pequenas e auditaveis.

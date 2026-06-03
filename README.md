@@ -35,6 +35,13 @@ Deploy Vercel: https://mapa-da-violencia-brasil.vercel.app
 
 ## Como rodar localmente
 
+Use Node.js 22.x e npm >= 10. O projeto versiona `.nvmrc` com a major esperada
+para alinhar maquina local, CI e Vercel:
+
+```bash
+nvm use
+```
+
 Instale as dependencias:
 
 ```bash
@@ -59,14 +66,23 @@ http://localhost:3000
 npm run lint
 npm run typecheck
 npm run test
+npm run test:etl
+npm run test:contracts
 npm run build
 ```
 
 Se `npm` nao estiver disponivel no `PATH` desta maquina, use o script local de
-validacao com fallback para o runtime Node do Codex:
+validacao com fallback para um runtime Node local:
 
 ```bash
 bash scripts/validate-local.sh
+```
+
+O smoke test de APIs espera um servidor local ja iniciado em
+`http://127.0.0.1:3000`:
+
+```bash
+npm run smoke
 ```
 
 Gerar JSON app-ready a partir do CSV SINESP municipal combinado com populacao:

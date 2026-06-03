@@ -12,9 +12,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:etl && npm run test:app",
+    "test": "npm run test:etl && npm run test:contracts",
     "test:etl": "python3 -m unittest discover -s etl/tests",
-    "test:app": "node --test tests/*.test.mjs",
+    "test:contracts": "node --test tests/*.test.mjs",
+    "test:app": "npm run test:contracts",
     "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
     "smoke": "node scripts/smoke-public-routes.mjs"
   },
