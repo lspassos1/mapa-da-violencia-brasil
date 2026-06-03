@@ -27,7 +27,7 @@ const viewModeOptions: CrimeMetadata["viewModes"] = [
   { key: "taxa100k", label: "Taxa por 100 mil" },
   { key: "variacaoMensal", label: "Variacao mensal" },
 ];
-const dataMode = process.env.NEXT_PUBLIC_CRIME_DATA_MODE === "demo" ? "demo" : "official_sample";
+const dataMode = process.env.NEXT_PUBLIC_CRIME_DATA_MODE === "official_sample" ? "official_sample" : "demo";
 const activeIndicators = dataMode === "demo" ? indicatorOptions : officialData.indicators;
 const activePeriods = dataMode === "demo" ? periodOptions : officialData.periods;
 const activeData = dataMode === "demo" ? mockCrimeData : officialData.items;

@@ -5,6 +5,9 @@ const forbiddenRawPathPatterns = [
   /\.part\b/i,
   /sinesp_vde\.zip/i,
 ];
+const expectedDataMode =
+  process.env.SMOKE_EXPECT_DATA_MODE ??
+  (process.env.NEXT_PUBLIC_CRIME_DATA_MODE === "official_sample" ? "official_sample" : "demo");
 
 await expectOkText("/", /Mapa da Violencia Brasil/);
 await expectOkText("/metodologia", /Metodologia/);
@@ -19,22 +22,24 @@ assertArray(metadata.periodos, "/api/metadata periodos");
 assertArray(metadata.modos, "/api/metadata modos");
 assertObject(metadata.filtrosPadrao, "/api/metadata filtrosPadrao");
 assertDataMode(metadata.modoDados, "/api/metadata modoDados");
+assertEqual(metadata.modoDados, expectedDataMode, "/api/metadata modoDados");
 
 const crimeMap = await expectOkJson("/api/crime-map");
 assertArray(crimeMap.items, "/api/crime-map items");
 assertArray(crimeMap.ranking, "/api/crime-map ranking");
 assertObject(crimeMap.fonteResumo, "/api/crime-map fonteResumo");
 assertDataMode(crimeMap.fonteResumo.modo, "/api/crime-map fonteResumo.modo");
+assertEqual(crimeMap.fonteResumo.modo, expectedDataMode, "/api/crime-map fonteResumo.modo");
 assertObject(crimeMap.metadata, "/api/crime-map metadata");
 
 const sources = await expectOkJson("/api/sources/status");
 assertArray(sources.fontes, "/api/sources/status fontes");
-if (!sources.fontes.some((source) => source.status === metadata.modoDados)) {
+if (!sources.fontes.some((source) => source.status === expectedDataMode)) {
   throw new Error("/api/sources/status should expose the active crime data mode");
 }
 
 const defaultPeriod = metadata.filtrosPadrao.period;
-const defaultMunicipalityId = metadata.modoDados === "demo" ? "3550308" : "1200401";
+const defaultMunicipalityId = expectedDataMode === "demo" ? "3550308" : "1200401";
 const municipalityId = process.env.SMOKE_MUNICIPALITY_ID ?? defaultMunicipalityId;
 const municipalityPath = `/api/municipalities/${municipalityId}?periodo=${encodeURIComponent(defaultPeriod)}`;
 const municipality = await expectOkJson(municipalityPath);
@@ -42,6 +47,7 @@ assertObject(municipality.item, `${municipalityPath} item`);
 assertEqual(municipality.item.idIbge, municipalityId, `${municipalityPath} idIbge`);
 assertObject(municipality.status, `${municipalityPath} status`);
 assertDataMode(municipality.status.mode ?? "demo", `${municipalityPath} status.mode`);
+assertEqual(municipality.status.mode ?? "demo", expectedDataMode, `${municipalityPath} status.mode`);
 
 async function expectOkText(path, expectedPattern) {
   const response = await fetch(`${baseUrl}${path}`);

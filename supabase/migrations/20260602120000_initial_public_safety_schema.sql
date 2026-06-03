@@ -117,7 +117,14 @@ create table if not exists public.metricas_municipais_mensais (
   score_0_100 numeric(6, 2),
   nivel_risco text check (nivel_risco in ('baixo', 'moderado', 'atencao', 'alto', 'critico')),
   data_status text not null check (
-    data_status in ('oficial', 'sem_dados', 'zero_registrado', 'populacao_indisponivel', 'nao_aplicavel')
+    data_status in (
+      'oficial',
+      'amostra_oficial',
+      'sem_dados',
+      'zero_registrado',
+      'populacao_indisponivel',
+      'nao_aplicavel'
+    )
   ),
   fonte_prioritaria_id bigint references public.fontes(id),
   updated_at timestamptz not null default now(),
