@@ -16,7 +16,7 @@ Deploy Vercel: https://mapa-da-violencia-brasil.vercel.app
 - Visao Brasil -> Estado -> Municipio.
 - Centroides municipais coloridos por score de 0 a 100.
 - Filtros por indicador de violencia disponivel na camada ativa.
-- Filtros por modo de visualizacao: indice, total, taxa por 100 mil e variacao mensal.
+- Filtros por modo de visualizacao disponiveis na camada ativa.
 - Ranking de municipios mais criticos conforme o filtro atual.
 - Painel de detalhes por municipio.
 - Pagina de metodologia em `/metodologia`.
@@ -92,7 +92,17 @@ python3 -m etl.official_data generate-app-ready --write-samples
 
 ## Deploy
 
-O projeto esta publicado na Vercel como aplicacao Next.js, sem variaveis de ambiente obrigatorias nesta fase. Veja [docs/DEPLOY.md](docs/DEPLOY.md).
+O projeto esta publicado na Vercel como aplicacao Next.js. Sem variavel de
+ambiente, o app permanece em mock/default. Para validar a amostra oficial em
+Preview, configure:
+
+```txt
+NEXT_PUBLIC_CRIME_DATA_MODE=official_sample
+```
+
+`NEXT_PUBLIC_DATA_MODE` ainda nao controla o app. Veja
+[docs/DEPLOY.md](docs/DEPLOY.md) e
+[docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md](docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md).
 
 ## Estrutura do projeto
 
