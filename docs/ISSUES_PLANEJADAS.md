@@ -3,6 +3,45 @@
 Este documento registra pendencias reais apos a estabilizacao da amostra oficial.
 Cada item deve virar issue executavel antes de nova rodada de implementacao.
 
+## Issue - Validar `official_sample` na Vercel Preview
+
+Contexto: a `main` ja contem clareza de escopo, filtros orientados por
+metadata e sample ETL alinhado. A variavel efetiva atual e
+`NEXT_PUBLIC_CRIME_DATA_MODE=official_sample`.
+
+Objetivo: validar a amostra oficial em ambiente publico antes de mudar a
+producao principal ou abrir a frente VDE.
+
+Escopo:
+
+- Configurar Preview com `NEXT_PUBLIC_CRIME_DATA_MODE=official_sample`.
+- Rodar checklist publico em `docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md`.
+- Confirmar que mock/default continua ativo quando a variavel esta ausente.
+- Confirmar que a UI comunica homicidio doloso, unidade vitimas e amostra
+  parcial.
+
+Fora de escopo: integrar VDE, aplicar Supabase, criar alias
+`NEXT_PUBLIC_DATA_MODE` ou remover mock.
+
+Arquivos provaveis: `docs/DEPLOY.md`,
+`docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md`, `scripts/smoke-public-routes.mjs`.
+
+Criterios de aceite:
+
+- Preview carrega `/`, `/metodologia` e APIs publicas.
+- `/api/metadata` retorna `official_sample`.
+- Nenhum endpoint vaza `data/raw`, `data/manual`, `data/processed` ou caminho
+  local.
+- Production so muda para `official_sample` apos revisao explicita.
+
+Validacao:
+
+```bash
+BASE_URL=<preview-url> SMOKE_EXPECT_DATA_MODE=official_sample npm run smoke
+```
+
+Dependencias: acesso ao painel Vercel para configurar variavel em Preview.
+
 ## Issue - Padronizar Node/npm local, CI e Vercel
 
 Contexto: o projeto espera Node.js 22.x e npm >= 10, mas esta sessao Codex tinha

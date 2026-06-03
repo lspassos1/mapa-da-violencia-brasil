@@ -1,4 +1,4 @@
-const baseUrl = process.env.SMOKE_BASE_URL ?? "http://127.0.0.1:3000";
+const baseUrl = process.env.BASE_URL ?? process.env.SMOKE_BASE_URL ?? "http://127.0.0.1:3000";
 const forbiddenRawPathPatterns = [
   /data\/raw/i,
   /data\/manual/i,

@@ -38,8 +38,14 @@ Escopo recomendado:
 
 Proxima decisao recomendada:
 
-1. Produto: ligar a amostra oficial ao app por feature flag explicita, mantendo mock como fallback.
-2. Dados: retomar VDE apenas depois de baixar o ZIP completo e inspecionar schema real.
+1. Produto: validar `official_sample` em Vercel Preview com
+   `NEXT_PUBLIC_CRIME_DATA_MODE=official_sample`, mantendo mock/default quando a
+   variavel estiver ausente.
+2. Dados: retomar VDE apenas depois de validar a UX publica e depois de baixar
+   o ZIP completo para inspecionar schema real.
+
+Recomendacao atual: usar Preview primeiro. So promover Production para
+`official_sample` depois de validar UX publica, metodologia e endpoints.
 
 ## Evolucao geografica
 

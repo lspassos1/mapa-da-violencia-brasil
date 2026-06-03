@@ -34,11 +34,57 @@ Python CI/ETL: 3.12
 
 ## Variaveis de ambiente
 
-Nenhuma variavel de ambiente e obrigatoria nesta fase.
+Nenhuma variavel de ambiente e obrigatoria para manter o deploy em modo
+demonstrativo/mock.
+
+A variavel efetiva para publicar a amostra oficial e:
+
+```txt
+NEXT_PUBLIC_CRIME_DATA_MODE=official_sample
+```
+
+Valores e comportamento:
+
+- Ausente: o app permanece no fallback demonstrativo/mock.
+- `official_sample`: o app usa a amostra oficial versionada.
+- `mock`, `demo` ou valor invalido: o app permanece no fallback
+  demonstrativo/mock.
+
+Nao use `NEXT_PUBLIC_DATA_MODE` para esta etapa; ela ainda nao controla o app.
 
 ## Aviso importante
 
-O deploy demo ainda usa dados demonstrativos/mockados. Os dados nao representam estatisticas oficiais reais.
+O deploy demo ainda usa dados demonstrativos/mockados quando
+`NEXT_PUBLIC_CRIME_DATA_MODE` esta ausente.
+
+Quando `NEXT_PUBLIC_CRIME_DATA_MODE=official_sample`, o app mostra uma amostra
+oficial parcial de homicidio doloso municipal, medida em vitimas, com fonte
+SINESP/MJSP e populacao IBGE. Essa amostra nao representa todos os crimes do
+mapa nem a carga nacional completa.
+
+## Estrategia recomendada para Vercel
+
+### Opcao A - Preview oficial
+
+Criar um deploy Preview com:
+
+```txt
+NEXT_PUBLIC_CRIME_DATA_MODE=official_sample
+```
+
+Objetivo: validar publicamente a UX, metodologia, APIs e avisos da amostra
+oficial sem alterar a producao principal.
+
+### Opcao B - Production official_sample
+
+Configurar a variavel em Production para mostrar `official_sample` na URL
+principal.
+
+Risco: a demo principal deixa de ser mock e passa a mostrar apenas homicidio
+doloso parcial.
+
+Recomendacao: usar Preview primeiro. So promover para Production depois de
+validar UX publica e metodologia.
 
 ## Checklist pos-deploy
 
@@ -52,6 +98,9 @@ O deploy demo ainda usa dados demonstrativos/mockados. Os dados nao representam 
 - `/api/health`, `/api/metadata`, `/api/crime-map` e `/api/sources/status` retornam 200.
 - Aviso de amostra oficial ou dados demonstrativos aparece conforme a camada ativa.
 
+Para checklist detalhado do Preview `official_sample`, veja
+`docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md`.
+
 ## Validacao local antes do deploy
 
 ```bash
@@ -61,4 +110,10 @@ npm run test
 npm run build
 npm run smoke
 git diff --check
+```
+
+Para validar uma URL publica:
+
+```bash
+BASE_URL=https://mapa-da-violencia-brasil.vercel.app SMOKE_EXPECT_DATA_MODE=official_sample npm run smoke
 ```
