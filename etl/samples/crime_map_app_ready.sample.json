@@ -1,7 +1,7 @@
 {
   "status": {
     "source": "MJSP/SINESP - amostra oficial local",
-    "lastUpdated": "2026-06-02T20:59:25Z",
+    "lastUpdated": "2026-06-03T03:54:49Z",
     "latestPeriod": "Mar/2018",
     "status": "Amostra oficial versionada",
     "mode": "official_sample",
@@ -26,17 +26,17 @@
     {
       "key": "2018-03",
       "label": "Mar/2018",
-      "updatedAt": "2026-06-02"
+      "updatedAt": "2026-06-03"
     },
     {
       "key": "2018-02",
       "label": "Fev/2018",
-      "updatedAt": "2026-06-02"
+      "updatedAt": "2026-06-03"
     },
     {
       "key": "2018-01",
       "label": "Jan/2018",
-      "updatedAt": "2026-06-02"
+      "updatedAt": "2026-06-03"
     }
   ],
   "items": [
@@ -53,6 +53,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 7.1798,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -76,6 +78,8 @@
         "homicidioDoloso": {
           "total": 8,
           "taxa100k": 8.0877,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -99,6 +103,8 @@
         "homicidioDoloso": {
           "total": 3,
           "taxa100k": 7.9441,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -122,6 +128,8 @@
         "homicidioDoloso": {
           "total": 31,
           "taxa100k": 7.9691,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -145,6 +153,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 2.2702,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -168,6 +178,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 4.4639,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -191,6 +203,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 2.136,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -214,6 +228,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 5.2165,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -237,6 +253,8 @@
         "homicidioDoloso": {
           "total": 3,
           "taxa100k": 27.3199,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -260,6 +278,8 @@
         "homicidioDoloso": {
           "total": 4,
           "taxa100k": 4.0438,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -283,6 +303,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 2.648,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -306,6 +328,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 5.7068,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -329,6 +353,8 @@
         "homicidioDoloso": {
           "total": 18,
           "taxa100k": 4.6272,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -352,6 +378,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 2.136,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -375,6 +403,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 7.1798,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -398,6 +428,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 9.1066,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -421,6 +453,8 @@
         "homicidioDoloso": {
           "total": 9,
           "taxa100k": 9.0986,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -444,6 +478,8 @@
         "homicidioDoloso": {
           "total": 1,
           "taxa100k": 5.8456,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -467,6 +503,8 @@
         "homicidioDoloso": {
           "total": 11,
           "taxa100k": 2.8278,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -490,6 +528,8 @@
         "homicidioDoloso": {
           "total": 2,
           "taxa100k": 4.5404,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -513,6 +553,8 @@
         "homicidioDoloso": {
           "total": 2,
           "taxa100k": 8.9278,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
@@ -536,6 +578,8 @@
         "homicidioDoloso": {
           "total": 2,
           "taxa100k": 4.272,
+          "variacaoMensal": null,
+          "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",

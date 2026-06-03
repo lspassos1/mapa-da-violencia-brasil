@@ -1,12 +1,5 @@
 import { Filter } from "lucide-react";
-import type { CrimeIndicatorKey, IndicatorOption, PeriodOption, ViewMode } from "@/types/crime";
-
-const viewModeOptions: Array<{ key: ViewMode; label: string }> = [
-  { key: "score", label: "Indice 0-100" },
-  { key: "total", label: "Total de ocorrencias" },
-  { key: "taxa100k", label: "Taxa por 100 mil" },
-  { key: "variacaoMensal", label: "Variacao mensal" },
-];
+import type { CrimeIndicatorKey, CrimeMetadata, IndicatorOption, PeriodOption, ViewMode } from "@/types/crime";
 
 interface CrimeFiltersProps {
   indicator: CrimeIndicatorKey;
@@ -14,6 +7,7 @@ interface CrimeFiltersProps {
   period: string;
   periods: PeriodOption[];
   viewMode: ViewMode;
+  viewModes: CrimeMetadata["viewModes"];
   onIndicatorChange: (indicator: CrimeIndicatorKey) => void;
   onPeriodChange: (period: string) => void;
   onViewModeChange: (mode: ViewMode) => void;
@@ -25,6 +19,7 @@ export function CrimeFilters({
   period,
   periods,
   viewMode,
+  viewModes,
   onIndicatorChange,
   onPeriodChange,
   onViewModeChange,
@@ -58,7 +53,7 @@ export function CrimeFilters({
             value={viewMode}
             onChange={(event) => onViewModeChange(event.target.value as ViewMode)}
           >
-            {viewModeOptions.map((option) => (
+            {viewModes.map((option) => (
               <option key={option.key} value={option.key}>
                 {option.label}
               </option>
@@ -84,4 +79,3 @@ export function CrimeFilters({
     </section>
   );
 }
-

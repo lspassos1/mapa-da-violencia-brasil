@@ -21,8 +21,10 @@ assertArray(metadata.indicadores, "/api/metadata indicadores");
 assertArray(metadata.periodos, "/api/metadata periodos");
 assertArray(metadata.modos, "/api/metadata modos");
 assertObject(metadata.filtrosPadrao, "/api/metadata filtrosPadrao");
+assertObject(metadata.escopo, "/api/metadata escopo");
 assertDataMode(metadata.modoDados, "/api/metadata modoDados");
 assertEqual(metadata.modoDados, expectedDataMode, "/api/metadata modoDados");
+assertViewModes(metadata.modos, expectedDataMode, "/api/metadata modos");
 
 const crimeMap = await expectOkJson("/api/crime-map");
 assertEqual(crimeMap.demo, expectedDataMode === "demo", "/api/crime-map demo");
@@ -32,6 +34,7 @@ assertObject(crimeMap.fonteResumo, "/api/crime-map fonteResumo");
 assertDataMode(crimeMap.fonteResumo.modo, "/api/crime-map fonteResumo.modo");
 assertEqual(crimeMap.fonteResumo.modo, expectedDataMode, "/api/crime-map fonteResumo.modo");
 assertObject(crimeMap.metadata, "/api/crime-map metadata");
+assertObject(crimeMap.metadata.scope, "/api/crime-map metadata.scope");
 
 const sources = await expectOkJson("/api/sources/status");
 assertArray(sources.fontes, "/api/sources/status fontes");
@@ -114,5 +117,19 @@ function assertEqual(actual, expected, label) {
 function assertDataMode(value, label) {
   if (!["demo", "official_sample", "official"].includes(value)) {
     throw new Error(`${label} should identify demo, official_sample or official; received ${value}`);
+  }
+}
+
+function assertViewModes(value, expectedMode, label) {
+  assertArray(value, label);
+  const keys = value.map((option) => option.key);
+  if (expectedMode === "official_sample" && keys.includes("variacaoMensal")) {
+    throw new Error(`${label} should hide variacaoMensal when official_sample has no variation series`);
+  }
+  if (expectedMode === "official_sample" && !value.some((option) => option.key === "total" && /vitimas/i.test(option.label))) {
+    throw new Error(`${label} should label total with the official sample unit`);
+  }
+  if (expectedMode === "demo" && !keys.includes("variacaoMensal")) {
+    throw new Error(`${label} should keep variacaoMensal available for demo data`);
   }
 }

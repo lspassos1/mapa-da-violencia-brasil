@@ -5,6 +5,9 @@ import test from "node:test";
 const dataset = JSON.parse(
   await readFile(new URL("../src/data/officialCrimeData.sample.json", import.meta.url), "utf-8"),
 );
+const etlSampleDataset = JSON.parse(
+  await readFile(new URL("../etl/samples/crime_map_app_ready.sample.json", import.meta.url), "utf-8"),
+);
 
 test("official sample is explicitly marked and scoped", () => {
   assert.equal(dataset.status.mode, "official_sample");
@@ -36,6 +39,16 @@ test("items never encode missing data as zero", () => {
 
 test("official sample metrics expose unavailable variation fields explicitly", () => {
   for (const item of dataset.items) {
+    const metric = item.indicadores.homicidioDoloso;
+    assert.ok(Object.hasOwn(metric, "variacaoMensal"));
+    assert.ok(Object.hasOwn(metric, "variacaoAnual"));
+    assert.equal(metric.variacaoMensal, null);
+    assert.equal(metric.variacaoAnual, null);
+  }
+});
+
+test("etl app-ready sample metrics match unavailable variation contract", () => {
+  for (const item of etlSampleDataset.items) {
     const metric = item.indicadores.homicidioDoloso;
     assert.ok(Object.hasOwn(metric, "variacaoMensal"));
     assert.ok(Object.hasOwn(metric, "variacaoAnual"));

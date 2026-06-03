@@ -36,7 +36,7 @@ export function MunicipalityDetailsPanel({
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
           {state
-            ? `${stateItems.length} municipios demonstrativos disponiveis neste recorte. Clique em uma cidade no mapa ou no ranking para abrir os detalhes.`
+            ? `${stateItems.length} municipios disponiveis neste recorte. Clique em uma cidade no mapa ou no ranking para abrir os detalhes.`
             : "Clique em uma cidade no mapa ou em um item do ranking para ver detalhes demonstrativos."}
         </p>
       </section>

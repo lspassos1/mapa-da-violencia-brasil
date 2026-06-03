@@ -11,5 +11,6 @@ export function GET() {
     modos: metadata.viewModes,
     filtrosPadrao: metadata.defaultFilters,
     modoDados: metadata.dataMode,
+    escopo: metadata.scope,
   });
 }
