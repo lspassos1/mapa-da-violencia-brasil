@@ -1,4 +1,4 @@
-# Metodologia - Radar da Violencia Brasil
+# Metodologia - Mapa da Violencia Brasil
 
 Data do plano: 2026-05-25
 
@@ -25,11 +25,25 @@ Texto base para a pagina:
 
 ## 2. Modos de visualizacao
 
+### Fonte oficial inicial
+
+A camada oficial inicial deve usar o XLSX municipal SINESP/MJSP validado em
+modo offline/local:
+
+- Indicador: `homicidio_doloso`.
+- Unidade: `vitimas`.
+- Valor canonico: coluna `Vítimas`.
+- Fonte de populacao para taxa: IBGE Estimativas de Populacao 2025.
+
+O valor nao deve ser exibido como ocorrencias. A Base VDE segue como fonte
+candidata para multiplos indicadores, mas nao deve ser assumida antes de
+download completo, inspecao e normalizacao especifica.
+
 ### Total de ocorrencias
 
 Uso:
 
-- Mostrar volume absoluto.
+- Mostrar volume absoluto na unidade do indicador.
 - Bom para planejamento operacional.
 
 Risco:
@@ -47,6 +61,12 @@ Formula:
 
 ```txt
 taxa_100k = (ocorrencias / populacao_usada) * 100000
+```
+
+Para o recorte inicial SINESP municipal, a formula aplicada e:
+
+```txt
+taxa_100k = (vitimas / populacao_usada) * 100000
 ```
 
 Regras:
@@ -230,4 +250,3 @@ Casos obrigatorios:
 - Indice geral com indicador ausente.
 - Variacao mensal com denominador zero.
 - Classificacao de nivel nos limites 20, 40, 60, 80 e 100.
-

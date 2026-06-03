@@ -30,6 +30,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 SAMPLES_DIR = PROJECT_ROOT / "etl" / "samples"
+APP_READY_DIR = PROCESSED_DIR / "app-ready"
 
 MJSP_PACKAGE_API_URL = (
     "https://dados.mj.gov.br/api/3/action/package_show"
@@ -133,6 +134,28 @@ SINESP_INDICATOR_ALIASES = {
     "trafico_drogas": ["trafico_de_drogas", "trafico_drogas"],
 }
 SINESP_MUNICIPAL_DEFAULT_INDICATOR = "Homicídio doloso"
+APP_INDICATOR_KEYS = {
+    "homicidio_doloso": "homicidioDoloso",
+    "feminicidio": "feminicidio",
+    "roubo_veiculos": "rouboVeiculos",
+    "roubo_carga": "rouboCarga",
+    "estupro": "estupro",
+    "trafico_drogas": "traficoDrogas",
+    "furto_veiculos": "furtoVeiculos",
+}
+APP_READY_SAMPLE_CENTROIDS = {
+    "1200138": (-9.821, -67.949),
+    "1200179": (-10.566, -67.686),
+    "1200203": (-7.627, -72.675),
+    "1200302": (-8.166, -70.354),
+    "1200385": (-10.335, -67.185),
+    "1200401": (-9.975, -67.824),
+    "1200450": (-10.149, -67.736),
+    "1200500": (-9.066, -68.657),
+    "1200609": (-8.161, -70.765),
+    "1200708": (-10.651, -68.496),
+    "1200807": (-9.581, -67.547),
+}
 
 MONTH_NAMES = {
     "janeiro": 1,
@@ -204,6 +227,34 @@ def main() -> int:
     normalize_parser = subparsers.add_parser("normalize", help="Normalize local official data")
     normalize_parser.add_argument("--write-samples", action="store_true")
 
+    app_ready_parser = subparsers.add_parser("generate-app-ready", help="Generate compact JSON for the app")
+    app_ready_parser.add_argument(
+        "--input",
+        type=Path,
+        default=None,
+        help="Combined SINESP+population CSV. Defaults to processed CSV, then sample CSV.",
+    )
+    app_ready_parser.add_argument(
+        "--centroids",
+        type=Path,
+        default=None,
+        help="Optional CSV with id_ibge,lat,lng. Built-in sample centroids cover only the versioned sample.",
+    )
+    app_ready_parser.add_argument("--output", type=Path, default=None)
+    app_ready_parser.add_argument("--write-samples", action="store_true")
+
+    fetch_vde_parser = subparsers.add_parser("fetch-sinesp-vde", help="Alias for VDE download with resume")
+    fetch_vde_parser.add_argument("--timeout", type=int, default=900)
+    fetch_vde_parser.add_argument("--retries", type=int, default=5)
+    fetch_vde_parser.add_argument("--backoff-seconds", type=int, default=5)
+    fetch_vde_parser.add_argument("--write-samples", action="store_true")
+
+    inspect_vde_parser = subparsers.add_parser("inspect-vde", help="Inspect local SINESP VDE download status/schema")
+    inspect_vde_parser.add_argument("--write-samples", action="store_true")
+
+    normalize_vde_parser = subparsers.add_parser("normalize-vde", help="Normalize VDE only when its schema is recognized")
+    normalize_vde_parser.add_argument("--write-samples", action="store_true")
+
     args = parser.parse_args()
     ensure_dirs()
 
@@ -260,6 +311,48 @@ def main() -> int:
         print(json.dumps(result["validation"]["summary"], ensure_ascii=False, indent=2))
         return 0
 
+    if args.command == "generate-app-ready":
+        result = generate_app_ready_dataset(
+            input_path=args.input,
+            centroids_path=args.centroids,
+            output_path=args.output,
+            write_samples=args.write_samples,
+        )
+        print(json.dumps(result["summary"], ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "fetch-sinesp-vde":
+        manifest = download_sources(
+            ["sinesp_vde"],
+            timeout=args.timeout,
+            retries=args.retries,
+            backoff_seconds=args.backoff_seconds,
+        )
+        write_json(PROCESSED_DIR / "download_manifest.json", manifest)
+        if args.write_samples:
+            write_json(SAMPLES_DIR / "download_manifest.sample.json", manifest)
+        print(json.dumps(manifest, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "inspect-vde":
+        result = inspect_vde_source()
+        write_json(PROCESSED_DIR / "sinesp_vde_inspection_status.json", result)
+        if args.write_samples:
+            write_json(SAMPLES_DIR / "sinesp_vde_inspection_status.sample.json", result)
+        print(json.dumps(result["summary"], ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "normalize-vde":
+        result = normalize_vde_source()
+        write_json(PROCESSED_DIR / "sinesp_vde_normalization_status.json", result["status"])
+        if args.write_samples:
+            write_json(SAMPLES_DIR / "sinesp_vde_normalization_status.sample.json", result["status"])
+            rows = list(result.get("rows", []))
+            if rows:
+                write_csv(SAMPLES_DIR / "sinesp_vde_normalized.sample.csv", rows[:25], SINESP_NORMALIZED_FIELDNAMES)
+        print(json.dumps(result["status"]["summary"], ensure_ascii=False, indent=2))
+        return 0
+
     parser.error("unknown command")
     return 2
 
@@ -268,6 +361,7 @@ def ensure_dirs() -> None:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+    APP_READY_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def discover_catalog() -> dict[str, object]:
@@ -618,6 +712,260 @@ def combine_sinesp_with_population(
     return {"rows": combined_rows, "status": status, "outputs": status["outputs"]}
 
 
+def generate_app_ready_dataset(
+    input_path: Path | None = None,
+    centroids_path: Path | None = None,
+    output_path: Path | None = None,
+    write_samples: bool = False,
+) -> dict[str, object]:
+    source_path = resolve_app_ready_input(input_path)
+    is_sample = source_path.is_relative_to(SAMPLES_DIR) if hasattr(source_path, "is_relative_to") else str(source_path).startswith(str(SAMPLES_DIR))
+    rows = read_csv_file_rows(source_path)
+    centroids = load_app_ready_centroids(centroids_path)
+    app_rows, skipped_without_centroid = build_app_ready_rows(rows, centroids, is_sample=is_sample)
+    periods = build_app_ready_periods(app_rows)
+    indicators = build_app_ready_indicators(app_rows)
+    latest_period = periods[0]["key"] if periods else None
+    payload = {
+        "status": {
+            "source": "MJSP/SINESP" if not is_sample else "MJSP/SINESP - amostra oficial local",
+            "lastUpdated": utc_now(),
+            "latestPeriod": format_period_label(latest_period) if latest_period else "",
+            "status": "Oficial processado localmente" if not is_sample else "Amostra oficial versionada",
+            "mode": "official" if not is_sample else "official_sample",
+            "sourceId": "sinesp_municipios",
+            "unit": "vitimas",
+            "limitations": [
+                "O XLSX municipal SINESP/MJSP representa vitimas de homicidio doloso, nao ocorrencias.",
+                "Taxas usam populacao IBGE 2025 ate haver serie populacional historica.",
+                "Linhas sem centroide conhecido ficam fora do JSON do mapa ate a malha IBGE real ser integrada.",
+            ],
+        },
+        "indicators": indicators,
+        "periods": periods,
+        "items": app_rows,
+    }
+    target = output_path or APP_READY_DIR / "crime-map.json"
+    write_json(target, payload)
+    if write_samples:
+        sample_payload = dict(payload)
+        sample_payload["items"] = app_rows[:25]
+        write_json(SAMPLES_DIR / "crime_map_app_ready.sample.json", sample_payload)
+
+    summary = {
+        "input": project_relative_path(source_path),
+        "output": project_relative_path(target),
+        "is_sample": is_sample,
+        "source_rows": len(rows),
+        "app_rows": len(app_rows),
+        "skipped_without_centroid": skipped_without_centroid,
+        "period_count": len(periods),
+        "indicator_count": len(indicators),
+    }
+    write_json(APP_READY_DIR / "crime-map.status.json", {"metadata": {"generated_at": utc_now()}, "summary": summary})
+    return {"summary": summary, "payload": payload}
+
+
+def resolve_app_ready_input(input_path: Path | None) -> Path:
+    candidates = [
+        input_path,
+        PROCESSED_DIR / "sinesp_municipal_indicators_with_population.csv",
+        SAMPLES_DIR / "sinesp_municipal_indicators_with_population.sample.csv",
+    ]
+    for candidate in candidates:
+        if candidate and candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        "No SINESP+population CSV found. Run normalize or pass --input to generate-app-ready."
+    )
+
+
+def load_app_ready_centroids(path: Path | None) -> dict[str, tuple[float, float]]:
+    centroids = dict(APP_READY_SAMPLE_CENTROIDS)
+    if not path:
+        return centroids
+    for row in read_csv_file_rows(path):
+        id_ibge = str(row.get("id_ibge") or row.get("idIbge") or "")
+        lat = parse_optional_float(row.get("lat") or row.get("latitude"))
+        lng = parse_optional_float(row.get("lng") or row.get("longitude"))
+        if id_ibge and lat is not None and lng is not None:
+            centroids[id_ibge] = (lat, lng)
+    return centroids
+
+
+def build_app_ready_rows(
+    rows: list[dict[str, str]],
+    centroids: dict[str, tuple[float, float]],
+    is_sample: bool,
+) -> tuple[list[dict[str, object]], int]:
+    normalized = []
+    skipped_without_centroid = 0
+    for row in rows:
+        id_ibge = str(row.get("id_ibge") or "")
+        centroid = centroids.get(id_ibge)
+        app_indicator = APP_INDICATOR_KEYS.get(str(row.get("indicador_codigo") or ""))
+        if not id_ibge or not centroid or not app_indicator:
+            if id_ibge and not centroid:
+                skipped_without_centroid += 1
+            continue
+        year = parse_optional_int(str(row.get("ano") or ""))
+        month = parse_optional_int(str(row.get("mes") or ""))
+        if year is None or month is None:
+            continue
+        value = parse_optional_int(str(row.get("valor") or ""))
+        population = parse_optional_int(str(row.get("populacao") or ""))
+        taxa = parse_optional_float(row.get("taxa_100k"))
+        data_status = app_ready_data_status(value, population, is_sample)
+        normalized.append(
+            {
+                "idIbge": id_ibge,
+                "municipio": clean_text(str(row.get("municipio") or "")),
+                "uf": clean_text(str(row.get("uf") or "")).upper(),
+                "estado": state_name_for_uf(clean_text(str(row.get("uf") or "")).upper()),
+                "lat": centroid[0],
+                "lng": centroid[1],
+                "populacao": population or 0,
+                "periodo": f"{year}-{month:02d}",
+                "indicator": app_indicator,
+                "metric": {
+                    "total": value or 0,
+                    "taxa100k": taxa,
+                    "dataStatus": data_status,
+                    "unidade": row.get("unidade_medida") or "vitimas",
+                    "fonte": row.get("fonte") or "MJSP/SINESP",
+                    "sourceId": row.get("source_id") or "sinesp_municipios",
+                    "limitacoes": row.get("limitacoes") or "",
+                },
+            }
+        )
+    return score_app_ready_rows(normalized), skipped_without_centroid
+
+
+def score_app_ready_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    by_group: dict[tuple[str, str], list[dict[str, object]]] = {}
+    for row in rows:
+        by_group.setdefault((str(row["periodo"]), str(row["indicator"])), []).append(row)
+    output = []
+    for group_rows in by_group.values():
+        ordered = sorted(
+            group_rows,
+            key=lambda item: float(dict(item["metric"]).get("taxa100k") or -1),
+            reverse=True,
+        )
+        count = max(len(ordered), 1)
+        for index, row in enumerate(ordered):
+            score = round(((count - index) / count) * 100)
+            metric = dict(row["metric"])
+            metric["score"] = score
+            metric["nivel"] = risk_level_from_score(score)
+            indicator = str(row["indicator"])
+            app_row = {key: value for key, value in row.items() if key not in {"indicator", "metric"}}
+            app_row["indicadores"] = {indicator: metric}
+            output.append(app_row)
+    return sorted(output, key=lambda item: (str(item["periodo"]), str(item["uf"]), str(item["municipio"])))
+
+
+def app_ready_data_status(value: int | None, population: int | None, is_sample: bool) -> str:
+    if value is None:
+        return "sem_dados"
+    if value == 0:
+        return "zero_registrado"
+    if not population:
+        return "populacao_indisponivel"
+    return "amostra_oficial" if is_sample else "oficial"
+
+
+def build_app_ready_periods(rows: list[dict[str, object]]) -> list[dict[str, str]]:
+    periods = sorted({str(row["periodo"]) for row in rows}, reverse=True)
+    return [{"key": period, "label": format_period_label(period), "updatedAt": utc_now()[:10]} for period in periods]
+
+
+def build_app_ready_indicators(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    keys = sorted({next(iter(dict(row["indicadores"]).keys())) for row in rows})
+    labels = {
+        "homicidioDoloso": ("homicidio_doloso", "Homicidio doloso", "vitimas"),
+        "feminicidio": ("feminicidio", "Feminicidio", "vitimas"),
+        "rouboVeiculos": ("roubo_veiculos", "Roubo de veiculos", "ocorrencias"),
+        "rouboCarga": ("roubo_carga", "Roubo de carga", "ocorrencias"),
+        "estupro": ("estupro", "Estupro", "ocorrencias"),
+        "traficoDrogas": ("trafico_drogas", "Trafico de drogas", "ocorrencias"),
+        "furtoVeiculos": ("furto_veiculos", "Furto de veiculos", "ocorrencias"),
+    }
+    return [
+        {
+            "key": key,
+            "codigo": labels.get(key, (key, key, "ocorrencias"))[0],
+            "label": labels.get(key, (key, key, "ocorrencias"))[1],
+            "unidade": labels.get(key, (key, key, "ocorrencias"))[2],
+            "oficial": True,
+        }
+        for key in keys
+    ]
+
+
+def format_period_label(period: str | None) -> str:
+    if not period:
+        return ""
+    year, month = period.split("-")
+    labels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+    return f"{labels[int(month) - 1]}/{year}"
+
+
+def risk_level_from_score(score: int) -> str:
+    if score <= 20:
+        return "baixo"
+    if score <= 40:
+        return "moderado"
+    if score <= 60:
+        return "atencao"
+    if score <= 80:
+        return "alto"
+    return "critico"
+
+
+def state_name_for_uf(uf: str) -> str:
+    names = {
+        "AC": "Acre",
+        "AL": "Alagoas",
+        "AP": "Amapa",
+        "AM": "Amazonas",
+        "BA": "Bahia",
+        "CE": "Ceara",
+        "DF": "Distrito Federal",
+        "ES": "Espirito Santo",
+        "GO": "Goias",
+        "MA": "Maranhao",
+        "MT": "Mato Grosso",
+        "MS": "Mato Grosso do Sul",
+        "MG": "Minas Gerais",
+        "PA": "Para",
+        "PB": "Paraiba",
+        "PR": "Parana",
+        "PE": "Pernambuco",
+        "PI": "Piaui",
+        "RJ": "Rio de Janeiro",
+        "RN": "Rio Grande do Norte",
+        "RS": "Rio Grande do Sul",
+        "RO": "Rondonia",
+        "RR": "Roraima",
+        "SC": "Santa Catarina",
+        "SP": "Sao Paulo",
+        "SE": "Sergipe",
+        "TO": "Tocantins",
+    }
+    return names.get(uf, uf)
+
+
+def parse_optional_float(value: object) -> float | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return float(text.replace(",", "."))
+    except ValueError:
+        return None
+
+
 def normalize_sinesp_sources(municipalities: list[dict[str, str]]) -> dict[str, object]:
     files = find_sinesp_raw_files()
     all_rows: list[dict[str, object]] = []
@@ -705,6 +1053,113 @@ def find_sinesp_raw_files() -> list[Path]:
             if path.is_file() and path.suffix != ".part"
         )
     return files
+
+
+def inspect_vde_source() -> dict[str, object]:
+    complete = RAW_DIR / "sinesp_vde.zip"
+    partial = RAW_DIR / "sinesp_vde.zip.part"
+    if complete.exists():
+        try:
+            inspection = inspect_zip(complete)
+            tabular_members = inspection.get("tabular_members", [])
+            return {
+                "metadata": {
+                    "inspected_at": utc_now(),
+                    "source_id": "sinesp_vde",
+                    "path": project_relative_path(complete),
+                    "sha256": sha256_file(complete),
+                },
+                "summary": {
+                    "status": "downloaded",
+                    "bytes": complete.stat().st_size,
+                    "tabular_member_count": len(tabular_members),
+                    "can_attempt_normalization": bool(tabular_members),
+                },
+                "inspection": inspection,
+                "decision": "normalization_pending_schema_review",
+            }
+        except zipfile.BadZipFile as error:
+            return vde_incomplete_status(complete, f"invalid zip: {error}")
+    if partial.exists():
+        return vde_incomplete_status(partial, "partial download present; resume before inspection")
+    return {
+        "metadata": {"inspected_at": utc_now(), "source_id": "sinesp_vde"},
+        "summary": {
+            "status": "missing",
+            "bytes": 0,
+            "tabular_member_count": 0,
+            "can_attempt_normalization": False,
+        },
+        "decision": "download_required",
+        "resume_command": (
+            "python3 -m etl.official_data download --source sinesp_vde "
+            "--timeout 900 --retries 5 --backoff-seconds 5"
+        ),
+    }
+
+
+def vde_incomplete_status(path: Path, reason: str) -> dict[str, object]:
+    return {
+        "metadata": {
+            "inspected_at": utc_now(),
+            "source_id": "sinesp_vde",
+            "path": project_relative_path(path),
+        },
+        "summary": {
+            "status": "incomplete_download",
+            "bytes": path.stat().st_size if path.exists() else 0,
+            "tabular_member_count": 0,
+            "can_attempt_normalization": False,
+        },
+        "decision": "resume_download_before_schema_assumption",
+        "reason": reason,
+        "resume_command": (
+            "python3 -m etl.official_data download --source sinesp_vde "
+            "--timeout 900 --retries 5 --backoff-seconds 5"
+        ),
+    }
+
+
+def normalize_vde_source() -> dict[str, object]:
+    path = RAW_DIR / "sinesp_vde.zip"
+    if not path.exists():
+        status = inspect_vde_source()
+        status["summary"]["normalized_rows"] = 0
+        return {"rows": [], "status": status}
+    rows, result = normalize_sinesp_file(path)
+    municipalities = fetch_ibge_municipalities()
+    key_validation = validate_sinesp_municipality_keys(rows, municipalities)
+    if rows:
+        write_csv(PROCESSED_DIR / "sinesp_vde_normalized.csv", rows, SINESP_NORMALIZED_FIELDNAMES)
+    status = {
+        "metadata": {
+            "generated_at": utc_now(),
+            "source_id": "sinesp_vde",
+            "path": project_relative_path(path),
+            "sha256": sha256_file(path),
+            "policy": "VDE rows are normalized only when explicit indicator and value columns are recognized.",
+        },
+        "summary": {
+            "status": "normalized" if rows else "no_recognized_rows",
+            "normalized_rows": len(rows),
+            "can_support_multi_indicator_municipal_mvp": has_multi_indicator_municipal_rows(rows),
+            "key_validation": key_validation["summary"],
+        },
+        "file": result,
+        "municipality_key_validation": key_validation,
+        "decision": (
+            "vde_viavel_para_mvp_municipal"
+            if has_multi_indicator_municipal_rows(rows)
+            else "vde_nao_confirmada_para_mvp_municipal"
+        ),
+    }
+    return {"rows": rows, "status": status}
+
+
+def has_multi_indicator_municipal_rows(rows: list[dict[str, object]]) -> bool:
+    municipal_rows = [row for row in rows if row.get("nivel_geografico") == "municipio" and row.get("id_ibge")]
+    indicators = {str(row.get("indicador_codigo") or "") for row in municipal_rows}
+    return len(municipal_rows) > 0 and len(indicators - {"", "vitimas_indicador_nao_informado"}) > 1
 
 
 def normalize_sinesp_file(path: Path) -> tuple[list[dict[str, object]], dict[str, object]]:

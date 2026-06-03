@@ -1,4 +1,4 @@
-# Fontes de Dados - Radar da Violencia Brasil
+# Fontes de Dados - Mapa da Violencia Brasil
 
 Data de validacao inicial: 2026-05-25
 

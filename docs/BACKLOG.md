@@ -1,4 +1,4 @@
-# Backlog Priorizado - Radar da Violencia Brasil
+# Backlog Priorizado - Mapa da Violencia Brasil
 
 Data do plano: 2026-05-25
 

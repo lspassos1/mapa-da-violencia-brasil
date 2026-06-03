@@ -60,7 +60,7 @@ export function createCityFeatureCollection(
     type: "FeatureCollection",
     features: data.flatMap((item) => {
       const metric = item.indicadores[indicator];
-      if (!metric) {
+      if (!metric || metric.dataStatus === "sem_dados" || metric.dataStatus === "nao_aplicavel") {
         return [];
       }
 

@@ -4,15 +4,15 @@ Data: 2026-05-25
 
 ## Proxima fase recomendada
 
-Antes de conectar Supabase/PostGIS ou expor dados reais no app, a proxima fase deve integrar dados oficiais em modo offline/local.
+A proxima fase deve publicar um primeiro recorte oficial estreito e auditavel antes de conectar Supabase/PostGIS ou expandir indicadores.
 
-Proxima fase tecnica: integracao de dados reais em modo offline/local antes de conectar banco em producao.
+Decisao ativa: iniciar com `homicidio_doloso` municipal do SINESP/MJSP, medido em `vitimas`, usando a populacao IBGE 2025 para taxa por 100 mil. A Base VDE segue como trilha paralela para confirmar se ha multiplos indicadores municipais.
 
 Escopo recomendado:
 
 - Conectar dados reais primeiro em modo offline/local.
-- Baixar e normalizar a fonte nacional.
-- Mapear indicadores oficiais para os indicadores internos do app.
+- Gerar camada app-ready JSON para homicidio doloso real.
+- Ocultar indicadores sem fonte oficial validada na camada oficial.
 - Criar schema inicial em banco local ou arquivo intermediario versionavel.
 - Validar o join por codigo IBGE entre criminalidade, populacao e geometria.
 - So depois conectar Supabase/PostGIS.
@@ -21,12 +21,25 @@ Escopo recomendado:
 
 1. Integrar camada real de UFs.
 2. Integrar populacao IBGE. Parcialmente preparado em modo offline/local: parser ODS, CSV processado local e validacao de `id_ibge`.
-3. Integrar base nacional SINESP/VDE.
-4. Criar normalizador de indicadores.
-5. Criar banco local ou SQLite temporario.
+3. Gerar JSON app-ready do SINESP municipal validado.
+4. Retomar download/inspecao da Base VDE.
+5. Criar normalizador VDE somente se o schema real for municipal e multi-indicador.
 6. Criar schema Supabase/PostGIS.
-7. Trocar mock por API real.
+7. Trocar mock por API real ou artefato app-ready.
 8. Adicionar poligonos municipais/vector tiles.
+
+## Estado apos fechamento tecnico de 2026-06-03
+
+- O projeto ja possui uma amostra oficial versionada em `src/data/officialCrimeData.sample.json`, marcada como `official_sample`.
+- O app ainda deve manter mock/demo como fallback; nao trocar para dependencia exclusiva de dado real sem feature flag e validacao visual.
+- A migration Supabase/PostGIS foi criada, mas nao aplicada.
+- `docs/SUPABASE_SCHEMA.md` descreve o status da migration e o roteiro seguro de aplicacao futura.
+- `docs/ISSUES_PLANEJADAS.md` detalha as pendencias reais antes de avancar produto ou dados.
+
+Proxima decisao recomendada:
+
+1. Produto: ligar a amostra oficial ao app por feature flag explicita, mantendo mock como fallback.
+2. Dados: retomar VDE apenas depois de baixar o ZIP completo e inspecionar schema real.
 
 ## Evolucao geografica
 

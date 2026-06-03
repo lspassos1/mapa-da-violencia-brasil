@@ -134,6 +134,11 @@ function createMetric(
     taxa100k,
     variacaoMensal,
     variacaoAnual,
+    dataStatus: "demo",
+    unidade: indicator === "indiceGeral" ? "indice" : "ocorrencias",
+    fonte: demoDataStatus.source,
+    sourceId: "mock_local",
+    limitacoes: "Dados ficticios para demonstracao visual.",
   };
 }
 

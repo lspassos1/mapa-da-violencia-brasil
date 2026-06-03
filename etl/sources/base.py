@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Iterable, Iterator, Mapping, Sequence
 
 
-USER_AGENT = "RadarViolenciaBrasil/0.1 (+https://github.com/)"
+USER_AGENT = "MapaViolenciaBrasil/0.1 (+https://github.com/lspassos1/mapa-da-violencia-brasil)"
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,4 @@
-# Arquitetura - Radar da Violencia Brasil
+# Arquitetura - Mapa da Violencia Brasil
 
 Data do plano: 2026-05-25
 
@@ -262,6 +262,14 @@ create table indice_violencia_municipal (
 Observacao: Postgres nao permite `coalesce` diretamente em `unique` de tabela como constraint simples em todos os formatos. Na implementacao, usar indice unico por expressao ou coluna gerada para a chave logica de `ocorrencias_crime`.
 
 ## 4. Indices
+
+Migration inicial versionada:
+
+```txt
+supabase/migrations/20260602120000_initial_public_safety_schema.sql
+```
+
+Ela cria as tabelas principais, habilita PostGIS, RLS e views publicas de leitura agregada. A migration ainda precisa ser aplicada e validada com Supabase CLI/MCP em um projeto real antes de producao.
 
 ### Geoespaciais
 
@@ -599,4 +607,3 @@ Resposta: JSON com versao da metodologia, pesos e fonte textual. A pagina `/meto
 - Rate limit em endpoints publicos.
 - Logs sem dados pessoais.
 - Dados agregados por municipio/mes/indicador.
-

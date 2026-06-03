@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Setup Python
@@ -43,6 +43,15 @@ jobs:
       - name: Check whitespace
         run: git diff --check
 
+      - name: Check tracked file size
+        run: |
+          oversized="$(git ls-files -z | xargs -0 du -k | awk '$1 > 5120 { print $2 " (" $1 " KB)" }')"
+          if [ -n "$oversized" ]; then
+            echo "Tracked files above 5 MB are not allowed:"
+            echo "$oversized"
+            exit 1
+          fi
+
       - name: Lint
         run: npm run lint
 
@@ -54,3 +63,16 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Smoke public routes
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 3000 &
+          server_pid="$!"
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          npm run smoke
