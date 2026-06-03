@@ -8,8 +8,6 @@ para contratos oficiais em modo offline/local.
 - A camada oficial inicial usa uma amostra versionada do SINESP/MJSP municipal
   para `homicidio_doloso`, com unidade `vitimas`.
 - O modo demonstrativo continua disponivel e nao foi removido.
-- A camada OSINT de noticias continua separada de ranking, score e estatistica
-  oficial.
 - A migration Supabase/PostGIS inicial foi criada, mas nao foi aplicada em
   ambiente remoto ou de producao.
 - A Base VDE nao foi avancada alem da inspecao segura do `.part` incompleto.

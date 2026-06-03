@@ -294,7 +294,7 @@ Criterios de aceite:
 
 - Usuario entende que e amostra oficial.
 - Usuario entende limitacoes de periodo/cobertura.
-- Metodologia nao mistura OSINT demo com dado oficial.
+- Metodologia nao mistura dados demonstrativos com dado oficial.
 - Linguagem evita ranking definitivo em cima de amostra parcial.
 
 Validacao: revisao textual, smoke da pagina `/metodologia` e checagem visual.

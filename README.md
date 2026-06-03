@@ -22,7 +22,6 @@ Deploy Vercel: https://mapa-da-violencia-brasil.vercel.app
 - Pagina de metodologia em `/metodologia`.
 - APIs para mapa, municipio, metadata, health e status de fontes.
 - Aviso visivel sobre amostra oficial ou dados demonstrativos conforme a camada ativa.
-- Camada OSINT demonstrativa separada dos dados oficiais.
 
 ## Stack
 

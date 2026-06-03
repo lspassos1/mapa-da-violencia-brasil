@@ -273,4 +273,3 @@ Consequencias:
 - O filtro oficial inicial mostra apenas homicidio doloso.
 - A taxa por 100 mil usa populacao IBGE 2025 ate a serie populacional historica ser integrada.
 - O app precisa diferenciar `sem_dados`, `zero_registrado` e `populacao_indisponivel`.
-- A camada OSINT de noticias permanece separada dos dados oficiais e nao entra em ranking, score ou indicador estatistico.
