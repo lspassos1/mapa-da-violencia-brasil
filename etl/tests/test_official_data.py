@@ -148,6 +148,23 @@ class OfficialDataTests(unittest.TestCase):
         metric = item["indicadores"]["homicidioDoloso"]
         self.assertEqual(metric["dataStatus"], "zero_registrado")
         self.assertEqual(metric["total"], 0)
+        self.assertIsNone(metric["variacaoMensal"])
+        self.assertIsNone(metric["variacaoAnual"])
+
+    def test_generate_app_ready_dataset_marks_relative_sample_inputs(self):
+        with TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "crime-map.json"
+            result = generate_app_ready_dataset(
+                input_path=Path("etl/samples/sinesp_municipal_indicators_with_population.sample.csv"),
+                output_path=output_path,
+            )
+
+        self.assertTrue(result["summary"]["is_sample"])
+        self.assertEqual(result["payload"]["status"]["mode"], "official_sample")
+        metric = result["payload"]["items"][0]["indicadores"]["homicidioDoloso"]
+        self.assertIn(metric["dataStatus"], {"amostra_oficial", "zero_registrado"})
+        self.assertIsNone(metric["variacaoMensal"])
+        self.assertIsNone(metric["variacaoAnual"])
 
     def test_generate_app_ready_dataset_skips_rows_without_centroid(self):
         with TemporaryDirectory() as tmpdir:

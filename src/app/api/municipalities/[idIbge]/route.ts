@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDefaultCrimeMapFilters, getDemoDataStatus } from "@/services/crimeDataService";
+import { getCrimeMetadata, getDefaultCrimeMapFilters, getDemoDataStatus } from "@/services/crimeDataService";
 import { getMunicipalityById } from "@/services/municipalityService";
 
 export async function GET(
@@ -15,9 +15,12 @@ export async function GET(
     return NextResponse.json({ error: "Municipio nao encontrado" }, { status: 404 });
   }
 
+  const status = getDemoDataStatus();
+  const metadata = getCrimeMetadata();
+
   return NextResponse.json({
-    demo: getDemoDataStatus().mode === "demo",
-    status: getDemoDataStatus(),
+    demo: metadata.dataMode === "demo",
+    status,
     item,
   });
 }

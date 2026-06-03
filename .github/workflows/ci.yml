@@ -66,13 +66,20 @@ jobs:
 
       - name: Smoke public routes
         run: |
-          npm run start -- --hostname 127.0.0.1 --port 3000 &
+          npm run start -- --hostname 127.0.0.1 --port 3000 > next-start.log 2>&1 &
           server_pid="$!"
-          trap 'kill "$server_pid"' EXIT
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          server_ready=false
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:3000/api/health > /dev/null; then
+              server_ready=true
               break
             fi
             sleep 1
           done
+          if [ "$server_ready" != "true" ]; then
+            echo "Next.js server did not become healthy on http://127.0.0.1:3000/api/health."
+            cat next-start.log
+            exit 1
+          fi
           npm run smoke
