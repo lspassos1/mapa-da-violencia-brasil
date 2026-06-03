@@ -21,22 +21,17 @@ interface OfficialCrimeDataset {
 }
 
 const officialData = officialCrimeDataset as OfficialCrimeDataset;
-const viewModeOptions: CrimeMetadata["viewModes"] = [
-  { key: "score", label: "Indice 0-100" },
-  { key: "total", label: "Total" },
-  { key: "taxa100k", label: "Taxa por 100 mil" },
-  { key: "variacaoMensal", label: "Variacao mensal" },
-];
 const dataMode = process.env.NEXT_PUBLIC_CRIME_DATA_MODE === "official_sample" ? "official_sample" : "demo";
 const activeIndicators = dataMode === "demo" ? indicatorOptions : officialData.indicators;
 const activePeriods = dataMode === "demo" ? periodOptions : officialData.periods;
 const activeData = dataMode === "demo" ? mockCrimeData : officialData.items;
 const activeStatus: DataStatus = dataMode === "demo" ? demoDataStatus : officialData.status;
+const activeViewModes = getAvailableViewModes();
 
 const defaultFilters: CrimeMapFilters = {
   indicator: activeIndicators[0]?.key ?? "homicidioDoloso",
   period: activePeriods[0]?.key ?? "2018-03",
-  viewMode: dataMode === "demo" ? "score" : "taxa100k",
+  viewMode: activeViewModes.some((option) => option.key === "taxa100k") && dataMode !== "demo" ? "taxa100k" : "score",
   uf: null,
 };
 
@@ -60,10 +55,11 @@ export function getCrimeMetadata(): CrimeMetadata {
   return {
     indicators: getAvailableIndicators(),
     periods: getAvailablePeriods(),
-    viewModes: [...viewModeOptions],
+    viewModes: [...activeViewModes],
     ufs: getAvailableUfs(),
     defaultFilters: getDefaultCrimeMapFilters(),
     dataMode,
+    scope: getDataScope(),
   };
 }
 
@@ -92,7 +88,7 @@ export function isCrimeIndicatorKey(value: string): value is CrimeIndicatorKey {
 }
 
 export function isViewMode(value: string): value is ViewMode {
-  return ["score", "total", "taxa100k", "variacaoMensal"].includes(value);
+  return activeViewModes.some((option) => option.key === value);
 }
 
 function resolveFilters(filters: Partial<CrimeMapFilters>): CrimeMapFilters {
@@ -116,4 +112,46 @@ function getAvailableUfs(): CrimeMetadata["ufs"] {
     byUf.set(item.uf, item.estado);
   }
   return Array.from(byUf, ([uf, nome]) => ({ uf, nome })).sort((a, b) => a.uf.localeCompare(b.uf));
+}
+
+function getAvailableViewModes(): CrimeMetadata["viewModes"] {
+  const options: CrimeMetadata["viewModes"] = [
+    { key: "score", label: "Indice 0-100" },
+    { key: "total", label: getTotalViewLabel() },
+    { key: "taxa100k", label: "Taxa por 100 mil" },
+  ];
+
+  if (hasVariationSeries()) {
+    options.push({ key: "variacaoMensal", label: "Variacao mensal" });
+  }
+
+  return options;
+}
+
+function getTotalViewLabel(): string {
+  if (activeStatus.unit === "vitimas") {
+    return "Total de vitimas";
+  }
+  if (activeStatus.unit === "ocorrencias") {
+    return "Total de ocorrencias";
+  }
+  return "Total";
+}
+
+function getDataScope(): CrimeMetadata["scope"] {
+  return {
+    items: activeData.length,
+    municipalities: new Set(activeData.map((item) => item.idIbge)).size,
+    ufs: getAvailableUfs().length,
+    indicators: activeIndicators.length,
+    periods: activePeriods.length,
+    hasVariationSeries: hasVariationSeries(),
+    unit: activeStatus.unit,
+  };
+}
+
+function hasVariationSeries(): boolean {
+  return activeData.some((item) =>
+    Object.values(item.indicadores).some((metric) => typeof metric?.variacaoMensal === "number"),
+  );
 }

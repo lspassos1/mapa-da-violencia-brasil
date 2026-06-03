@@ -12,6 +12,7 @@ import { RankingPanel } from "@/components/panels/RankingPanel";
 import {
   getAvailableIndicators,
   getAvailablePeriods,
+  getCrimeMetadata,
   getCrimeMapData,
   getDefaultCrimeMapFilters,
   getDemoDataStatus,
@@ -22,6 +23,9 @@ const defaultFilters = getDefaultCrimeMapFilters();
 const indicators = getAvailableIndicators();
 const periods = getAvailablePeriods();
 const demoStatus = getDemoDataStatus();
+const metadata = getCrimeMetadata();
+const dataScope = metadata.scope;
+const viewModes = metadata.viewModes;
 const officialDataLabel =
   demoStatus.mode === "official_sample"
     ? "Amostra oficial: homicidio doloso (vitimas)"
@@ -80,6 +84,7 @@ export function CrimeDashboard() {
             period={period}
             periods={periods}
             viewMode={viewMode}
+            viewModes={viewModes}
             onIndicatorChange={(next) => {
               setIndicator(next);
               setSelectedMunicipality(null);
@@ -147,6 +152,18 @@ export function CrimeDashboard() {
               </p>
               <p>
                 <span className="text-slate-500">Atualizado:</span> {demoStatus.lastUpdated}
+              </p>
+              <p>
+                <span className="text-slate-500">Escopo:</span> {dataScope.municipalities} municipios,
+                {" "}{dataScope.ufs} UF
+              </p>
+              <p>
+                <span className="text-slate-500">Cobertura:</span> {dataScope.indicators} indicador,
+                {" "}{dataScope.periods} periodos
+              </p>
+              <p>
+                <span className="text-slate-500">Serie:</span>{" "}
+                {dataScope.hasVariationSeries ? "variacao disponivel" : "sem serie para variacao"}
               </p>
             </div>
           </div>

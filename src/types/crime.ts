@@ -99,4 +99,13 @@ export interface CrimeMetadata {
   ufs: Array<{ uf: string; nome: string }>;
   defaultFilters: CrimeMapFilters;
   dataMode: "official" | "official_sample" | "demo";
+  scope: {
+    items: number;
+    municipalities: number;
+    ufs: number;
+    indicators: number;
+    periods: number;
+    hasVariationSeries: boolean;
+    unit?: CrimeMetricUnit;
+  };
 }
