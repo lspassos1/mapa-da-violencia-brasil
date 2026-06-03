@@ -28,6 +28,19 @@ Escopo recomendado:
 7. Trocar mock por API real ou artefato app-ready.
 8. Adicionar poligonos municipais/vector tiles.
 
+## Estado apos fechamento tecnico de 2026-06-03
+
+- O projeto ja possui uma amostra oficial versionada em `src/data/officialCrimeData.sample.json`, marcada como `official_sample`.
+- O app ainda deve manter mock/demo como fallback; nao trocar para dependencia exclusiva de dado real sem feature flag e validacao visual.
+- A migration Supabase/PostGIS foi criada, mas nao aplicada.
+- `docs/SUPABASE_SCHEMA.md` descreve o status da migration e o roteiro seguro de aplicacao futura.
+- `docs/ISSUES_PLANEJADAS.md` detalha as pendencias reais antes de avancar produto ou dados.
+
+Proxima decisao recomendada:
+
+1. Produto: ligar a amostra oficial ao app por feature flag explicita, mantendo mock como fallback.
+2. Dados: retomar VDE apenas depois de baixar o ZIP completo e inspecionar schema real.
+
 ## Evolucao geografica
 
 1. MVP atual: centroides municipais + bounds simplificados de estados.

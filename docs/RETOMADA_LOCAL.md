@@ -58,7 +58,7 @@ Observações de ambiente:
 
 O XLSX municipal SINESP/MJSP deve ser tratado como homicídio doloso por município/mês, medido em vítimas.
 
-O MVP visual ainda usa dados demonstrativos/mockados.
+O app ainda mantem dados demonstrativos/mockados como fallback.
 
 ## Próxima etapa recomendada
 
@@ -74,7 +74,7 @@ Objetivo da próxima etapa:
 - Verificar se tem indicador/crime explícito.
 - Verificar se tem múltiplos crimes.
 - Se viável, criar normalizador VDE.
-- Se não viável, integrar apenas homicídio doloso real ao MVP.
+- Se não viável, avançar apenas com homicídio doloso real em modo controlado.
 
 ## Comando planejado para próxima etapa
 
@@ -116,7 +116,21 @@ python3 -m etl.official_data download --source sinesp_vde --timeout 900 --retrie
 - Arquivos brutos foram apagados no reset local.
 - `data/raw/` precisa ser baixado novamente pelo pipeline.
 - VDE ainda não foi completamente baixado/inspecionado.
-- App ainda não consome dataset real.
-- Supabase/PostGIS ainda não foram implementados.
+- App ainda não consome uma carga nacional real completa.
+- Supabase/PostGIS ja tem migration inicial, mas ainda nao foi aplicado nem integrado ao app.
 - Polígonos municipais reais ainda não foram integrados.
 - MVP ainda usa centroides, não malha municipal real.
+
+## Atualizacao de fechamento - 2026-06-03
+
+- Branch atual desta sessao: `codex/osint-news-layer`.
+- Worktree inicial da etapa de fechamento: limpo.
+- Ultimo commit local no inicio da etapa: `2abe4b1 chore: stabilize official data handoff`.
+- Node esperado pelo projeto: Node.js 22.x, registrado em `.nvmrc`.
+- npm esperado: `>=10`, registrado em `package.json`.
+- Node disponivel nesta sessao Codex: `/Applications/Codex.app/Contents/Resources/node` (`v24.14.0`).
+- `npm` nao estava disponivel no `PATH` desta sessao; use `nvm use && npm ci` em ambiente local normal, ou `bash scripts/validate-local.sh` para validar com fallback por `node`.
+- A migration Supabase/PostGIS inicial existe em `supabase/migrations/20260602120000_initial_public_safety_schema.sql`, mas segue nao aplicada/testada localmente porque a Supabase CLI nao esta instalada nesta maquina.
+- A amostra oficial versionada ja esta em `src/data/officialCrimeData.sample.json`; ela valida contratos de `homicidio_doloso` em `vitimas`, mas nao substitui a necessidade de gerar a carga nacional completa.
+- O modo mock/demo permanece disponivel por `NEXT_PUBLIC_CRIME_DATA_MODE=demo`.
+- Documentos especificos criados para retomada futura: `docs/SUPABASE_SCHEMA.md` e `docs/ISSUES_PLANEJADAS.md`.
