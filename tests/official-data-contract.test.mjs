@@ -33,3 +33,13 @@ test("items never encode missing data as zero", () => {
     }
   }
 });
+
+test("official sample metrics expose unavailable variation fields explicitly", () => {
+  for (const item of dataset.items) {
+    const metric = item.indicadores.homicidioDoloso;
+    assert.ok(Object.hasOwn(metric, "variacaoMensal"));
+    assert.ok(Object.hasOwn(metric, "variacaoAnual"));
+    assert.equal(metric.variacaoMensal, null);
+    assert.equal(metric.variacaoAnual, null);
+  }
+});

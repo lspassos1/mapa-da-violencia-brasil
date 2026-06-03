@@ -719,7 +719,7 @@ def generate_app_ready_dataset(
     write_samples: bool = False,
 ) -> dict[str, object]:
     source_path = resolve_app_ready_input(input_path)
-    is_sample = source_path.is_relative_to(SAMPLES_DIR) if hasattr(source_path, "is_relative_to") else str(source_path).startswith(str(SAMPLES_DIR))
+    is_sample = is_relative_path(source_path, SAMPLES_DIR)
     rows = read_csv_file_rows(source_path)
     centroids = load_app_ready_centroids(centroids_path)
     app_rows, skipped_without_centroid = build_app_ready_rows(rows, centroids, is_sample=is_sample)
@@ -773,11 +773,28 @@ def resolve_app_ready_input(input_path: Path | None) -> Path:
         SAMPLES_DIR / "sinesp_municipal_indicators_with_population.sample.csv",
     ]
     for candidate in candidates:
-        if candidate and candidate.exists():
-            return candidate
+        if not candidate:
+            continue
+        possible_paths = (
+            [candidate]
+            if candidate.is_absolute()
+            else [Path.cwd() / candidate, PROJECT_ROOT / candidate]
+        )
+        for possible_path in possible_paths:
+            resolved = possible_path.resolve()
+            if resolved.exists():
+                return resolved
     raise FileNotFoundError(
         "No SINESP+population CSV found. Run normalize or pass --input to generate-app-ready."
     )
+
+
+def is_relative_path(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+    except ValueError:
+        return False
+    return True
 
 
 def load_app_ready_centroids(path: Path | None) -> dict[str, tuple[float, float]]:
@@ -830,6 +847,8 @@ def build_app_ready_rows(
                 "metric": {
                     "total": value or 0,
                     "taxa100k": taxa,
+                    "variacaoMensal": None,
+                    "variacaoAnual": None,
                     "dataStatus": data_status,
                     "unidade": row.get("unidade_medida") or "vitimas",
                     "fonte": row.get("fonte") or "MJSP/SINESP",

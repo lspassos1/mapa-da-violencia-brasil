@@ -25,6 +25,7 @@ assertDataMode(metadata.modoDados, "/api/metadata modoDados");
 assertEqual(metadata.modoDados, expectedDataMode, "/api/metadata modoDados");
 
 const crimeMap = await expectOkJson("/api/crime-map");
+assertEqual(crimeMap.demo, expectedDataMode === "demo", "/api/crime-map demo");
 assertArray(crimeMap.items, "/api/crime-map items");
 assertArray(crimeMap.ranking, "/api/crime-map ranking");
 assertObject(crimeMap.fonteResumo, "/api/crime-map fonteResumo");
@@ -43,6 +44,7 @@ const defaultMunicipalityId = expectedDataMode === "demo" ? "3550308" : "1200401
 const municipalityId = process.env.SMOKE_MUNICIPALITY_ID ?? defaultMunicipalityId;
 const municipalityPath = `/api/municipalities/${municipalityId}?periodo=${encodeURIComponent(defaultPeriod)}`;
 const municipality = await expectOkJson(municipalityPath);
+assertEqual(municipality.demo, expectedDataMode === "demo", `${municipalityPath} demo`);
 assertObject(municipality.item, `${municipalityPath} item`);
 assertEqual(municipality.item.idIbge, municipalityId, `${municipalityPath} idIbge`);
 assertObject(municipality.status, `${municipalityPath} status`);
