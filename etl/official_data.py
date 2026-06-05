@@ -80,6 +80,7 @@ SINESP_WITH_POPULATION_FIELDNAMES = [
     "vitimas",
     "populacao",
     "taxa_100k",
+    "taxa_status",
     "fonte",
     "fonte_populacao",
     "limitacoes",
@@ -649,6 +650,7 @@ def combine_sinesp_with_population(
 ) -> dict[str, object]:
     population_by_id = {str(row["id_ibge"]): row for row in population_rows}
     combined_rows: list[dict[str, object]] = []
+    cross_year_suppressed = 0
     for row in sinesp_rows:
         id_ibge = str(row.get("id_ibge") or "")
         population_row = population_by_id.get(id_ibge)
@@ -656,6 +658,32 @@ def combine_sinesp_with_population(
             continue
         population = int(population_row["populacao"])
         value = int(row["valor"])
+        indicator_year = parse_optional_int(str(row.get("ano") or ""))
+        population_year = parse_optional_int(str(population_row.get("ano") or ""))
+        years_aligned = (
+            indicator_year is not None
+            and population_year is not None
+            and indicator_year == population_year
+        )
+        if not population:
+            taxa_100k: object = ""
+            taxa_status = "sem_populacao"
+        elif not years_aligned:
+            # Numerador e denominador de anos diferentes (ex.: vitimas 2018 sobre
+            # populacao 2025) produzem uma taxa enganosa. Suprimimos a taxa ate
+            # existir serie populacional do ano do indicador.
+            taxa_100k = ""
+            taxa_status = "populacao_indisponivel"
+            cross_year_suppressed += 1
+        else:
+            taxa_100k = round((value / population) * 100000, 4)
+            taxa_status = "disponivel"
+        limitacoes = "Join inicial por id_ibge; revisar metodologia antes de uso no app."
+        if taxa_status == "populacao_indisponivel":
+            limitacoes = (
+                f"{limitacoes} Taxa por 100 mil suprimida: ano do indicador "
+                f"({indicator_year}) difere do ano da populacao ({population_year})."
+            )
         combined_rows.append(
             {
                 "source_id": row["source_id"],
@@ -670,10 +698,11 @@ def combine_sinesp_with_population(
                 "unidade_medida": row["unidade_medida"],
                 "vitimas": row["vitimas"],
                 "populacao": population,
-                "taxa_100k": round((value / population) * 100000, 4) if population else "",
+                "taxa_100k": taxa_100k,
+                "taxa_status": taxa_status,
                 "fonte": row["fonte"],
                 "fonte_populacao": population_row["fonte"],
-                "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+                "limitacoes": limitacoes,
             }
         )
 
@@ -688,13 +717,16 @@ def combine_sinesp_with_population(
         "metadata": {
             "generated_at": utc_now(),
             "join_key": "id_ibge",
-            "rate_formula": "taxa_100k = (valor / populacao) * 100000",
+            "rate_formula": "taxa_100k = (valor / populacao) * 100000 quando ano do indicador == ano da populacao",
         },
         "summary": {
             "sinesp_rows": len(sinesp_rows),
             "combined_rows": len(combined_rows),
             "rows_without_population": len(sinesp_rows) - len(combined_rows),
-            "can_calculate_taxa_100k": bool(combined_rows),
+            "rows_taxa_suppressed_cross_year": cross_year_suppressed,
+            "can_calculate_taxa_100k": any(
+                row.get("taxa_status") == "disponivel" for row in combined_rows
+            ),
         },
         "outputs": {
             "combined_csv": (
@@ -704,7 +736,8 @@ def combine_sinesp_with_population(
         },
         "limitations": [
             "Dataset combinado ainda nao alimenta o MVP visual.",
-            "Taxas usam populacao IBGE 2025 para todos os anos ate definirmos serie historica populacional.",
+            "Taxa por 100 mil so e calculada quando o ano do indicador coincide com o ano da populacao; caso contrario fica suprimida (taxa_status=populacao_indisponivel).",
+            "Sem serie populacional historica, indicadores anteriores a 2025 ficam sem taxa ate o IBGE do ano correspondente ser integrado.",
             "Comparacoes historicas exigem revisao metodologica antes de publicacao.",
         ],
     }
@@ -866,9 +899,14 @@ def score_app_ready_rows(rows: list[dict[str, object]]) -> list[dict[str, object
         by_group.setdefault((str(row["periodo"]), str(row["indicator"])), []).append(row)
     output = []
     for group_rows in by_group.values():
+        # Quando ninguem no grupo tem taxa por 100 mil (ex.: populacao de ano
+        # diferente suprimiu a taxa), o ranking recai sobre o total absoluto
+        # para nao gerar um indice arbitrario a partir de taxas ausentes.
+        group_has_rate = any(dict(row["metric"]).get("taxa100k") is not None for row in group_rows)
+        rank_field = "taxa100k" if group_has_rate else "total"
         ordered = sorted(
             group_rows,
-            key=lambda item: float(dict(item["metric"]).get("taxa100k") or -1),
+            key=lambda item: float(dict(item["metric"]).get(rank_field) or -1),
             reverse=True,
         )
         count = max(len(ordered), 1)

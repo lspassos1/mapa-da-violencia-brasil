@@ -28,10 +28,29 @@ const activeData = dataMode === "demo" ? mockCrimeData : officialData.items;
 const activeStatus: DataStatus = dataMode === "demo" ? demoDataStatus : officialData.status;
 const activeViewModes = getAvailableViewModes();
 
+const defaultIndicator = activeIndicators[0]?.key ?? "homicidioDoloso";
+const defaultPeriod = activePeriods[0]?.key ?? "2018-03";
+
+// So abre na vista de taxa por 100 mil quando existe pelo menos um valor real no
+// periodo que abre por omissao; com a taxa suprimida (ex.: populacao de ano
+// diferente) o app abre na vista de indice (score) para nao mostrar um mapa
+// inteiramente "Indisponivel". Restrito ao periodo padrao para que, com dados
+// multi-vintage, a escolha reflita apenas o periodo efetivamente exibido.
+const defaultPeriodHasTaxaData = activeData.some(
+  (item) =>
+    item.periodo === defaultPeriod &&
+    Object.values(item.indicadores).some((metric) => typeof metric?.taxa100k === "number"),
+);
+
 const defaultFilters: CrimeMapFilters = {
-  indicator: activeIndicators[0]?.key ?? "homicidioDoloso",
-  period: activePeriods[0]?.key ?? "2018-03",
-  viewMode: activeViewModes.some((option) => option.key === "taxa100k") && dataMode !== "demo" ? "taxa100k" : "score",
+  indicator: defaultIndicator,
+  period: defaultPeriod,
+  viewMode:
+    defaultPeriodHasTaxaData &&
+    activeViewModes.some((option) => option.key === "taxa100k") &&
+    dataMode !== "demo"
+      ? "taxa100k"
+      : "score",
   uf: null,
 };
 

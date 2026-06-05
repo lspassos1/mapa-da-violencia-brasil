@@ -56,3 +56,25 @@ test("etl app-ready sample metrics match unavailable variation contract", () => 
     assert.equal(metric.variacaoAnual, null);
   }
 });
+
+test("taxa100k is suppressed because indicator year differs from population year", () => {
+  // A amostra cobre vitimas de 2018 sobre populacao IBGE 2025: a taxa por 100 mil
+  // seria enganosa (numerador e denominador de anos diferentes) e deve ficar null.
+  for (const item of dataset.items) {
+    assert.equal(
+      item.indicadores.homicidioDoloso.taxa100k,
+      null,
+      `${item.idIbge}: taxa100k deveria estar suprimida (anos cruzados)`,
+    );
+  }
+  for (const item of etlSampleDataset.items) {
+    assert.equal(item.indicadores.homicidioDoloso.taxa100k, null);
+  }
+});
+
+test("official sample documents the suppressed-rate limitation", () => {
+  assert.ok(
+    dataset.status.limitations.some((item) => item.toLowerCase().includes("taxa")),
+    "status.limitations should explain the suppressed rate",
+  );
+});
