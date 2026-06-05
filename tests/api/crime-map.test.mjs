@@ -28,21 +28,25 @@ test("responde 200 com a forma esperada do payload", async () => {
 });
 
 test("aceita 'indicador' (pt) e 'indicator' (en) como sinonimos", async () => {
-  const { indicadores } = await metadata();
-  const key = indicadores[0].key;
+  const { indicadores, filtrosPadrao } = await metadata();
+  // Usa uma key DIFERENTE do default: assim, se o ramo de alias for removido,
+  // o fallback para o default nao mascara a regressao.
+  const key = indicadores.map((indicator) => indicator.key).find((k) => k !== filtrosPadrao.indicator);
+  if (!key) return; // dataset com um unico indicador: nada a distinguir
   const pt = await (await call(`?indicador=${key}`)).json();
   const en = await (await call(`?indicator=${key}`)).json();
-  assert.equal(pt.indicador, key);
-  assert.equal(en.indicador, key);
+  assert.equal(pt.indicador, key, "param pt deve ser respeitado");
+  assert.equal(en.indicador, key, "param en deve ser respeitado");
 });
 
 test("aceita 'periodo' (pt) e 'period' (en) como sinonimos", async () => {
-  const { periodos } = await metadata();
-  const key = periodos[0].key;
+  const { periodos, filtrosPadrao } = await metadata();
+  const key = periodos.map((period) => period.key).find((k) => k !== filtrosPadrao.period);
+  if (!key) return; // dataset com um unico periodo: nada a distinguir
   const pt = await (await call(`?periodo=${key}`)).json();
   const en = await (await call(`?period=${key}`)).json();
-  assert.equal(pt.periodo, key);
-  assert.equal(en.periodo, key);
+  assert.equal(pt.periodo, key, "param pt deve ser respeitado");
+  assert.equal(en.periodo, key, "param en deve ser respeitado");
 });
 
 test("aceita 'modo', 'viewMode' e 'mode' como sinonimos", async () => {
