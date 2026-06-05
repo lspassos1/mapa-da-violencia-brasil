@@ -1,4 +1,5 @@
 import type { CrimeIndicatorKey, MunicipalityCrimeData } from "@/types/crime";
+import { getDataStatusDescription, getDataStatusLabel, isUnavailableStatus } from "@/lib/dataStatus";
 import { riskLevelLabels } from "@/lib/riskLevel";
 
 interface TooltipState {
@@ -37,6 +38,20 @@ export function MapTooltip({ indicator, tooltip }: MapTooltipProps) {
         <strong className="text-right text-white">{metric.total}</strong>
         <span>Nivel</span>
         <strong className="text-right text-white">{riskLevelLabels[metric.nivel]}</strong>
+      </div>
+      <div className="mt-2 border-t border-white/10 pt-2">
+        <span
+          className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+            isUnavailableStatus(metric.dataStatus)
+              ? "bg-amber-300/15 text-amber-200"
+              : "bg-cyan-300/15 text-cyan-200"
+          }`}
+        >
+          {getDataStatusLabel(metric.dataStatus)}
+        </span>
+        {isUnavailableStatus(metric.dataStatus) ? (
+          <p className="mt-1 leading-4 text-slate-400">{getDataStatusDescription(metric.dataStatus)}</p>
+        ) : null}
       </div>
     </div>
   );

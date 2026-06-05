@@ -1,4 +1,5 @@
 import { BarChart3, MapPinned } from "lucide-react";
+import { getDataStatusDescription, getDataStatusLabel, isUnavailableStatus } from "@/lib/dataStatus";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 import { getMunicipalityRank } from "@/lib/ranking";
 import { riskLevelLabels } from "@/lib/riskLevel";
@@ -71,9 +72,21 @@ export function MunicipalityDetailsPanel({
             {municipality.estado} / {municipality.uf}
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-right">
-          <p className="text-xs text-slate-500">Nivel</p>
-          <p className="font-semibold text-white">{riskLevelLabels[metric.nivel]}</p>
+        <div className="flex flex-col items-end gap-2">
+          <div className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-right">
+            <p className="text-xs text-slate-500">Nivel</p>
+            <p className="font-semibold text-white">{riskLevelLabels[metric.nivel]}</p>
+          </div>
+          <span
+            className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+              isUnavailableStatus(metric.dataStatus)
+                ? "bg-amber-300/15 text-amber-200"
+                : "bg-cyan-300/15 text-cyan-200"
+            }`}
+            title={getDataStatusDescription(metric.dataStatus)}
+          >
+            {getDataStatusLabel(metric.dataStatus)}
+          </span>
         </div>
       </div>
 
@@ -100,7 +113,8 @@ export function MunicipalityDetailsPanel({
           Fonte e atualizacao
         </div>
         <p className="text-sm leading-6 text-slate-400">
-          {metric.fonte}. Atualizado em {demoDataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.
+          {metric.fonte}. Atualizado em {demoDataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.{" "}
+          {getDataStatusDescription(metric.dataStatus)}
           {metric.limitacoes ? ` ${metric.limitacoes}` : ""}
         </p>
       </div>
