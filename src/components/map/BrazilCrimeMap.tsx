@@ -6,6 +6,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
 import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
+import { mapTileAttribution, mapTileUrls } from "@/lib/mapConfig";
 import { getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
 import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
@@ -107,9 +108,9 @@ export function BrazilCrimeMap({
             sources: {
               base: {
                 type: "raster",
-                tiles: ["https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"],
+                tiles: mapTileUrls,
                 tileSize: 256,
-                attribution: "OpenStreetMap, CARTO",
+                attribution: mapTileAttribution,
               },
             },
             layers: [
