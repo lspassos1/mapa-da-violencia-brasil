@@ -1,5 +1,6 @@
 import { demoDataStatus, indicatorOptions, mockCrimeData, periodOptions } from "@/data/mockCrimeData";
 import officialCrimeDataset from "@/data/officialCrimeData.sample.json";
+import { CRIME_DATA_MODE } from "@/lib/dataMode";
 import { getRankedMunicipalities } from "@/lib/ranking";
 import type {
   CrimeMetadata,
@@ -21,7 +22,7 @@ interface OfficialCrimeDataset {
 }
 
 const officialData = officialCrimeDataset as OfficialCrimeDataset;
-const dataMode = process.env.NEXT_PUBLIC_CRIME_DATA_MODE === "official_sample" ? "official_sample" : "demo";
+const dataMode = CRIME_DATA_MODE;
 const activeIndicators = dataMode === "demo" ? indicatorOptions : officialData.indicators;
 const activePeriods = dataMode === "demo" ? periodOptions : officialData.periods;
 const activeData = dataMode === "demo" ? mockCrimeData : officialData.items;

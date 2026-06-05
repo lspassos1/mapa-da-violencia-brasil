@@ -45,12 +45,14 @@ NEXT_PUBLIC_CRIME_DATA_MODE=official_sample
 
 Valores e comportamento:
 
-- Ausente: o app permanece no fallback demonstrativo/mock.
+- Ausente ou vazio: o app permanece no fallback demonstrativo (`demo`).
 - `official_sample`: o app usa a amostra oficial versionada.
-- `mock`, `demo` ou valor invalido: o app permanece no fallback
-  demonstrativo/mock.
+- `demo`: fallback demonstrativo explicito.
+- Qualquer outro valor (incluindo o legado `mock`): recai em `demo` e
+  emite um aviso no console para sinalizar configuracao incorreta.
 
-Nao use `NEXT_PUBLIC_DATA_MODE` para esta etapa; ela ainda nao controla o app.
+Use apenas `NEXT_PUBLIC_CRIME_DATA_MODE`. O nome legado `NEXT_PUBLIC_DATA_MODE`
+foi descontinuado: nunca teve efeito sobre o app.
 
 ## Aviso importante
 
