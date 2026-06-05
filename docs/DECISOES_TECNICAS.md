@@ -273,3 +273,52 @@ Consequencias:
 - O filtro oficial inicial mostra apenas homicidio doloso.
 - A taxa por 100 mil usa populacao IBGE 2025 ate a serie populacional historica ser integrada.
 - O app precisa diferenciar `sem_dados`, `zero_registrado` e `populacao_indisponivel`.
+
+## ADR-015 - Privacidade dos tiles do mapa base
+
+Status: Aceita
+
+Contexto:
+
+- O mapa base carrega tiles diretamente do browser do utilizador para
+  `*.basemaps.cartocdn.com` (CARTO). Isto expoe o IP e o padrao de navegacao
+  de cada utilizador a um terceiro, sem aviso nem opt-out.
+- Para uma ferramenta civica que pode ser usada em contextos sensiveis
+  (jornalismo, ativismo), isto e uma consideracao de privacidade relevante.
+
+Opcoes avaliadas:
+
+- **A. Proxy de tiles** (route handler que busca os tiles server-side): esconde
+  o IP do utilizador do CARTO, mas adiciona latencia, custo de largura de banda
+  e potencial atrito com os ToS do CARTO para volume elevado.
+- **B. Cache na edge** (Vercel/Cloudflare): os IPs chegam a edge, nao ao CARTO
+  diretamente; equilibrio entre privacidade e custo.
+- **C. Aceitar e documentar**: manter o carregamento direto, com atribuicao e
+  nota de privacidade, e tratar o proxy como evolucao futura.
+- **D. Self-hosted (PMTiles)**: servir os tiles do proprio bucket/CDN; elimina o
+  terceiro, mas exige gerar e hospedar a malha (ver ADR-013 / issue #14).
+
+Decisao:
+
+- Adotar a **Opcao C** no estado atual (MVP/demo): manter o carregamento direto
+  com a atribuicao CARTO/OpenStreetMap ja presente no rodape (PR #26) e nesta
+  nota de decisao.
+- A origem dos tiles ja e configuravel por ambiente (`NEXT_PUBLIC_MAP_TILE_URLS`,
+  PR #28), o que permite trocar para um proxy/self-hosted sem alterar codigo.
+- Reavaliar para **Opcao B ou D** antes de uma divulgacao publica ampla, ou
+  imediatamente se o app passar a tratar dados/uso sensiveis.
+
+Motivo:
+
+- Proxyar ou self-hostar tiles num MVP ainda sem dados reais adiciona custo e
+  complexidade desproporcionais ao risco atual.
+- Tornar a origem configuravel mantem a porta aberta para endurecer a
+  privacidade sem retrabalho.
+
+Consequencias:
+
+- O rodape mantem a atribuicao obrigatoria do CARTO/OpenStreetMap.
+- Fica registado que o carregamento direto expoe IPs ao CARTO; a mitigacao
+  (proxy/edge/self-hosted) e trabalho rastreado e nao um detalhe esquecido.
+- A futura malha self-hosted (ADR-013) e o caminho preferido para resolver
+  privacidade e dependencia externa em simultaneo.
