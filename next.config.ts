@@ -7,8 +7,6 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 // Origens externas de mapa (tiles raster CARTO). O wildcard cobre os
 // subdominios a/b/c/d usados para distribuir a carga de tiles.
 const MAP_TILE_ORIGIN = "https://*.basemaps.cartocdn.com";
-// Origem do Supabase (consumida quando o app passar a ler das views reais).
-const SUPABASE_ORIGIN = "https://*.supabase.co";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -25,8 +23,10 @@ const contentSecurityPolicy = [
   // MapLibre cria web workers a partir de blobs.
   "worker-src 'self' blob:",
   "child-src 'self' blob:",
-  // Tiles e (futuramente) Supabase sao carregados via fetch/XHR.
-  "connect-src 'self' " + MAP_TILE_ORIGIN + " " + SUPABASE_ORIGIN,
+  // Tiles carregados via fetch/XHR. A origem do Supabase sera adicionada
+  // (com o project-ref real, sem wildcard) no PR que introduzir a leitura
+  // das views reais, para nao permitir uma origem ainda nao utilizada.
+  "connect-src 'self' " + MAP_TILE_ORIGIN,
 ].join("; ");
 
 const securityHeaders = [
