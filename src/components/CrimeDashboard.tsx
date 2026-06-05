@@ -1,15 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Map as MapIcon, Table as TableIcon } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { DataModeBanner } from "@/components/layout/DataModeBanner";
 import { CrimeFilters } from "@/components/filters/CrimeFilters";
 import { BrazilCrimeMap } from "@/components/map/BrazilCrimeMap";
 import { MapLegend } from "@/components/map/MapLegend";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
+import { AccessibleDataTable } from "@/components/panels/AccessibleDataTable";
 import { MunicipalityDetailsPanel } from "@/components/panels/MunicipalityDetailsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
+import { getRankedMunicipalities } from "@/lib/ranking";
 import {
   getAvailableIndicators,
   getAvailablePeriods,
@@ -27,6 +29,7 @@ const demoStatus = getDemoDataStatus();
 const metadata = getCrimeMetadata();
 const dataScope = metadata.scope;
 const viewModes = metadata.viewModes;
+const TABLE_ROW_LIMIT = 200;
 const officialDataLabel =
   demoStatus.mode === "official_sample"
     ? "Amostra oficial: homicidio doloso (vitimas)"
@@ -40,6 +43,7 @@ export function CrimeDashboard() {
   const [period, setPeriod] = useState(defaultFilters.period);
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [selectedMunicipality, setSelectedMunicipality] = useState<MunicipalityCrimeData | null>(null);
+  const [showTable, setShowTable] = useState(false);
 
   const mapResult = useMemo(
     () => getCrimeMapData({ indicator, period, viewMode, uf: null }),
@@ -54,6 +58,17 @@ export function CrimeDashboard() {
   const ranking = rankingResult.ranking;
 
   const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
+  const indicatorLabel = indicators.find((option) => option.key === indicator)?.label ?? "Indicador";
+  const viewModeLabel = viewModes.find((option) => option.key === viewMode)?.label ?? "Valor";
+  // Limita as linhas renderizadas para nao montar milhares de nos DOM de uma
+  // vez na vista nacional (com dados reais, ~5.570 municipios). A nota de
+  // truncamento avisa quando o limite e atingido; refinar o estado por UF
+  // reduz o conjunto.
+  const rankedAll = useMemo(
+    () => getRankedMunicipalities(visibleMapData, indicator, viewMode, null, visibleMapData.length),
+    [visibleMapData, indicator, viewMode],
+  );
+  const tableData = rankedAll.slice(0, TABLE_ROW_LIMIT);
 
   function handleStateSelect(uf: string) {
     setSelectedState(uf);
@@ -76,13 +91,22 @@ export function CrimeDashboard() {
 
   return (
     <main className="flex min-h-screen flex-col overflow-hidden text-slate-100">
+      <a
+        href="#conteudo-principal"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-cyan-300 focus:px-4 focus:py-2 focus:font-semibold focus:text-slate-950"
+      >
+        Saltar para o conteudo principal
+      </a>
       <AppHeader />
       <DataModeBanner
         mode={metadata.dataMode}
         municipalities={dataScope.municipalities}
         periodLabel={selectedPeriod.label}
       />
-      <section className="flex flex-1 flex-col gap-4 p-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)_340px] lg:p-5">
+      <section
+        id="conteudo-principal"
+        className="flex flex-1 flex-col gap-4 p-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)_340px] lg:p-5"
+      >
         <aside className="flex min-h-0 flex-col gap-4">
           <CrimeFilters
             indicator={indicator}
@@ -121,27 +145,72 @@ export function CrimeDashboard() {
               onBackToBrazil={handleBackToBrazil}
               onBackToState={handleBackToState}
             />
-            {metadata.dataMode === "official" ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-100 backdrop-blur">
-                <AlertTriangle className="h-4 w-4" />
-                {officialDataLabel}
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className="inline-flex overflow-hidden rounded-lg border border-white/10 bg-slate-950/80 text-xs font-medium backdrop-blur"
+                role="group"
+                aria-label="Alternar visualizacao"
+              >
+                <button
+                  type="button"
+                  aria-pressed={!showTable}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 ${
+                    !showTable ? "bg-cyan-300/20 text-cyan-100" : "text-slate-300 hover:text-cyan-200"
+                  }`}
+                  onClick={() => setShowTable(false)}
+                >
+                  <MapIcon className="h-4 w-4" aria-hidden="true" />
+                  Mapa
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={showTable}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 ${
+                    showTable ? "bg-cyan-300/20 text-cyan-100" : "text-slate-300 hover:text-cyan-200"
+                  }`}
+                  onClick={() => setShowTable(true)}
+                >
+                  <TableIcon className="h-4 w-4" aria-hidden="true" />
+                  Tabela
+                </button>
               </div>
-            ) : null}
+              {metadata.dataMode === "official" ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-100 backdrop-blur">
+                  <AlertTriangle className="h-4 w-4" />
+                  {officialDataLabel}
+                </div>
+              ) : null}
+            </div>
           </div>
 
-          <BrazilCrimeMap
-            data={visibleMapData}
-            indicator={indicator}
-            selectedMunicipality={selectedMunicipality}
-            selectedState={selectedState}
-            viewMode={viewMode}
-            onMunicipalitySelect={handleMunicipalitySelect}
-            onStateSelect={handleStateSelect}
-          />
-
-          <div className="absolute bottom-4 left-4 z-10">
-            <MapLegend />
-          </div>
+          {showTable ? (
+            <AccessibleDataTable
+              data={tableData}
+              total={rankedAll.length}
+              indicator={indicator}
+              indicatorLabel={indicatorLabel}
+              viewMode={viewMode}
+              viewModeLabel={viewModeLabel}
+              periodLabel={selectedPeriod.label}
+              selectedMunicipalityId={selectedMunicipality?.idIbge ?? null}
+              onSelect={handleMunicipalitySelect}
+            />
+          ) : (
+            <>
+              <BrazilCrimeMap
+                data={visibleMapData}
+                indicator={indicator}
+                selectedMunicipality={selectedMunicipality}
+                selectedState={selectedState}
+                viewMode={viewMode}
+                onMunicipalitySelect={handleMunicipalitySelect}
+                onStateSelect={handleStateSelect}
+              />
+              <div className="absolute bottom-4 left-4 z-10">
+                <MapLegend />
+              </div>
+            </>
+          )}
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4">
