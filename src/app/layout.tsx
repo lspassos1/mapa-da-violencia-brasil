@@ -15,18 +15,17 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  // Apenas campos globais. title/description/url do Open Graph e do Twitter
+  // ficam por resolver para que cada pagina herde os seus proprios valores
+  // (titulo via template, descricao da pagina e url via metadataBase + caminho)
+  // em vez de propagar os valores da home para as subpaginas.
   openGraph: {
     type: "website",
     locale: siteConfig.locale,
-    url: siteConfig.url,
     siteName: siteConfig.name,
-    title: siteConfig.name,
-    description: siteConfig.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: siteConfig.name,
-    description: siteConfig.description,
   },
   robots: {
     index: true,
