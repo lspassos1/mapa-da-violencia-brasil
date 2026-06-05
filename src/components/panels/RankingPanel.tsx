@@ -45,6 +45,8 @@ export function RankingPanel({
                     : "border-white/10 bg-slate-950/70 hover:border-cyan-300/30"
                 }`}
                 key={item.idIbge}
+                type="button"
+                aria-current={active ? "true" : undefined}
                 onClick={() => onSelect(item)}
               >
                 <div className="flex items-center justify-between gap-3">
