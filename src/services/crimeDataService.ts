@@ -28,10 +28,20 @@ const activeData = dataMode === "demo" ? mockCrimeData : officialData.items;
 const activeStatus: DataStatus = dataMode === "demo" ? demoDataStatus : officialData.status;
 const activeViewModes = getAvailableViewModes();
 
+// So abre na vista de taxa por 100 mil quando existe pelo menos um valor real;
+// com a taxa suprimida (ex.: populacao de ano diferente) o app abre na vista de
+// indice (score) para nao mostrar um mapa inteiramente "Indisponivel".
+const hasTaxaData = activeData.some((item) =>
+  Object.values(item.indicadores).some((metric) => typeof metric?.taxa100k === "number"),
+);
+
 const defaultFilters: CrimeMapFilters = {
   indicator: activeIndicators[0]?.key ?? "homicidioDoloso",
   period: activePeriods[0]?.key ?? "2018-03",
-  viewMode: activeViewModes.some((option) => option.key === "taxa100k") && dataMode !== "demo" ? "taxa100k" : "score",
+  viewMode:
+    hasTaxaData && activeViewModes.some((option) => option.key === "taxa100k") && dataMode !== "demo"
+      ? "taxa100k"
+      : "score",
   uf: null,
 };
 

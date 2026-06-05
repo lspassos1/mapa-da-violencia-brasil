@@ -1,7 +1,7 @@
 {
   "status": {
     "source": "MJSP/SINESP - amostra oficial local",
-    "lastUpdated": "2026-06-03T03:54:49Z",
+    "lastUpdated": "2026-06-05T05:33:35Z",
     "latestPeriod": "Mar/2018",
     "status": "Amostra oficial versionada",
     "mode": "official_sample",
@@ -26,17 +26,17 @@
     {
       "key": "2018-03",
       "label": "Mar/2018",
-      "updatedAt": "2026-06-03"
+      "updatedAt": "2026-06-05"
     },
     {
       "key": "2018-02",
       "label": "Fev/2018",
-      "updatedAt": "2026-06-03"
+      "updatedAt": "2026-06-05"
     },
     {
       "key": "2018-01",
       "label": "Jan/2018",
-      "updatedAt": "2026-06-03"
+      "updatedAt": "2026-06-05"
     }
   ],
   "items": [
@@ -52,14 +52,14 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 7.1798,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
           "score": 62,
           "nivel": "alto"
         }
@@ -77,15 +77,15 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 8,
-          "taxa100k": 8.0877,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 100,
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 88,
           "nivel": "critico"
         }
       }
@@ -102,14 +102,14 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 3,
-          "taxa100k": 7.9441,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
           "score": 75,
           "nivel": "alto"
         }
@@ -127,15 +127,15 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 31,
-          "taxa100k": 7.9691,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 88,
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 100,
           "nivel": "critico"
         }
       }
@@ -152,16 +152,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 2.2702,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 25,
-          "nivel": "moderado"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 50,
+          "nivel": "atencao"
         }
       }
     },
@@ -177,14 +177,14 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 4.4639,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
           "score": 38,
           "nivel": "moderado"
         }
@@ -202,16 +202,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 2.136,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 12,
-          "nivel": "baixo"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 25,
+          "nivel": "moderado"
         }
       }
     },
@@ -227,16 +227,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 5.2165,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 50,
-          "nivel": "atencao"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 12,
+          "nivel": "baixo"
         }
       }
     },
@@ -252,16 +252,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 3,
-          "taxa100k": 27.3199,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 100,
-          "nivel": "critico"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 67,
+          "nivel": "alto"
         }
       }
     },
@@ -277,16 +277,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 4,
-          "taxa100k": 4.0438,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 50,
-          "nivel": "atencao"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 83,
+          "nivel": "critico"
         }
       }
     },
@@ -302,16 +302,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 2.648,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 33,
-          "nivel": "moderado"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 50,
+          "nivel": "atencao"
         }
       }
     },
@@ -327,16 +327,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 5.7068,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 83,
-          "nivel": "critico"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 33,
+          "nivel": "moderado"
         }
       }
     },
@@ -352,16 +352,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 18,
-          "taxa100k": 4.6272,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 67,
-          "nivel": "alto"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 100,
+          "nivel": "critico"
         }
       }
     },
@@ -377,14 +377,14 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 2.136,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
           "score": 17,
           "nivel": "baixo"
         }
@@ -402,16 +402,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 7.1798,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 62,
-          "nivel": "alto"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 38,
+          "nivel": "moderado"
         }
       }
     },
@@ -427,16 +427,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 9.1066,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 100,
-          "nivel": "critico"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 25,
+          "nivel": "moderado"
         }
       }
     },
@@ -452,14 +452,14 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 9,
-          "taxa100k": 9.0986,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
           "score": 88,
           "nivel": "critico"
         }
@@ -477,16 +477,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 1,
-          "taxa100k": 5.8456,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 50,
-          "nivel": "atencao"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 12,
+          "nivel": "baixo"
         }
       }
     },
@@ -502,16 +502,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 11,
-          "taxa100k": 2.8278,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 12,
-          "nivel": "baixo"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 100,
+          "nivel": "critico"
         }
       }
     },
@@ -527,16 +527,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 2,
-          "taxa100k": 4.5404,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 38,
-          "nivel": "moderado"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 75,
+          "nivel": "alto"
         }
       }
     },
@@ -552,15 +552,15 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 2,
-          "taxa100k": 8.9278,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 75,
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 62,
           "nivel": "alto"
         }
       }
@@ -577,16 +577,16 @@
       "indicadores": {
         "homicidioDoloso": {
           "total": 2,
-          "taxa100k": 4.272,
+          "taxa100k": null,
           "variacaoMensal": null,
           "variacaoAnual": null,
           "dataStatus": "amostra_oficial",
           "unidade": "vitimas",
           "fonte": "MJSP/SINESP",
           "sourceId": "sinesp_municipios",
-          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app.",
-          "score": 25,
-          "nivel": "moderado"
+          "limitacoes": "Join inicial por id_ibge; revisar metodologia antes de uso no app. Taxa por 100 mil suprimida: ano do indicador (2018) difere do ano da populacao (2025).",
+          "score": 50,
+          "nivel": "atencao"
         }
       }
     }

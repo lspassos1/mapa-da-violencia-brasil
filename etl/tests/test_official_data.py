@@ -2,9 +2,12 @@ import unittest
 import zipfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
+from etl import official_data
 from etl.official_data import (
     canonical_indicator_code,
+    combine_sinesp_with_population,
     detect_tabular_header,
     generate_app_ready_dataset,
     normalize_sinesp_table_rows,
@@ -12,6 +15,34 @@ from etl.official_data import (
     parse_ibge_population_ods,
     validate_municipality_keys,
 )
+
+
+def _sinesp_row(year: int, value: int = 10) -> dict:
+    return {
+        "source_id": "sinesp_municipios",
+        "id_ibge": "3550308",
+        "uf": "SP",
+        "municipio": "Sao Paulo",
+        "ano": year,
+        "mes": 3,
+        "indicador_codigo": "homicidio_doloso",
+        "indicador_nome": "Homicidio doloso",
+        "valor": value,
+        "unidade_medida": "vitimas",
+        "vitimas": value,
+        "fonte": "MJSP/SINESP",
+    }
+
+
+def _population_row(year: int, populacao: int = 1000000) -> dict:
+    return {
+        "id_ibge": "3550308",
+        "uf": "SP",
+        "municipio": "Sao Paulo",
+        "populacao": populacao,
+        "ano": year,
+        "fonte": "IBGE Estimativas de Populacao",
+    }
 
 
 ODS_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
@@ -183,6 +214,47 @@ class OfficialDataTests(unittest.TestCase):
 
         self.assertEqual(result["summary"]["app_rows"], 0)
         self.assertEqual(result["summary"]["skipped_without_centroid"], 1)
+
+    def test_combine_suppresses_taxa_when_years_differ(self):
+        with TemporaryDirectory() as tmpdir:
+            with mock.patch.object(official_data, "PROCESSED_DIR", Path(tmpdir)):
+                result = combine_sinesp_with_population(
+                    [_sinesp_row(2018, value=10)],
+                    [_population_row(2025)],
+                )
+
+        row = result["rows"][0]
+        self.assertEqual(row["taxa_100k"], "")
+        self.assertEqual(row["taxa_status"], "populacao_indisponivel")
+        self.assertIn("suprimida", row["limitacoes"])
+        self.assertEqual(result["status"]["summary"]["rows_taxa_suppressed_cross_year"], 1)
+        self.assertFalse(result["status"]["summary"]["can_calculate_taxa_100k"])
+
+    def test_combine_keeps_taxa_when_years_match(self):
+        with TemporaryDirectory() as tmpdir:
+            with mock.patch.object(official_data, "PROCESSED_DIR", Path(tmpdir)):
+                result = combine_sinesp_with_population(
+                    [_sinesp_row(2025, value=10)],
+                    [_population_row(2025, populacao=1000000)],
+                )
+
+        row = result["rows"][0]
+        self.assertEqual(row["taxa_status"], "disponivel")
+        self.assertEqual(row["taxa_100k"], 1.0)  # 10 / 1_000_000 * 100_000
+        self.assertEqual(result["status"]["summary"]["rows_taxa_suppressed_cross_year"], 0)
+        self.assertTrue(result["status"]["summary"]["can_calculate_taxa_100k"])
+
+    def test_combine_marks_missing_population(self):
+        with TemporaryDirectory() as tmpdir:
+            with mock.patch.object(official_data, "PROCESSED_DIR", Path(tmpdir)):
+                result = combine_sinesp_with_population(
+                    [_sinesp_row(2025, value=10)],
+                    [_population_row(2025, populacao=0)],
+                )
+
+        row = result["rows"][0]
+        self.assertEqual(row["taxa_100k"], "")
+        self.assertEqual(row["taxa_status"], "sem_populacao")
 
 
 if __name__ == "__main__":
