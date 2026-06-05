@@ -29,6 +29,7 @@ data/geo/
 # Local environment
 .env
 .env.*
+!.env.example
 
 # OS/editor
 .DS_Store
