@@ -113,8 +113,8 @@ export function MunicipalityDetailsPanel({
           Fonte e atualizacao
         </div>
         <p className="text-sm leading-6 text-slate-400">
-          {metric.fonte}. Atualizado em {demoDataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.{" "}
-          {getDataStatusDescription(metric.dataStatus)}
+          {metric.fonte}. Atualizado em {demoDataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.
+          {isUnavailableStatus(metric.dataStatus) ? ` ${getDataStatusDescription(metric.dataStatus)}` : ""}
           {metric.limitacoes ? ` ${metric.limitacoes}` : ""}
         </p>
       </div>

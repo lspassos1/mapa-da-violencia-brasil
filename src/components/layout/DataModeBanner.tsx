@@ -19,7 +19,7 @@ export function DataModeBanner({ mode, municipalities, periodLabel }: DataModeBa
   if (mode === "official_sample") {
     return (
       <div
-        role="status"
+        role="note"
         className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-cyan-300/20 bg-cyan-300/10 px-5 py-2.5 text-sm text-cyan-100"
       >
         <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -36,7 +36,7 @@ export function DataModeBanner({ mode, municipalities, periodLabel }: DataModeBa
 
   return (
     <div
-      role="status"
+      role="note"
       className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-amber-300/25 bg-amber-300/10 px-5 py-2.5 text-sm text-amber-100"
     >
       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />

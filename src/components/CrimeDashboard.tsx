@@ -121,10 +121,12 @@ export function CrimeDashboard() {
               onBackToBrazil={handleBackToBrazil}
               onBackToState={handleBackToState}
             />
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-medium text-amber-100 backdrop-blur">
-              <AlertTriangle className="h-4 w-4" />
-              {officialDataLabel}
-            </div>
+            {metadata.dataMode === "official" ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-100 backdrop-blur">
+                <AlertTriangle className="h-4 w-4" />
+                {officialDataLabel}
+              </div>
+            ) : null}
           </div>
 
           <BrazilCrimeMap
