@@ -12,9 +12,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:etl && npm run test:contracts",
+    "test": "npm run test:etl && npm run test:contracts && npm run test:api",
     "test:etl": "python3 -m unittest discover -s etl/tests",
     "test:contracts": "node --experimental-strip-types --import ./tests/helpers/register-alias.mjs --test tests/*.test.mjs",
+    "test:api": "node --experimental-strip-types --import ./tests/helpers/register-api-hooks.mjs --test tests/api/*.test.mjs",
     "test:app": "npm run test:contracts",
     "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
     "smoke": "node scripts/smoke-public-routes.mjs"
