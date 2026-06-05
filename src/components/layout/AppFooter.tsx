@@ -12,7 +12,7 @@ export function AppFooter() {
             href={REPOSITORY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Ver o codigo-fonte no GitHub (licenca AGPL-3.0)"
+            aria-label="Ver o código-fonte no GitHub (licença AGPL-3.0)"
           >
             <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
             Codigo-fonte
@@ -22,7 +22,7 @@ export function AppFooter() {
             Licenciado sob{" "}
             <a
               className="underline-offset-4 hover:text-cyan-200 hover:underline"
-              href={`${REPOSITORY_URL}/blob/main/LICENSE`}
+              href={`${REPOSITORY_URL}/blob/HEAD/LICENSE`}
               target="_blank"
               rel="noopener noreferrer"
             >
