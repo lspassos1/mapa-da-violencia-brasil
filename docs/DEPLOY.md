@@ -50,7 +50,8 @@ Valores e comportamento:
 - `mock`, `demo` ou valor invalido: o app permanece no fallback
   demonstrativo/mock.
 
-Nao use `NEXT_PUBLIC_DATA_MODE` para esta etapa; ela ainda nao controla o app.
+Use apenas `NEXT_PUBLIC_CRIME_DATA_MODE`. O nome legado `NEXT_PUBLIC_DATA_MODE`
+foi descontinuado: nunca teve efeito sobre o app.
 
 ## Aviso importante
 

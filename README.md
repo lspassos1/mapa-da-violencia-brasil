@@ -100,7 +100,8 @@ Preview, configure:
 NEXT_PUBLIC_CRIME_DATA_MODE=official_sample
 ```
 
-`NEXT_PUBLIC_DATA_MODE` ainda nao controla o app. Veja
+Apenas `NEXT_PUBLIC_CRIME_DATA_MODE` controla o app (`official_sample` ou
+`demo`); qualquer outro valor recai em `demo`. Veja
 [docs/DEPLOY.md](docs/DEPLOY.md) e
 [docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md](docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md).
 
