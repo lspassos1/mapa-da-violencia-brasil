@@ -13,12 +13,23 @@ export function AppHeader() {
           <p className="text-xs text-slate-400">Indicadores oficiais agregados e camadas separadas</p>
         </div>
       </div>
-      <Link
-        className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
-        href="/metodologia"
-      >
-        Metodologia
-      </Link>
+      <nav className="flex items-center gap-2">
+        <Link
+          className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+          href="/metodologia"
+        >
+          Metodologia
+        </Link>
+        <a
+          className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+          href="https://github.com/lspassos1/mapa-da-violencia-brasil"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ver o código-fonte no GitHub (licença AGPL-3.0)"
+        >
+          Codigo-fonte
+        </a>
+      </nav>
     </header>
   );
 }
