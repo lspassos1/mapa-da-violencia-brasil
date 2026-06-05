@@ -59,6 +59,8 @@ group by indicador_codigo, unidade_medida
 order by indicador_codigo;
 ```
 
-As colunas `valor_diverge_*` devem ser `0`: quando `unidade_medida = 'vitimas'`,
-`valor` deve igualar `vitimas` (quando presente); idem para `ocorrencias`. Qualquer
+As colunas `valor_diverge_*` devem ser `0`: quando `unidade_medida = 'vitimas'`, a
+coluna `vitimas` deve estar preenchida e igual a `valor` (a query usa
+`is distinct from`, logo um `vitimas` nulo tambem conta como divergencia); o mesmo
+vale para `ocorrencias` quando `unidade_medida = 'ocorrencias'`. Qualquer
 divergencia indica inconsistencia de ingestao a investigar.
