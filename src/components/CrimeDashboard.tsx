@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { DataModeBanner } from "@/components/layout/DataModeBanner";
 import { CrimeFilters } from "@/components/filters/CrimeFilters";
 import { BrazilCrimeMap } from "@/components/map/BrazilCrimeMap";
 import { MapLegend } from "@/components/map/MapLegend";
@@ -76,6 +77,11 @@ export function CrimeDashboard() {
   return (
     <main className="flex min-h-screen flex-col overflow-hidden text-slate-100">
       <AppHeader />
+      <DataModeBanner
+        mode={metadata.dataMode}
+        municipalities={dataScope.municipalities}
+        periodLabel={selectedPeriod.label}
+      />
       <section className="flex flex-1 flex-col gap-4 p-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)_340px] lg:p-5">
         <aside className="flex min-h-0 flex-col gap-4">
           <CrimeFilters
@@ -115,10 +121,12 @@ export function CrimeDashboard() {
               onBackToBrazil={handleBackToBrazil}
               onBackToState={handleBackToState}
             />
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-medium text-amber-100 backdrop-blur">
-              <AlertTriangle className="h-4 w-4" />
-              {officialDataLabel}
-            </div>
+            {metadata.dataMode === "official" ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-100 backdrop-blur">
+                <AlertTriangle className="h-4 w-4" />
+                {officialDataLabel}
+              </div>
+            ) : null}
           </div>
 
           <BrazilCrimeMap
