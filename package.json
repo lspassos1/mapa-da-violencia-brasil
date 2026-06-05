@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "npm run test:etl && npm run test:contracts",
     "test:etl": "python3 -m unittest discover -s etl/tests",
-    "test:contracts": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:contracts": "node --experimental-strip-types --import ./tests/helpers/register-alias.mjs --test tests/*.test.mjs",
     "test:app": "npm run test:contracts",
     "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
     "smoke": "node scripts/smoke-public-routes.mjs"
