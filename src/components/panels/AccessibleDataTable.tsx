@@ -6,6 +6,7 @@ import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types
 
 interface AccessibleDataTableProps {
   data: MunicipalityCrimeData[];
+  total: number;
   indicator: CrimeIndicatorKey;
   indicatorLabel: string;
   viewMode: ViewMode;
@@ -20,6 +21,7 @@ interface AccessibleDataTableProps {
 // linha) e anunciada por leitores de ecra.
 export function AccessibleDataTable({
   data,
+  total,
   indicator,
   indicatorLabel,
   viewMode,
@@ -28,13 +30,20 @@ export function AccessibleDataTable({
   selectedMunicipalityId,
   onSelect,
 }: AccessibleDataTableProps) {
+  const truncated = total > data.length;
   return (
     <div className="h-full overflow-auto px-4 pb-4 pt-20">
+      {truncated ? (
+        <p className="mb-2 rounded border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-xs text-amber-100">
+          Mostrando os {data.length} primeiros de {total} municipios. Selecione um estado para refinar.
+        </p>
+      ) : null}
       <table className="w-full border-collapse text-left text-sm">
         <caption className="sr-only">
-          {indicatorLabel} por municipio — {viewModeLabel}, periodo {periodLabel}. {data.length} municipios.
+          {indicatorLabel} por municipio — {viewModeLabel}, periodo {periodLabel}.{" "}
+          {truncated ? `Mostrando ${data.length} de ${total}` : `${data.length}`} municipios.
         </caption>
-        <thead className="sticky top-0 bg-slate-950 text-xs uppercase tracking-wide text-slate-400">
+        <thead className="sticky top-20 bg-slate-950 text-xs uppercase tracking-wide text-slate-400">
           <tr>
             <th scope="col" className="px-3 py-2">#</th>
             <th scope="col" className="px-3 py-2">Municipio</th>

@@ -29,6 +29,7 @@ const demoStatus = getDemoDataStatus();
 const metadata = getCrimeMetadata();
 const dataScope = metadata.scope;
 const viewModes = metadata.viewModes;
+const TABLE_ROW_LIMIT = 200;
 const officialDataLabel =
   demoStatus.mode === "official_sample"
     ? "Amostra oficial: homicidio doloso (vitimas)"
@@ -59,10 +60,15 @@ export function CrimeDashboard() {
   const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
   const indicatorLabel = indicators.find((option) => option.key === indicator)?.label ?? "Indicador";
   const viewModeLabel = viewModes.find((option) => option.key === viewMode)?.label ?? "Valor";
-  const tableData = useMemo(
+  // Limita as linhas renderizadas para nao montar milhares de nos DOM de uma
+  // vez na vista nacional (com dados reais, ~5.570 municipios). A nota de
+  // truncamento avisa quando o limite e atingido; refinar o estado por UF
+  // reduz o conjunto.
+  const rankedAll = useMemo(
     () => getRankedMunicipalities(visibleMapData, indicator, viewMode, null, visibleMapData.length),
     [visibleMapData, indicator, viewMode],
   );
+  const tableData = rankedAll.slice(0, TABLE_ROW_LIMIT);
 
   function handleStateSelect(uf: string) {
     setSelectedState(uf);
@@ -180,6 +186,7 @@ export function CrimeDashboard() {
           {showTable ? (
             <AccessibleDataTable
               data={tableData}
+              total={rankedAll.length}
               indicator={indicator}
               indicatorLabel={indicatorLabel}
               viewMode={viewMode}
