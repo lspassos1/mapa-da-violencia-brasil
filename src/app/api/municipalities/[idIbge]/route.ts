@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCrimeMetadata, getDefaultCrimeMapFilters, getDemoDataStatus } from "@/services/crimeDataService";
-import { getMunicipalityById } from "@/services/municipalityService";
+import {
+  getCrimeMetadata,
+  getDefaultCrimeMapFilters,
+  getDemoDataStatus,
+  getMunicipalityById,
+} from "@/services/crimeDataService";
 
 export async function GET(
   request: Request,
