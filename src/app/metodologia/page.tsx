@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Metodologia",
+  description:
+    "Como o Mapa da Violencia Brasil trata fontes oficiais, indicadores e limitacoes dos dados.",
+  alternates: { canonical: "/metodologia" },
+};
 
 export default function MethodologyPage() {
   return (
