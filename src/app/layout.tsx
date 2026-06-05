@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
+import { AppFooter } from "@/components/layout/AppFooter";
 
 export const metadata: Metadata = {
   title: "Mapa da Violencia Brasil",
@@ -14,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        {children}
+        <AppFooter />
+      </body>
     </html>
   );
 }
