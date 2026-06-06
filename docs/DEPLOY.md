@@ -97,13 +97,19 @@ NEXT_PUBLIC_CRIME_DATA_MODE=official_sample
 Objetivo: validar publicamente a UX, metodologia, APIs e avisos da amostra
 oficial sem alterar a producao principal.
 
-### Opcao B - Production official_sample
+### Opcao B - Production official_sample (apenas validacao)
+
+> [!WARNING]
+> Conforme a seccao "Qual modo usar num deploy publico", `official_sample` cobre
+> so 5 municipios do Acre e **nao deve ser o estado por omissao do site
+> publico**. Use esta opcao apenas para validacao temporaria; para o publico,
+> prefira `demo` (ou a carga nacional `official`).
 
 Configurar a variavel em Production para mostrar `official_sample` na URL
 principal.
 
 Risco: a demo principal deixa de ser mock e passa a mostrar apenas homicidio
-doloso parcial.
+doloso parcial (5 municipios do Acre).
 
 Recomendacao: usar Preview primeiro. So promover para Production depois de
 validar UX publica e metodologia.
@@ -134,8 +140,13 @@ npm run smoke
 git diff --check
 ```
 
-Para validar uma URL publica:
+Para validar uma URL publica, use o `SMOKE_EXPECT_DATA_MODE` que corresponde ao
+modo realmente publicado:
 
 ```bash
+# se a URL publica esta em demo (recomendado para o publico)
+BASE_URL=https://mapa-da-violencia-brasil.vercel.app SMOKE_EXPECT_DATA_MODE=demo npm run smoke
+
+# se esta em validacao official_sample
 BASE_URL=https://mapa-da-violencia-brasil.vercel.app SMOKE_EXPECT_DATA_MODE=official_sample npm run smoke
 ```
