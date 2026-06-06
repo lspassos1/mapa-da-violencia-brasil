@@ -31,6 +31,9 @@ RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 SAMPLES_DIR = PROJECT_ROOT / "etl" / "samples"
 APP_READY_DIR = PROCESSED_DIR / "app-ready"
+# Centroides municipais nacionais versionados (id_ibge -> lat, lng), derivados
+# da malha municipal do IBGE. Servem de base padrao para a geracao app-ready.
+MUNICIPAL_CENTROIDS_REFERENCE = PROJECT_ROOT / "etl" / "reference" / "municipal_centroids.csv"
 
 MJSP_PACKAGE_API_URL = (
     "https://dados.mj.gov.br/api/3/action/package_show"
@@ -830,16 +833,26 @@ def is_relative_path(path: Path, parent: Path) -> bool:
     return True
 
 
-def load_app_ready_centroids(path: Path | None) -> dict[str, tuple[float, float]]:
-    centroids = dict(APP_READY_SAMPLE_CENTROIDS)
-    if not path:
-        return centroids
+def _merge_centroids_csv(centroids: dict[str, tuple[float, float]], path: Path) -> None:
     for row in read_csv_file_rows(path):
         id_ibge = str(row.get("id_ibge") or row.get("idIbge") or "")
         lat = parse_optional_float(row.get("lat") or row.get("latitude"))
         lng = parse_optional_float(row.get("lng") or row.get("longitude"))
         if id_ibge and lat is not None and lng is not None:
             centroids[id_ibge] = (lat, lng)
+
+
+def load_app_ready_centroids(path: Path | None) -> dict[str, tuple[float, float]]:
+    centroids: dict[str, tuple[float, float]] = {}
+    # Base nacional de centroides municipais (malha IBGE), quando versionada.
+    # Desbloqueia a carga nacional: sem centroide o municipio fica fora do mapa.
+    if MUNICIPAL_CENTROIDS_REFERENCE.exists():
+        _merge_centroids_csv(centroids, MUNICIPAL_CENTROIDS_REFERENCE)
+    # A amostra curada sobrepoe-se (mantem estaveis as coordenadas de fixtures).
+    centroids.update(APP_READY_SAMPLE_CENTROIDS)
+    # Override explicito via --centroids tem prioridade final.
+    if path:
+        _merge_centroids_csv(centroids, path)
     return centroids
 
 
