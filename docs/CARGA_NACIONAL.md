@@ -92,6 +92,15 @@ vazio e emite um aviso no console (em vez de dados falsos).
 
 A saida intermedia em `data/processed/app-ready/` continua gitignored.
 
+> [!IMPORTANT]
+> `src/data/officialCrimeData.json` e importado estaticamente, por isso entra no
+> bundle JavaScript em **todos** os modos (demo/official_sample tambem). Mantenha
+> este ficheiro pequeno. Para uma carga nacional grande (varios MB), prefira
+> **servir o JSON de `public/` e carrega-lo via fetch** no modo `official`, em vez
+> de o committar em `src/data/` — caso contrario inflara o bundle de todos os
+> deploys. (Essa variante por fetch e um follow-up; o caminho atual via `src/data`
+> serve datasets pequenos/curados.)
+
 ## #11 — Supabase (requer credenciais)
 
 Aplicar a migration e carregar as views exige um projeto Supabase e credenciais

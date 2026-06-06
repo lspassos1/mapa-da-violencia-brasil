@@ -25,6 +25,12 @@ interface OfficialCrimeDataset {
 const dataMode = CRIME_DATA_MODE;
 // Seleciona o dataset oficial conforme o modo: carga nacional (`official`) ou
 // amostra versionada (`official_sample`). Em `demo` usa o mock.
+//
+// NOTA DE TAMANHO: officialCrimeData.json (versionado como placeholder vazio) e
+// importado estaticamente, logo entra no bundle em qualquer modo. Mantenha-o
+// pequeno. Para uma carga nacional grande, sirva o JSON de `public/` via fetch
+// em vez de o committar aqui (ver docs/CARGA_NACIONAL.md) — evita inflar os
+// bundles de demo/official_sample.
 const officialData = (dataMode === "official" ? officialNationalDataset : officialSampleDataset) as OfficialCrimeDataset;
 
 if (dataMode === "official" && officialData.items.length === 0 && typeof console !== "undefined") {
