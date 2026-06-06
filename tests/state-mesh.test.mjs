@@ -56,8 +56,10 @@ test("os centroides de stateMapData caem dentro da caixa da malha", () => {
     const state = stateMapData.find((s) => s.uf === feature.properties.uf);
     const { minLon, minLat, maxLon, maxLat } = bbox(feature.geometry);
     const [lon, lat] = state.centroid;
-    // tolerancia de 1 grau para acomodar a simplificacao da malha
-    assert.ok(lon >= minLon - 1 && lon <= maxLon + 1, `${state.uf}: centroid lon fora da malha`);
-    assert.ok(lat >= minLat - 1 && lat <= maxLat + 1, `${state.uf}: centroid lat fora da malha`);
+    // O centroide aproximado deve cair dentro da caixa real do estado; folga de
+    // 0.1 grau (~11 km) so para absorver artefactos de simplificacao da malha.
+    const tol = 0.1;
+    assert.ok(lon >= minLon - tol && lon <= maxLon + tol, `${state.uf}: centroid lon fora da malha`);
+    assert.ok(lat >= minLat - tol && lat <= maxLat + tol, `${state.uf}: centroid lat fora da malha`);
   }
 });
