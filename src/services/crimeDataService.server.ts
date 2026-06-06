@@ -38,16 +38,29 @@ function readOfficialDataset(): OfficialCrimeDataset {
 // filesystem para official. Memorizada por processo.
 export function getServerCrimeDataApi(): CrimeDataApi {
   if (!cachedApi) {
-    if (CRIME_DATA_MODE === "official") {
-      const dataset = readOfficialDataset();
-      // Em erro de leitura, readOfficialDataset ja avisou e devolveu o placeholder;
-      // so avisamos de "vazio" quando a leitura teve sucesso (evita aviso duplo).
-      if (dataset !== EMPTY_OFFICIAL_DATASET) {
-        warnIfEmptyOfficial(dataset);
+    // Toda a inicializacao fica protegida: um JSON valido mas estruturalmente
+    // inesperado (ex.: indicators ausente) faria createCrimeDataApi lancar, e
+    // sem este guard o cachedApi nunca seria atribuido — todas as requisicoes
+    // dariam 500 ate reiniciar. Espelha o tratamento do loadCrimeDataApi.
+    try {
+      if (CRIME_DATA_MODE === "official") {
+        const dataset = readOfficialDataset();
+        // Em erro de leitura, readOfficialDataset ja avisou e devolveu o placeholder;
+        // so avisamos de "vazio" quando a leitura teve sucesso (evita aviso duplo).
+        if (dataset !== EMPTY_OFFICIAL_DATASET) {
+          warnIfEmptyOfficial(dataset);
+        }
+        cachedApi = createCrimeDataApi("official", dataset);
+      } else {
+        cachedApi = createCrimeDataApi(CRIME_DATA_MODE, getStaticDataset(CRIME_DATA_MODE));
       }
-      cachedApi = createCrimeDataApi("official", dataset);
-    } else {
-      cachedApi = createCrimeDataApi(CRIME_DATA_MODE, getStaticDataset(CRIME_DATA_MODE));
+    } catch (error) {
+      if (typeof console !== "undefined") {
+        console.warn(
+          `[crimeDataService.server] Falha ao inicializar a API: ${String(error)}. A usar placeholder vazio.`,
+        );
+      }
+      cachedApi = createCrimeDataApi("official", EMPTY_OFFICIAL_DATASET);
     }
   }
   return cachedApi;
