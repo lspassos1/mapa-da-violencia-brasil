@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { GET as crimeMapGET } from "../../src/app/api/crime-map/route.ts";
 import { GET as metadataGET } from "../../src/app/api/metadata/route.ts";
-import { assertErrorPayload } from "../helpers/api-assert.mjs";
+import { assertErrorPayload, assertOkPayload } from "../helpers/api-assert.mjs";
 
 function call(query = "") {
   return crimeMapGET(new Request(`http://localhost/api/crime-map${query}`));
@@ -14,9 +14,7 @@ async function metadata() {
 }
 
 test("responde 200 com a forma esperada do payload", async () => {
-  const res = call();
-  assert.equal(res.status, 200);
-  const body = await res.json();
+  const body = await assertOkPayload(call());
   assert.ok(Array.isArray(body.items), "items deve ser array");
   assert.ok(Array.isArray(body.ranking), "ranking deve ser array");
   assert.ok(body.metadata, "deve incluir metadata");
