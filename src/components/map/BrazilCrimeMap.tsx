@@ -7,7 +7,7 @@ import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
 import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
 import { mapTileAttribution, mapTileUrls } from "@/lib/mapConfig";
-import { getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
+import { getBoundsForData, getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
 import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import { MapTooltip } from "./MapTooltip";
@@ -28,6 +28,19 @@ const BRAZIL_VIEWPORT = {
   east: -34.7,
   north: 5.4,
 };
+
+// Enquadramento nacional: usa a extensao real dos dados visiveis (ex.: uma
+// amostra regional) com recuo, caindo no Brasil inteiro quando nao ha dados.
+function getNationalBounds(data: MunicipalityCrimeData[]): [number, number, number, number] {
+  return (
+    getBoundsForData(data) ?? [
+      BRAZIL_VIEWPORT.west,
+      BRAZIL_VIEWPORT.south,
+      BRAZIL_VIEWPORT.east,
+      BRAZIL_VIEWPORT.north,
+    ]
+  );
+}
 
 export function BrazilCrimeMap({
   data,
@@ -238,12 +251,13 @@ export function BrazilCrimeMap({
             map.getCanvas().style.cursor = "";
           });
 
+          const [initWest, initSouth, initEast, initNorth] = getNationalBounds(dataRef.current);
           map.fitBounds(
             [
-              [BRAZIL_VIEWPORT.west, BRAZIL_VIEWPORT.south],
-              [BRAZIL_VIEWPORT.east, BRAZIL_VIEWPORT.north],
+              [initWest, initSouth],
+              [initEast, initNorth],
             ],
-            { padding: 42, duration: 0 },
+            { padding: 48, maxZoom: 7, duration: 0 },
           );
           setIsLoading(false);
         });
@@ -312,13 +326,18 @@ export function BrazilCrimeMap({
       return;
     }
 
-    const [west, south, east, north] = getBoundsForState(selectedState);
+    // Com estado selecionado, enquadra o estado; ao nivel nacional, enquadra a
+    // extensao dos dados visiveis (cai no Brasil inteiro quando ha dados em todo
+    // o pais ou quando nao ha dados).
+    const [west, south, east, north] = selectedState
+      ? getBoundsForState(selectedState)
+      : getNationalBounds(dataRef.current);
     map.fitBounds(
       [
         [west, south],
         [east, north],
       ],
-      { padding: selectedState ? 96 : 42, duration: 900 },
+      { padding: selectedState ? 96 : 48, maxZoom: selectedState ? undefined : 7, duration: 900 },
     );
   }, [selectedMunicipality, selectedState]);
 
