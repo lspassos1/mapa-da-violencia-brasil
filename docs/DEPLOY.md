@@ -54,6 +54,26 @@ Valores e comportamento:
 Use apenas `NEXT_PUBLIC_CRIME_DATA_MODE`. O nome legado `NEXT_PUBLIC_DATA_MODE`
 foi descontinuado: nunca teve efeito sobre o app.
 
+## Qual modo usar num deploy publico
+
+> [!IMPORTANT]
+> A amostra `official_sample` cobre **apenas 5 municipios, todos no Acre**, e
+> so o indicador de homicidio doloso. Num mapa do Brasil inteiro esses pontos
+> ficam minusculos num canto e a pagina parece vazia. Ela e uma **fixture de
+> validacao de contrato/UI**, nao um dataset para o publico.
+
+Recomendacao por objetivo:
+
+| Objetivo | `NEXT_PUBLIC_CRIME_DATA_MODE` | O que aparece |
+|---|---|---|
+| **Demo publica completa** | `demo` (ou ausente) | 18 cidades por todo o Brasil, 8 indicadores (ficticios, rotulados "Dados demonstrativos") |
+| Validar o pipeline oficial | `official_sample` | 5 municipios do Acre, so homicidio (real, mas minimo) |
+| Produto real nacional | (requer carga nacional + ligacao do app) | Dados oficiais nacionais — ver `docs/CARGA_NACIONAL.md` |
+
+Para a **demo publica atual** (sem carga nacional), use `demo` (ou remova a
+variavel). Trocar de/para `official_sample` deve ser uma decisao deliberada de
+validacao, nao o estado por omissao do site publico.
+
 ## Aviso importante
 
 O deploy demo ainda usa dados demonstrativos/mockados quando
