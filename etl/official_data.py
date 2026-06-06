@@ -14,6 +14,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import time
 import zipfile
 from dataclasses import asdict, dataclass
@@ -848,6 +849,16 @@ def load_app_ready_centroids(path: Path | None) -> dict[str, tuple[float, float]
     # Desbloqueia a carga nacional: sem centroide o municipio fica fora do mapa.
     if MUNICIPAL_CENTROIDS_REFERENCE.exists():
         _merge_centroids_csv(centroids, MUNICIPAL_CENTROIDS_REFERENCE)
+    else:
+        # Sem a referencia nacional o resultado fica limitado aos poucos
+        # centroides de amostra; torna isso observavel em vez de gerar
+        # silenciosamente um mapa quase vazio.
+        print(
+            f"[centroids] AVISO: referencia nacional ausente em {MUNICIPAL_CENTROIDS_REFERENCE}; "
+            "a saida ficara limitada aos centroides de amostra. "
+            "Regenere com scripts/build_municipal_centroids.py.",
+            file=sys.stderr,
+        )
     # A amostra curada sobrepoe-se (mantem estaveis as coordenadas de fixtures).
     centroids.update(APP_READY_SAMPLE_CENTROIDS)
     # Override explicito via --centroids tem prioridade final.

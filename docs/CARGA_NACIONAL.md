@@ -19,12 +19,19 @@ a base versionada, a geracao app-ready deixa de perder municipios:
 # amostra de 25 linhas, agora:  app_rows: 25, skipped_without_centroid: 0
 ```
 
-Regenerar o CSV (caso o IBGE atualize a malha):
+Regenerar o CSV (caso o IBGE atualize a malha) e reproduzivel por
+`scripts/build_municipal_centroids.py`:
 
 ```bash
-curl -sS "https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application/vnd.geo+json&qualidade=minima&intrarregiao=municipio" -o /tmp/ibge_mun.geojson
-# calcular o centroide do maior poligono por municipio e escrever id_ibge,lat,lng
+# baixa a malha do IBGE e reescreve etl/reference/municipal_centroids.csv
+python3 scripts/build_municipal_centroids.py
+
+# ou, a partir de uma malha ja baixada
+python3 scripts/build_municipal_centroids.py --input /tmp/ibge_mun.geojson
 ```
+
+Se a referencia estiver ausente, `generate-app-ready` emite um aviso em stderr e
+a saida fica limitada aos centroides de amostra (em vez de falhar em silencio).
 
 ## #9 — Base VDE SINESP/MJSP (download manual)
 
