@@ -1,5 +1,6 @@
 import { demoDataStatus, indicatorOptions, mockCrimeData, periodOptions } from "@/data/mockCrimeData";
-import officialCrimeDataset from "@/data/officialCrimeData.sample.json";
+import officialNationalDataset from "@/data/officialCrimeData.json";
+import officialSampleDataset from "@/data/officialCrimeData.sample.json";
 import { CRIME_DATA_MODE } from "@/lib/dataMode";
 import { getRankedMunicipalities } from "@/lib/ranking";
 import type {
@@ -21,8 +22,24 @@ interface OfficialCrimeDataset {
   items: MunicipalityCrimeData[];
 }
 
-const officialData = officialCrimeDataset as OfficialCrimeDataset;
 const dataMode = CRIME_DATA_MODE;
+// Seleciona o dataset oficial conforme o modo: carga nacional (`official`) ou
+// amostra versionada (`official_sample`). Em `demo` usa o mock.
+//
+// NOTA DE TAMANHO: officialCrimeData.json (versionado como placeholder vazio) e
+// importado estaticamente, logo entra no bundle em qualquer modo. Mantenha-o
+// pequeno. Para uma carga nacional grande, sirva o JSON de `public/` via fetch
+// em vez de o committar aqui (ver docs/CARGA_NACIONAL.md) — evita inflar os
+// bundles de demo/official_sample.
+const officialData = (dataMode === "official" ? officialNationalDataset : officialSampleDataset) as OfficialCrimeDataset;
+
+if (dataMode === "official" && officialData.items.length === 0 && typeof console !== "undefined") {
+  console.warn(
+    "[crimeDataService] Modo 'official' ativo mas a carga nacional esta vazia (placeholder). " +
+      "Gere os dados com scripts/build_national_dataset.sh (ver docs/CARGA_NACIONAL.md).",
+  );
+}
+
 const activeIndicators = dataMode === "demo" ? indicatorOptions : officialData.indicators;
 const activePeriods = dataMode === "demo" ? periodOptions : officialData.periods;
 const activeData = dataMode === "demo" ? mockCrimeData : officialData.items;

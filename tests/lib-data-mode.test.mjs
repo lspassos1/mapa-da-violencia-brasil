@@ -8,7 +8,8 @@ test("valor ausente recai em demo", () => {
   assert.equal(resolveCrimeDataMode(""), "demo");
 });
 
-test("official_sample e demo sao reconhecidos", () => {
+test("official, official_sample e demo sao reconhecidos", () => {
+  assert.equal(resolveCrimeDataMode("official"), "official");
   assert.equal(resolveCrimeDataMode("official_sample"), "official_sample");
   assert.equal(resolveCrimeDataMode("demo"), "demo");
 });

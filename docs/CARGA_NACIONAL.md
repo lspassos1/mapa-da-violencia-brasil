@@ -47,20 +47,59 @@ python3 -m etl.official_data normalize-vde --write-samples
 
 Os artefactos de inspecao versionados ficam em `etl/samples/sinesp_vde_*`.
 
-## #10 — Gerar a carga app-ready nacional
+## #10 — Gerar a carga app-ready nacional e servi-la (modo `official`)
 
-Com a base de centroides versionada, o passo nacional precisa apenas das fontes
-oficiais (XLSX municipal + populacao IBGE) e do join:
+Existe um script que faz todo o caminho de uma vez (download -> normalize ->
+generate-app-ready -> publicar para o app):
+
+```bash
+scripts/build_national_dataset.sh
+```
+
+Ou, passo a passo:
 
 ```bash
 python3 -m etl.official_data download --source ibge_population --source sinesp_municipios
 python3 -m etl.official_data normalize          # gera o CSV combinado SINESP+populacao
 python3 -m etl.official_data generate-app-ready # usa os centroides nacionais por omissao
-# saida: data/processed/app-ready/crime-map.json  (gitignored; servido no deploy)
+cp data/processed/app-ready/crime-map.json src/data/officialCrimeData.json
 ```
 
-A saida nacional fica em `data/processed/app-ready/` (gitignored) e e publicada no
-deploy — nao e committada (ver README).
+### Apontar o app para a carga
+
+O app tem um terceiro modo, **`official`**, que le `src/data/officialCrimeData.json`
+(o ficheiro versionado existe como *placeholder* vazio ate ser gerado):
+
+```bash
+# local
+NEXT_PUBLIC_CRIME_DATA_MODE=official npm run build && npm start
+
+# na Vercel: definir a env var de Production
+NEXT_PUBLIC_CRIME_DATA_MODE=official
+```
+
+Sequencia tipica:
+
+1. `scripts/build_national_dataset.sh`
+2. rever o tamanho de `src/data/officialCrimeData.json` (o check de tamanho do
+   CI rejeita ficheiros acima de 5 MB; se exceder, reduzir o escopo ou servir o
+   JSON de `public/` via fetch)
+3. `git add src/data/officialCrimeData.json && git commit`
+4. publicar com `NEXT_PUBLIC_CRIME_DATA_MODE=official`
+
+Enquanto o placeholder nao for substituido, o modo `official` mostra um mapa
+vazio e emite um aviso no console (em vez de dados falsos).
+
+A saida intermedia em `data/processed/app-ready/` continua gitignored.
+
+> [!IMPORTANT]
+> `src/data/officialCrimeData.json` e importado estaticamente, por isso entra no
+> bundle JavaScript em **todos** os modos (demo/official_sample tambem). Mantenha
+> este ficheiro pequeno. Para uma carga nacional grande (varios MB), prefira
+> **servir o JSON de `public/` e carrega-lo via fetch** no modo `official`, em vez
+> de o committar em `src/data/` — caso contrario inflara o bundle de todos os
+> deploys. (Essa variante por fetch e um follow-up; o caminho atual via `src/data`
+> serve datasets pequenos/curados.)
 
 ## #11 — Supabase (requer credenciais)
 
