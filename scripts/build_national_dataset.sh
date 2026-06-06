@@ -42,6 +42,13 @@ SIZE_KB=$(du -k "$OUT_SERVED" | cut -f1)
 echo ""
 echo "Concluido. $OUT_SERVED (${SIZE_KB} KB)."
 echo "Servido como asset estatico (fetch no modo 'official'); NAO entra no bundle JS."
+if [ "$SIZE_KB" -gt 5120 ]; then
+  echo "" >&2
+  echo "AVISO: $OUT_SERVED tem ${SIZE_KB} KB (> 5 MB)." >&2
+  echo "       O ficheiro e versionado (public/), logo o check 'Check tracked file size'" >&2
+  echo "       do CI (ci.yml) vai FALHAR. Reduza o escopo (menos periodos/indicadores)" >&2
+  echo "       ou sirva-o de outro storage em vez de o committar." >&2
+fi
 echo ""
 echo "Proximos passos:"
 echo "  - git add $OUT_SERVED && git commit"

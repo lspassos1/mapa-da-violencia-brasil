@@ -4,6 +4,8 @@
 // de qualquer bundle (cliente e servidor) e as rotas permanecem sincronas.
 //
 // NAO importar este modulo a partir de codigo de cliente: usa node:fs.
+// `server-only` faz o Next falhar cedo (build-time) se for importado no cliente.
+import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { CRIME_DATA_MODE } from "@/lib/dataMode";
