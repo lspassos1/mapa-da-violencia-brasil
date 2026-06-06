@@ -39,6 +39,22 @@ test("getMetricValue devolve o valor quando os dados existem", () => {
   assert.equal(getMetricValue(item, "homicidioDoloso", "total"), 42);
 });
 
+test("zero_registrado e um zero real (valor finito 0), nao ausencia de dado", () => {
+  // Distincao critica: zero_registrado significa "registou zero ocorrencias",
+  // logo o valor 0 e finito e entra no ranking; sem_dados/nao_aplicavel sao
+  // ausencia (-Infinity) e ficam de fora.
+  const zero = makeMunicipality({
+    indicadores: { homicidioDoloso: makeMetric({ dataStatus: "zero_registrado", total: 0 }) },
+  });
+  assert.equal(getMetricValue(zero, "homicidioDoloso", "total"), 0);
+  assert.ok(Number.isFinite(getMetricValue(zero, "homicidioDoloso", "total")));
+
+  const semDados = makeMunicipality({
+    indicadores: { homicidioDoloso: makeMetric({ dataStatus: "sem_dados", total: 0 }) },
+  });
+  assert.equal(getMetricValue(semDados, "homicidioDoloso", "total"), Number.NEGATIVE_INFINITY);
+});
+
 test("getMetricValue com taxa100k suprimida (null) nao ranqueia como zero", () => {
   const item = makeMunicipality({
     indicadores: { homicidioDoloso: makeMetric({ dataStatus: "amostra_oficial", taxa100k: null }) },

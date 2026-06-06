@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { GET as crimeMapGET } from "../../src/app/api/crime-map/route.ts";
 import { GET as municipalityGET } from "../../src/app/api/municipalities/[idIbge]/route.ts";
+import { assertErrorPayload } from "../helpers/api-assert.mjs";
 
 function callMunicipality(idIbge, query = "") {
   return municipalityGET(new Request(`http://localhost/api/municipalities/${idIbge}${query}`), {
@@ -10,16 +11,12 @@ function callMunicipality(idIbge, query = "") {
   });
 }
 
-test("retorna 404 para municipio inexistente", async () => {
-  const res = await callMunicipality("0000000");
-  assert.equal(res.status, 404);
-  const body = await res.json();
-  assert.ok(body.error, "deve devolver mensagem de erro");
+test("retorna 404 para municipio inexistente (contrato de erro)", async () => {
+  await assertErrorPayload(await callMunicipality("0000000"), 404);
 });
 
-test("retorna 404 para id nao numerico", async () => {
-  const res = await callMunicipality("nao-existe");
-  assert.equal(res.status, 404);
+test("retorna 404 para id nao numerico (contrato de erro)", async () => {
+  await assertErrorPayload(await callMunicipality("nao-existe"), 404);
 });
 
 test("retorna 200 com a forma esperada para um municipio valido", async () => {
