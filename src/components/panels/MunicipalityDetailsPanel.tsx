@@ -3,24 +3,33 @@ import { getDataStatusDescription, getDataStatusLabel, isUnavailableStatus } fro
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 import { getMunicipalityRank } from "@/lib/ranking";
 import { riskLevelLabels } from "@/lib/riskLevel";
-import { getAvailableIndicators, getDemoDataStatus } from "@/services/crimeDataService";
 import { getStateByUf } from "@/services/geoService";
-import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
+import type {
+  CrimeIndicatorKey,
+  DataStatus,
+  IndicatorOption,
+  MunicipalityCrimeData,
+  ViewMode,
+} from "@/types/crime";
 
 interface MunicipalityDetailsPanelProps {
   allData: MunicipalityCrimeData[];
   indicator: CrimeIndicatorKey;
+  // Indicadores e status sao injetados pelo dashboard a partir da API ja
+  // carregada (sincrona em demo/official_sample; carregada via fetch em official),
+  // evitando leituras sincronas do servico que, em official, traria o placeholder.
+  indicators: IndicatorOption[];
+  dataStatus: DataStatus;
   municipality: MunicipalityCrimeData | null;
   selectedState: string | null;
   viewMode: ViewMode;
 }
 
-const indicatorOptions = getAvailableIndicators();
-const demoDataStatus = getDemoDataStatus();
-
 export function MunicipalityDetailsPanel({
   allData,
   indicator,
+  indicators,
+  dataStatus,
   municipality,
   selectedState,
   viewMode,
@@ -45,7 +54,7 @@ export function MunicipalityDetailsPanel({
   }
 
   const metric = municipality.indicadores[indicator];
-  const indicatorLabel = indicatorOptions.find((option) => option.key === indicator)?.label ?? "Indicador";
+  const indicatorLabel = indicators.find((option) => option.key === indicator)?.label ?? "Indicador";
   const stateRank = getMunicipalityRank(allData, municipality.idIbge, indicator, viewMode, municipality.uf);
   const nationalRank = getMunicipalityRank(allData, municipality.idIbge, indicator, viewMode);
   if (!metric) {
@@ -113,7 +122,7 @@ export function MunicipalityDetailsPanel({
           Fonte e atualizacao
         </div>
         <p className="text-sm leading-6 text-slate-400">
-          {metric.fonte}. Atualizado em {demoDataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.
+          {metric.fonte}. Atualizado em {dataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.
           {isUnavailableStatus(metric.dataStatus) ? ` ${getDataStatusDescription(metric.dataStatus)}` : ""}
           {metric.limitacoes ? ` ${metric.limitacoes}` : ""}
         </p>

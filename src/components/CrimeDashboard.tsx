@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Map as MapIcon, Table as TableIcon } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { DataModeBanner } from "@/components/layout/DataModeBanner";
@@ -12,32 +12,69 @@ import { AccessibleDataTable } from "@/components/panels/AccessibleDataTable";
 import { MunicipalityDetailsPanel } from "@/components/panels/MunicipalityDetailsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
 import { getRankedMunicipalities } from "@/lib/ranking";
-import {
-  getAvailableIndicators,
-  getAvailablePeriods,
-  getCrimeMetadata,
-  getCrimeMapData,
-  getDefaultCrimeMapFilters,
-  getDemoDataStatus,
-} from "@/services/crimeDataService";
+import { CRIME_DATA_MODE } from "@/lib/dataMode";
+import { getStaticCrimeDataApi, loadCrimeDataApi, type CrimeDataApi } from "@/services/crimeDataService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 
-const defaultFilters = getDefaultCrimeMapFilters();
-const indicators = getAvailableIndicators();
-const periods = getAvailablePeriods();
-const demoStatus = getDemoDataStatus();
-const metadata = getCrimeMetadata();
-const dataScope = metadata.scope;
-const viewModes = metadata.viewModes;
 const TABLE_ROW_LIMIT = 200;
-const officialDataLabel =
-  demoStatus.mode === "official_sample"
-    ? "Amostra oficial: homicidio doloso (vitimas)"
-    : demoStatus.mode === "official"
-      ? "Dados oficiais agregados"
-      : "Dados demonstrativos nesta versao";
 
+// Em demo/official_sample a carga e sincrona (loadCrimeDataApi resolve de
+// imediato), por isso a API ja esta disponivel no primeiro render — preservando
+// o SSR. No modo `official` a carga nacional vem por fetch do asset estatico em
+// public/officialCrimeData.json; ate resolver, mostramos um estado de carga.
 export function CrimeDashboard() {
+  // Em demo/official_sample a API estatica ja traz os dados reais no primeiro
+  // render (preserva o SSR). Em official iniciamos vazio e mostramos o estado de
+  // carga ate o fetch do asset nacional resolver.
+  const [api, setApi] = useState<CrimeDataApi | null>(
+    CRIME_DATA_MODE === "official" ? null : getStaticCrimeDataApi(),
+  );
+
+  useEffect(() => {
+    let active = true;
+    loadCrimeDataApi().then((loaded) => {
+      if (active) {
+        setApi(loaded);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!api) {
+    return (
+      <main className="flex min-h-screen flex-col text-slate-100">
+        <AppHeader />
+        <div
+          className="flex flex-1 items-center justify-center p-8 text-sm text-slate-400"
+          role="status"
+          aria-live="polite"
+        >
+          A carregar a carga nacional…
+        </div>
+      </main>
+    );
+  }
+
+  return <CrimeDashboardView api={api} />;
+}
+
+function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
+  const defaultFilters = api.getDefaultCrimeMapFilters();
+  const indicators = api.getAvailableIndicators();
+  const periods = api.getAvailablePeriods();
+  const demoStatus = api.getDemoDataStatus();
+  const metadata = api.getCrimeMetadata();
+  const dataScope = metadata.scope;
+  const viewModes = metadata.viewModes;
+  const officialDataLabel =
+    demoStatus.mode === "official_sample"
+      ? "Amostra oficial: homicidio doloso (vitimas)"
+      : demoStatus.mode === "official"
+        ? "Dados oficiais agregados"
+        : "Dados demonstrativos nesta versao";
+
   const [indicator, setIndicator] = useState<CrimeIndicatorKey>(defaultFilters.indicator);
   const [viewMode, setViewMode] = useState<ViewMode>(defaultFilters.viewMode);
   const [period, setPeriod] = useState(defaultFilters.period);
@@ -46,12 +83,12 @@ export function CrimeDashboard() {
   const [showTable, setShowTable] = useState(false);
 
   const mapResult = useMemo(
-    () => getCrimeMapData({ indicator, period, viewMode, uf: null }),
-    [indicator, period, viewMode],
+    () => api.getCrimeMapData({ indicator, period, viewMode, uf: null }),
+    [api, indicator, period, viewMode],
   );
   const rankingResult = useMemo(
-    () => getCrimeMapData({ indicator, period, viewMode, uf: selectedState }),
-    [indicator, period, selectedState, viewMode],
+    () => api.getCrimeMapData({ indicator, period, viewMode, uf: selectedState }),
+    [api, indicator, period, selectedState, viewMode],
   );
   const currentData = mapResult.items;
   const visibleMapData = selectedState ? rankingResult.items : currentData;
@@ -249,6 +286,8 @@ export function CrimeDashboard() {
           <MunicipalityDetailsPanel
             allData={currentData}
             indicator={indicator}
+            indicators={indicators}
+            dataStatus={demoStatus}
             municipality={selectedMunicipality}
             selectedState={selectedState}
             viewMode={viewMode}

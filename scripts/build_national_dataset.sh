@@ -5,10 +5,12 @@
 #   1. baixa as fontes oficiais (XLSX municipal SINESP/MJSP + populacao IBGE)
 #   2. normaliza e faz o join SINESP + populacao
 #   3. gera o JSON app-ready usando os centroides municipais nacionais
-#   4. copia o resultado para src/data/officialCrimeData.json
+#   4. publica o resultado em public/officialCrimeData.json (asset estatico)
 #
-# Depois: rever o tamanho do ficheiro (limite de 5 MB do CI), fazer commit e
-# publicar com NEXT_PUBLIC_CRIME_DATA_MODE=official.
+# A carga nacional e servida como asset estatico em public/ e carregada via fetch
+# no modo 'official' — assim NAO entra no bundle JavaScript (nem do demo nem do
+# official_sample). Depois: fazer commit do asset e publicar com
+# NEXT_PUBLIC_CRIME_DATA_MODE=official.
 #
 # Nota: o download do XLSX do MJSP e grande/lento; corra isto numa maquina com
 # rede estavel (nao em sandboxes com timeout curto).
@@ -17,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 OUT_APP_READY="data/processed/app-ready/crime-map.json"
-OUT_SERVED="src/data/officialCrimeData.json"
+OUT_SERVED="public/officialCrimeData.json"
 
 echo "==> 1/4 Baixar fontes oficiais (populacao IBGE + XLSX municipal SINESP)"
 python3 -m etl.official_data download --source ibge_population --source sinesp_municipios
@@ -39,10 +41,7 @@ cp "$OUT_APP_READY" "$OUT_SERVED"
 SIZE_KB=$(du -k "$OUT_SERVED" | cut -f1)
 echo ""
 echo "Concluido. $OUT_SERVED (${SIZE_KB} KB)."
-if [ "$SIZE_KB" -gt 5120 ]; then
-  echo "AVISO: ficheiro acima de 5 MB — o check de tamanho do CI vai falhar." >&2
-  echo "       Reduza o escopo (ex.: menos periodos) ou sirva o JSON de public/ via fetch." >&2
-fi
+echo "Servido como asset estatico (fetch no modo 'official'); NAO entra no bundle JS."
 echo ""
 echo "Proximos passos:"
 echo "  - git add $OUT_SERVED && git commit"

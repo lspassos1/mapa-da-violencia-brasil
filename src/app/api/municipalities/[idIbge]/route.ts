@@ -1,26 +1,22 @@
 import { NextResponse } from "next/server";
-import {
-  getCrimeMetadata,
-  getDefaultCrimeMapFilters,
-  getDemoDataStatus,
-  getMunicipalityById,
-} from "@/services/crimeDataService";
+import { getServerCrimeDataApi } from "@/services/crimeDataService.server";
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ idIbge: string }> },
 ) {
+  const api = getServerCrimeDataApi();
   const { searchParams } = new URL(request.url);
-  const period = searchParams.get("periodo") ?? searchParams.get("period") ?? getDefaultCrimeMapFilters().period;
+  const period = searchParams.get("periodo") ?? searchParams.get("period") ?? api.getDefaultCrimeMapFilters().period;
   const { idIbge } = await context.params;
-  const item = getMunicipalityById(idIbge, period);
+  const item = api.getMunicipalityById(idIbge, period);
 
   if (!item) {
     return NextResponse.json({ error: "Municipio nao encontrado" }, { status: 404 });
   }
 
-  const status = getDemoDataStatus();
-  const metadata = getCrimeMetadata();
+  const status = api.getDemoDataStatus();
+  const metadata = api.getCrimeMetadata();
 
   return NextResponse.json({
     demo: metadata.dataMode === "demo",

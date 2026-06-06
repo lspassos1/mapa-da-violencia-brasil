@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { getDemoDataStatus } from "@/services/crimeDataService";
+import { getServerCrimeDataApi } from "@/services/crimeDataService.server";
 
 export function GET() {
-  const officialStatus = getDemoDataStatus();
+  const officialStatus = getServerCrimeDataApi().getDemoDataStatus();
 
   return NextResponse.json({
     fontes: [

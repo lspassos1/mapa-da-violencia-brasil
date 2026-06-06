@@ -8,7 +8,7 @@
     "sourceId": "sinesp_municipios",
     "unit": "vitimas",
     "limitations": [
-      "Placeholder: a carga nacional oficial ainda nao foi gerada. Execute scripts/build_national_dataset.sh e faca commit do resultado em src/data/officialCrimeData.json (ver docs/CARGA_NACIONAL.md)."
+      "Placeholder: a carga nacional oficial ainda nao foi gerada. Execute scripts/build_national_dataset.sh e publique o resultado em public/officialCrimeData.json (ver docs/CARGA_NACIONAL.md)."
     ]
   },
   "indicators": [],
