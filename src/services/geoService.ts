@@ -1,8 +1,14 @@
+import brazilStatesMesh from "@/data/brazilStatesMesh.json";
 import { brazilBounds, stateMapData } from "@/data/stateGeometries";
 import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
 import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import type { Bounds, GeoFeatureCollection, StateMapInfo } from "@/types/geo";
+
+// Malha estadual real (poligonos IBGE simplificados, qualidade intermediaria)
+// com propriedades { uf, nome }. Substitui as caixas retangulares para que o
+// preenchimento, as fronteiras e o clique sigam o contorno real de cada UF.
+const stateMeshCollection = brazilStatesMesh as GeoFeatureCollection;
 
 export function getBrazilBounds(): Bounds {
   return [...brazilBounds];
@@ -24,31 +30,7 @@ export function getStateByUf(uf: string | null): StateMapInfo | undefined {
 }
 
 export function createStateFeatureCollection(): GeoFeatureCollection {
-  return {
-    type: "FeatureCollection",
-    features: stateMapData.map((state) => {
-      const [west, south, east, north] = state.bounds;
-      return {
-        type: "Feature",
-        properties: {
-          uf: state.uf,
-          nome: state.nome,
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: [
-            [
-              [west, south],
-              [east, south],
-              [east, north],
-              [west, north],
-              [west, south],
-            ],
-          ],
-        },
-      };
-    }),
-  };
+  return stateMeshCollection;
 }
 
 export function createCityFeatureCollection(
