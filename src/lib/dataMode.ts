@@ -10,7 +10,8 @@ export const CRIME_DATA_MODE_FLAG = "NEXT_PUBLIC_CRIME_DATA_MODE";
 
 /**
  * Normaliza o valor cru da variavel de ambiente para um modo conhecido.
- * - `official`: carga nacional oficial (src/data/officialCrimeData.json).
+ * - `official`: carga nacional oficial (asset estatico public/officialCrimeData.json,
+ *   carregado via fetch/filesystem, fora do bundle).
  * - `official_sample`: amostra oficial versionada (parcial).
  * Valores ausentes, vazios ou `demo` mantem o modo demonstrativo; qualquer
  * valor desconhecido tambem recai em `demo`, mas emite um aviso para nao

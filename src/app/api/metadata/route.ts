@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { getCrimeMetadata } from "@/services/crimeDataService";
+import { getServerCrimeDataApi } from "@/services/crimeDataService.server";
 
 export function GET() {
-  const metadata = getCrimeMetadata();
+  const metadata = getServerCrimeDataApi().getCrimeMetadata();
 
   return NextResponse.json({
     indicadores: metadata.indicators,

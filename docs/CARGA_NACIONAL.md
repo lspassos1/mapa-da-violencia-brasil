@@ -62,13 +62,17 @@ Ou, passo a passo:
 python3 -m etl.official_data download --source ibge_population --source sinesp_municipios
 python3 -m etl.official_data normalize          # gera o CSV combinado SINESP+populacao
 python3 -m etl.official_data generate-app-ready # usa os centroides nacionais por omissao
-cp data/processed/app-ready/crime-map.json src/data/officialCrimeData.json
+cp data/processed/app-ready/crime-map.json public/officialCrimeData.json
 ```
 
 ### Apontar o app para a carga
 
-O app tem um terceiro modo, **`official`**, que le `src/data/officialCrimeData.json`
-(o ficheiro versionado existe como *placeholder* vazio ate ser gerado):
+O app tem um terceiro modo, **`official`**, que carrega a carga nacional do asset
+estatico `public/officialCrimeData.json` (o ficheiro versionado existe como
+*placeholder* vazio ate ser gerado). A carga e servida de `public/` e lida via
+**fetch** no cliente (e via filesystem nas rotas de API, no servidor), por isso
+**nao entra no bundle JavaScript** — nem no modo `official`, nem em
+demo/official_sample:
 
 ```bash
 # local
@@ -80,12 +84,9 @@ NEXT_PUBLIC_CRIME_DATA_MODE=official
 
 Sequencia tipica:
 
-1. `scripts/build_national_dataset.sh`
-2. rever o tamanho de `src/data/officialCrimeData.json` (o check de tamanho do
-   CI rejeita ficheiros acima de 5 MB; se exceder, reduzir o escopo ou servir o
-   JSON de `public/` via fetch)
-3. `git add src/data/officialCrimeData.json && git commit`
-4. publicar com `NEXT_PUBLIC_CRIME_DATA_MODE=official`
+1. `scripts/build_national_dataset.sh` (publica em `public/officialCrimeData.json`)
+2. `git add public/officialCrimeData.json && git commit`
+3. publicar com `NEXT_PUBLIC_CRIME_DATA_MODE=official`
 
 Enquanto o placeholder nao for substituido, o modo `official` mostra um mapa
 vazio e emite um aviso no console (em vez de dados falsos).
@@ -93,13 +94,14 @@ vazio e emite um aviso no console (em vez de dados falsos).
 A saida intermedia em `data/processed/app-ready/` continua gitignored.
 
 > [!IMPORTANT]
-> `src/data/officialCrimeData.json` e importado estaticamente, por isso entra no
-> bundle JavaScript em **todos** os modos (demo/official_sample tambem). Mantenha
-> este ficheiro pequeno. Para uma carga nacional grande (varios MB), prefira
-> **servir o JSON de `public/` e carrega-lo via fetch** no modo `official`, em vez
-> de o committar em `src/data/` — caso contrario inflara o bundle de todos os
-> deploys. (Essa variante por fetch e um follow-up; o caminho atual via `src/data`
-> serve datasets pequenos/curados.)
+> A carga nacional e servida como **asset estatico** em
+> `public/officialCrimeData.json` e carregada **via fetch** no cliente (e via
+> filesystem nas rotas de API, no servidor) apenas no modo `official`. Por isso
+> **nao entra no bundle JavaScript** de nenhum modo — incluindo demo/official_sample.
+> Como o ficheiro deixa de ir para o bundle, uma carga nacional grande (varios MB)
+> nao infla os deploys; e descarregada sob demanda apenas quando o modo `official`
+> esta ativo. NAO importe `public/officialCrimeData.json` estaticamente em codigo
+> de cliente: isso voltaria a colocar o JSON no bundle.
 
 ## #11 — Supabase (requer credenciais)
 

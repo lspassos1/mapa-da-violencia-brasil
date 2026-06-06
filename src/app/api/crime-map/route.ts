@@ -1,25 +1,20 @@
 import { NextResponse } from "next/server";
-import {
-  getCrimeMetadata,
-  getCrimeMapData,
-  getDefaultCrimeMapFilters,
-  isCrimeIndicatorKey,
-  isViewMode,
-} from "@/services/crimeDataService";
+import { getServerCrimeDataApi } from "@/services/crimeDataService.server";
 
 export function GET(request: Request) {
+  const api = getServerCrimeDataApi();
   const { searchParams } = new URL(request.url);
-  const defaults = getDefaultCrimeMapFilters();
+  const defaults = api.getDefaultCrimeMapFilters();
   const period = searchParams.get("periodo") ?? searchParams.get("period") ?? defaults.period;
   const indicatorParam = searchParams.get("indicador") ?? searchParams.get("indicator") ?? defaults.indicator;
   const modeParam = searchParams.get("modo") ?? searchParams.get("viewMode") ?? searchParams.get("mode") ?? defaults.viewMode;
   const uf = searchParams.get("uf");
 
-  if (!isCrimeIndicatorKey(indicatorParam) || !isViewMode(modeParam)) {
+  if (!api.isCrimeIndicatorKey(indicatorParam) || !api.isViewMode(modeParam)) {
     return NextResponse.json({ error: "Parametros invalidos" }, { status: 400 });
   }
 
-  const result = getCrimeMapData({
+  const result = api.getCrimeMapData({
     indicator: indicatorParam,
     period,
     viewMode: modeParam,
@@ -38,6 +33,6 @@ export function GET(request: Request) {
       unidade: result.status.unit ?? null,
       modo: result.status.mode ?? "demo",
     },
-    metadata: getCrimeMetadata(),
+    metadata: api.getCrimeMetadata(),
   });
 }

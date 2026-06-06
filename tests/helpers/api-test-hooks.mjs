@@ -1,12 +1,14 @@
 // Hooks de resolucao/carregamento para testes de rotas de API:
 // - mapeia o alias "@/..." para src/...
 // - substitui "next/server" por um stub leve
+// - substitui "server-only" (modulo marcador do Next) por um stub vazio
 // - carrega imports .json sem exigir o atributo de importacao
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const srcURL = new URL("../../src/", import.meta.url);
 const stubURL = new URL("./next-server-stub.mjs", import.meta.url).href;
+const serverOnlyStubURL = new URL("./server-only-stub.mjs", import.meta.url).href;
 // "" tenta o caminho exato (ex.: imports .json ja com extensao) antes dos sufixos.
 const EXTENSIONS = ["", ".ts", ".tsx", ".mjs", ".js", "/index.ts", "/index.tsx"];
 
@@ -21,6 +23,9 @@ function isFile(url) {
 export async function resolve(specifier, context, nextResolve) {
   if (specifier === "next/server") {
     return { url: stubURL, shortCircuit: true };
+  }
+  if (specifier === "server-only") {
+    return { url: serverOnlyStubURL, shortCircuit: true };
   }
   if (specifier.startsWith("@/")) {
     const relative = specifier.slice(2);
