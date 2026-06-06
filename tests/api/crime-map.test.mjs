@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { GET as crimeMapGET } from "../../src/app/api/crime-map/route.ts";
 import { GET as metadataGET } from "../../src/app/api/metadata/route.ts";
+import { assertErrorPayload, assertOkPayload } from "../helpers/api-assert.mjs";
 
 function call(query = "") {
   return crimeMapGET(new Request(`http://localhost/api/crime-map${query}`));
@@ -13,9 +14,7 @@ async function metadata() {
 }
 
 test("responde 200 com a forma esperada do payload", async () => {
-  const res = call();
-  assert.equal(res.status, 200);
-  const body = await res.json();
+  const body = await assertOkPayload(call());
   assert.ok(Array.isArray(body.items), "items deve ser array");
   assert.ok(Array.isArray(body.ranking), "ranking deve ser array");
   assert.ok(body.metadata, "deve incluir metadata");
@@ -56,16 +55,12 @@ test("aceita 'modo', 'viewMode' e 'mode' como sinonimos", async () => {
   }
 });
 
-test("retorna 400 para indicador invalido", async () => {
-  const res = call("?indicador=INDICADOR_INEXISTENTE");
-  assert.equal(res.status, 400);
-  const body = await res.json();
-  assert.ok(body.error, "deve devolver mensagem de erro");
+test("retorna 400 para indicador invalido (contrato de erro)", async () => {
+  await assertErrorPayload(call("?indicador=INDICADOR_INEXISTENTE"), 400);
 });
 
-test("retorna 400 para modo invalido", async () => {
-  const res = call("?modo=NAO_EXISTE");
-  assert.equal(res.status, 400);
+test("retorna 400 para modo invalido (contrato de erro)", async () => {
+  await assertErrorPayload(call("?modo=NAO_EXISTE"), 400);
 });
 
 test("filtra itens por UF quando fornecida", async () => {
