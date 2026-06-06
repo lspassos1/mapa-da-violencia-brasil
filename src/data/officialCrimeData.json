@@ -1,0 +1,17 @@
+{
+  "status": {
+    "source": "MJSP/SINESP",
+    "lastUpdated": "",
+    "latestPeriod": "",
+    "status": "Carga nacional nao gerada",
+    "mode": "official",
+    "sourceId": "sinesp_municipios",
+    "unit": "vitimas",
+    "limitations": [
+      "Placeholder: a carga nacional oficial ainda nao foi gerada. Execute scripts/build_national_dataset.sh e faca commit do resultado em src/data/officialCrimeData.json (ver docs/CARGA_NACIONAL.md)."
+    ]
+  },
+  "indicators": [],
+  "periods": [],
+  "items": []
+}

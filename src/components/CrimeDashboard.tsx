@@ -58,6 +58,8 @@ export function CrimeDashboard() {
   const ranking = rankingResult.ranking;
 
   const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
+  // Modo 'official' sem carga gerada nao tem periodos: evita aceder a undefined.
+  const selectedPeriodLabel = selectedPeriod?.label ?? "Indisponivel";
   const indicatorLabel = indicators.find((option) => option.key === indicator)?.label ?? "Indicador";
   const viewModeLabel = viewModes.find((option) => option.key === viewMode)?.label ?? "Valor";
   // Limita as linhas renderizadas para nao montar milhares de nos DOM de uma
@@ -101,7 +103,7 @@ export function CrimeDashboard() {
       <DataModeBanner
         mode={metadata.dataMode}
         municipalities={dataScope.municipalities}
-        periodLabel={selectedPeriod.label}
+        periodLabel={selectedPeriodLabel}
       />
       <section
         id="conteudo-principal"
@@ -191,7 +193,7 @@ export function CrimeDashboard() {
               indicatorLabel={indicatorLabel}
               viewMode={viewMode}
               viewModeLabel={viewModeLabel}
-              periodLabel={selectedPeriod.label}
+              periodLabel={selectedPeriodLabel}
               selectedMunicipalityId={selectedMunicipality?.idIbge ?? null}
               onSelect={handleMunicipalitySelect}
             />
@@ -225,7 +227,7 @@ export function CrimeDashboard() {
                 {demoStatus.mode === "official_sample" ? "amostra oficial" : demoStatus.mode ?? "demo"}
               </p>
               <p>
-                <span className="text-slate-500">Periodo:</span> {selectedPeriod.label}
+                <span className="text-slate-500">Periodo:</span> {selectedPeriodLabel}
               </p>
               <p>
                 <span className="text-slate-500">Atualizado:</span> {demoStatus.lastUpdated}
