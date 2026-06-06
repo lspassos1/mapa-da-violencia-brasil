@@ -10,6 +10,7 @@ from etl.official_data import (
     combine_sinesp_with_population,
     detect_tabular_header,
     generate_app_ready_dataset,
+    load_app_ready_centroids,
     normalize_sinesp_table_rows,
     parse_optional_month_year,
     parse_ibge_population_ods,
@@ -243,6 +244,15 @@ class OfficialDataTests(unittest.TestCase):
         self.assertEqual(row["taxa_100k"], 1.0)  # 10 / 1_000_000 * 100_000
         self.assertEqual(result["status"]["summary"]["rows_taxa_suppressed_cross_year"], 0)
         self.assertTrue(result["status"]["summary"]["can_calculate_taxa_100k"])
+
+    def test_municipal_centroids_reference_is_national_and_valid(self):
+        centroids = load_app_ready_centroids(None)
+        # Cobertura nacional (todos os municipios da malha IBGE).
+        self.assertGreaterEqual(len(centroids), 5500)
+        for id_ibge, (lat, lng) in centroids.items():
+            self.assertTrue(id_ibge.isdigit() and len(id_ibge) == 7, f"id invalido: {id_ibge}")
+            self.assertTrue(-34.0 <= lat <= 6.0, f"{id_ibge} lat fora do Brasil: {lat}")
+            self.assertTrue(-74.5 <= lng <= -32.0, f"{id_ibge} lng fora do Brasil: {lng}")
 
     def test_combine_marks_missing_population(self):
         with TemporaryDirectory() as tmpdir:
