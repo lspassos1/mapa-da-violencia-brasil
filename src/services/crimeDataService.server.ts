@@ -40,7 +40,11 @@ export function getServerCrimeDataApi(): CrimeDataApi {
   if (!cachedApi) {
     if (CRIME_DATA_MODE === "official") {
       const dataset = readOfficialDataset();
-      warnIfEmptyOfficial(dataset);
+      // Em erro de leitura, readOfficialDataset ja avisou e devolveu o placeholder;
+      // so avisamos de "vazio" quando a leitura teve sucesso (evita aviso duplo).
+      if (dataset !== EMPTY_OFFICIAL_DATASET) {
+        warnIfEmptyOfficial(dataset);
+      }
       cachedApi = createCrimeDataApi("official", dataset);
     } else {
       cachedApi = createCrimeDataApi(CRIME_DATA_MODE, getStaticDataset(CRIME_DATA_MODE));

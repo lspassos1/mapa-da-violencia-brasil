@@ -41,6 +41,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  // Em serverless (Vercel/Lambda) a pasta public/ e servida pelo CDN e NAO fica
+  // no filesystem da funcao. As rotas de API leem public/officialCrimeData.json
+  // via fs (modo official), por isso incluimo-lo explicitamente no bundle de
+  // tracing das funcoes para que process.cwd()/public/... exista em runtime.
+  outputFileTracingIncludes: {
+    "/api/**": ["./public/officialCrimeData.json"],
+  },
   async headers() {
     return [
       {

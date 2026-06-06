@@ -310,17 +310,19 @@ export function loadCrimeDataApi(): Promise<CrimeDataApi> {
         }
         return response.json() as Promise<OfficialCrimeDataset>;
       })
+      .then((dataset) => {
+        // Sucesso: avisa uma vez se a carga vier vazia (placeholder por gerar).
+        warnIfEmptyOfficial(dataset);
+        return createCrimeDataApi("official", dataset);
+      })
       .catch((error) => {
+        // Falha de rede/HTTP: avisa uma vez (sem o aviso de "vazio" em duplicado).
         if (typeof console !== "undefined") {
           console.warn(
             `[crimeDataService] Falha ao carregar ${OFFICIAL_DATASET_PUBLIC_PATH}: ${String(error)}. A usar placeholder vazio.`,
           );
         }
-        return EMPTY_OFFICIAL_DATASET;
-      })
-      .then((dataset) => {
-        warnIfEmptyOfficial(dataset);
-        return createCrimeDataApi("official", dataset);
+        return createCrimeDataApi("official", EMPTY_OFFICIAL_DATASET);
       });
   }
   return clientApiPromise;
