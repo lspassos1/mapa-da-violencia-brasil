@@ -5,7 +5,7 @@ import { GET as metadataGET } from "../../src/app/api/metadata/route.ts";
 import { GET as sourcesGET } from "../../src/app/api/sources/status/route.ts";
 
 test("/api/metadata expoe indicadores, periodos, modos e escopo", async () => {
-  const res = metadataGET();
+  const res = await metadataGET();
   assert.equal(res.status, 200);
   const body = await res.json();
   for (const key of ["indicadores", "periodos", "ufs", "modos", "filtrosPadrao", "modoDados", "escopo"]) {
@@ -18,7 +18,7 @@ test("/api/metadata expoe indicadores, periodos, modos e escopo", async () => {
 });
 
 test("/api/sources/status expoe a lista de fontes com limitacoes", async () => {
-  const res = sourcesGET();
+  const res = await sourcesGET();
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.ok(Array.isArray(body.fontes) && body.fontes.length > 0, "deve listar fontes");

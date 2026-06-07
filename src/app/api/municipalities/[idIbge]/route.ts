@@ -5,7 +5,7 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ idIbge: string }> },
 ) {
-  const api = getServerCrimeDataApi();
+  const api = await getServerCrimeDataApi();
   const { searchParams } = new URL(request.url);
   const period = searchParams.get("periodo") ?? searchParams.get("period") ?? api.getDefaultCrimeMapFilters().period;
   const { idIbge } = await context.params;

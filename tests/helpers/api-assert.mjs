@@ -5,8 +5,10 @@ import assert from "node:assert/strict";
 // payload ambiguo de sucesso). Centralizado para que todas as rotas validem o
 // mesmo formato.
 export async function assertErrorPayload(response, expectedStatus) {
-  assert.equal(response.status, expectedStatus, `status deveria ser ${expectedStatus}`);
-  const body = await response.json();
+  // Aceita uma Response ou uma Promise<Response> (os handlers GET sao async).
+  const res = await response;
+  assert.equal(res.status, expectedStatus, `status deveria ser ${expectedStatus}`);
+  const body = await res.json();
   assert.equal(typeof body.error, "string", "corpo de erro deve ter `error: string`");
   assert.ok(body.error.length > 0, "mensagem de erro nao deve ser vazia");
   assert.ok(!("items" in body), "resposta de erro nao deve incluir payload de sucesso (items)");
@@ -15,8 +17,9 @@ export async function assertErrorPayload(response, expectedStatus) {
 
 // Espelho de sucesso: garante 200 e ausencia do campo `error`.
 export async function assertOkPayload(response) {
-  assert.equal(response.status, 200, "status deveria ser 200");
-  const body = await response.json();
+  const res = await response;
+  assert.equal(res.status, 200, "status deveria ser 200");
+  const body = await res.json();
   assert.ok(!("error" in body), "resposta de sucesso nao deve incluir `error`");
   return body;
 }

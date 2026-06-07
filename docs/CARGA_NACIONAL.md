@@ -30,10 +30,39 @@ indicadores), depois **gzipped** para `public/officialCrimeData.json.gz`
 descarregar). O cliente descomprime com `DecompressionStream`; o servidor (rotas
 de API) com `node:zlib`. Publicar com `NEXT_PUBLIC_CRIME_DATA_MODE=official`.
 
-**Limite desta abordagem (ficheiro):** serve bem 1 ano. Para a **historia
-completa (12 anos) com todas as dimensoes do VDE (sexo, faixa etaria, mes)**, o
-destino correto e a **base de dados Supabase** (schema ja em
-`supabase/migrations/`) — ver #11.
+**Limite desta abordagem (ficheiro):** o ficheiro committado em `public/` serve
+bem 1 ano. Para mais anos sem inflar o repo, usa o **modo `supabase`** (abaixo).
+
+## Modo `supabase` (carga servida do Supabase Storage)
+
+Com `NEXT_PUBLIC_CRIME_DATA_MODE=supabase`, a app carrega a carga nacional do
+**Supabase Storage** (bucket publico `crime-data`, objeto `current.json.gz`) em
+vez do ficheiro local — cliente via `fetch`+`DecompressionStream`, servidor (rotas
+de API) via `fetch`+`zlib`. Assim os dados saem do repo e nao ha limite de 5 MB.
+
+Publicar (le as credenciais do ambiente; nunca committar segredos):
+
+```bash
+python3 -m etl.aggregate_vde finalize --year 2025         # gera public/officialCrimeData.json.gz
+export SUPABASE_URL=https://<ref>.supabase.co
+export SUPABASE_SERVICE_ROLE_KEY=<service_role>           # secreto
+scripts/upload_to_supabase.sh                             # envia para crime-data/current.json.gz
+```
+
+Env da app (Vercel / `.env.local`):
+
+```
+NEXT_PUBLIC_CRIME_DATA_MODE=supabase
+NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon>   # opcional: o bucket de Storage e
+#   publico (nao precisa de auth). Reservado para o futuro acesso autenticado
+#   as views Postgres (#11).
+```
+
+Para a **historia completa (12 anos) com todas as dimensoes (sexo, faixa etaria,
+mes)** e os crimes patrimoniais a nivel UF, o passo seguinte e modelar isso em
+**tabelas Postgres** (schema ja em `supabase/migrations/`) com leitura por
+periodo nas rotas de API — ver #11.
 
 ## Centroides municipais — VERSIONADO (este PR)
 

@@ -8,6 +8,17 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 // subdominios a/b/c/d usados para distribuir a carga de tiles.
 const MAP_TILE_ORIGIN = "https://*.basemaps.cartocdn.com";
 
+// Origem do Supabase (Storage da carga nacional no modo `supabase`). Usa o
+// project-ref real quando configurado; caso contrario o wildcard *.supabase.co.
+const SUPABASE_ORIGIN = (() => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  try {
+    return url ? new URL(url).origin : "https://*.supabase.co";
+  } catch {
+    return "https://*.supabase.co";
+  }
+})();
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -23,10 +34,8 @@ const contentSecurityPolicy = [
   // MapLibre cria web workers a partir de blobs.
   "worker-src 'self' blob:",
   "child-src 'self' blob:",
-  // Tiles carregados via fetch/XHR. A origem do Supabase sera adicionada
-  // (com o project-ref real, sem wildcard) no PR que introduzir a leitura
-  // das views reais, para nao permitir uma origem ainda nao utilizada.
-  "connect-src 'self' " + MAP_TILE_ORIGIN,
+  // fetch/XHR: tiles (CARTO) e a carga nacional do Supabase Storage (modo supabase).
+  "connect-src 'self' " + MAP_TILE_ORIGIN + " " + SUPABASE_ORIGIN,
 ].join("; ");
 
 const securityHeaders = [

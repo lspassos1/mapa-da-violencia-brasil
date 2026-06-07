@@ -10,7 +10,7 @@ function call(query = "") {
 }
 
 async function metadata() {
-  return (await metadataGET().json());
+  return (await (await metadataGET()).json());
 }
 
 test("responde 200 com a forma esperada do payload", async () => {
