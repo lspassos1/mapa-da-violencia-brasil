@@ -38,6 +38,14 @@ function readLocalOfficialDataset(): OfficialCrimeDataset {
 
 async function fetchSupabaseDataset(): Promise<OfficialCrimeDataset> {
   // Supabase Storage (bucket publico) serve o .gz; descomprime no servidor.
+  if (!SUPABASE_DATASET_URL) {
+    if (typeof console !== "undefined") {
+      console.warn(
+        "[crimeDataService.server] modo 'supabase' ativo mas NEXT_PUBLIC_SUPABASE_URL nao esta definido. A usar placeholder vazio.",
+      );
+    }
+    return EMPTY_OFFICIAL_DATASET;
+  }
   try {
     const response = await fetch(SUPABASE_DATASET_URL);
     if (!response.ok) {

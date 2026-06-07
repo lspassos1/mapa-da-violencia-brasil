@@ -22,12 +22,16 @@ import type {
 export const OFFICIAL_DATASET_PUBLIC_PATH = "/officialCrimeData.json.gz";
 
 // Em modo `supabase`, a carga e servida do Supabase Storage (bucket publico
-// `crime-data`), permitindo todos os anos sem inflar o repo nem o bundle.
-export const SUPABASE_DATASET_URL =
-  `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/crime-data/current.json.gz`;
+// `crime-data`). Vazio quando NEXT_PUBLIC_SUPABASE_URL nao esta configurado —
+// assim o loader deteta a configuracao em falta e avisa, em vez de tentar uma
+// URL relativa (que falharia silenciosamente).
+const SUPABASE_BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+export const SUPABASE_DATASET_URL = SUPABASE_BASE_URL
+  ? `${SUPABASE_BASE_URL}/storage/v1/object/public/crime-data/current.json.gz`
+  : "";
 
 // URL da carga oficial conforme o modo: asset estatico local (`official`) ou
-// Supabase Storage (`supabase`).
+// Supabase Storage (`supabase`). String vazia se a config do Supabase falta.
 export function officialDatasetUrl(mode: CrimeDataMode = CRIME_DATA_MODE): string {
   return mode === "supabase" ? SUPABASE_DATASET_URL : OFFICIAL_DATASET_PUBLIC_PATH;
 }
@@ -159,7 +163,10 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
       viewModes: [...activeViewModes],
       ufs: getAvailableUfs(),
       defaultFilters: getDefaultCrimeMapFilters(),
-      dataMode: mode,
+      // `supabase` e apenas a origem (Storage); a proveniencia dos dados e
+      // oficial. Consolidamos para "official" para nao expor um valor que os
+      // consumidores nunca veriam de outra forma.
+      dataMode: mode === "supabase" ? "official" : mode,
       scope: getDataScope(),
     };
   }
@@ -314,6 +321,15 @@ export function loadCrimeDataApi(): Promise<CrimeDataApi> {
     return Promise.resolve(staticApi);
   }
   const url = officialDatasetUrl();
+  if (!url) {
+    if (typeof console !== "undefined") {
+      console.warn(
+        "[crimeDataService] modo 'supabase' ativo mas NEXT_PUBLIC_SUPABASE_URL nao esta definido. " +
+          "Defina-o (ex.: .env.local / Vercel) para carregar a carga do Supabase Storage.",
+      );
+    }
+    return Promise.resolve(createCrimeDataApi("official", EMPTY_OFFICIAL_DATASET));
+  }
   if (!clientApiPromise) {
     clientApiPromise = fetch(url)
       .then(async (response) => {

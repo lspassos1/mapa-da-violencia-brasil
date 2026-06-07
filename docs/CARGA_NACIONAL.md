@@ -54,7 +54,9 @@ Env da app (Vercel / `.env.local`):
 ```
 NEXT_PUBLIC_CRIME_DATA_MODE=supabase
 NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon>
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon>   # opcional: o bucket de Storage e
+#   publico (nao precisa de auth). Reservado para o futuro acesso autenticado
+#   as views Postgres (#11).
 ```
 
 Para a **historia completa (12 anos) com todas as dimensoes (sexo, faixa etaria,
