@@ -1,6 +1,6 @@
 import { demoDataStatus, indicatorOptions, mockCrimeData, periodOptions } from "@/data/mockCrimeData";
 import officialSampleDataset from "@/data/officialCrimeData.sample.json";
-import { CRIME_DATA_MODE, type CrimeDataMode } from "@/lib/dataMode";
+import { CRIME_DATA_MODE, isRemoteDataMode, type CrimeDataMode } from "@/lib/dataMode";
 import { getRankedMunicipalities } from "@/lib/ranking";
 import type {
   CrimeMetadata,
@@ -20,6 +20,17 @@ import type {
 // JSON nacional (potencialmente varios MB) fique FORA dos bundles de
 // demo/official_sample. Ver docs/CARGA_NACIONAL.md.
 export const OFFICIAL_DATASET_PUBLIC_PATH = "/officialCrimeData.json.gz";
+
+// Em modo `supabase`, a carga e servida do Supabase Storage (bucket publico
+// `crime-data`), permitindo todos os anos sem inflar o repo nem o bundle.
+export const SUPABASE_DATASET_URL =
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/crime-data/current.json.gz`;
+
+// URL da carga oficial conforme o modo: asset estatico local (`official`) ou
+// Supabase Storage (`supabase`).
+export function officialDatasetUrl(mode: CrimeDataMode = CRIME_DATA_MODE): string {
+  return mode === "supabase" ? SUPABASE_DATASET_URL : OFFICIAL_DATASET_PUBLIC_PATH;
+}
 
 export interface OfficialCrimeDataset {
   status: DataStatus;
@@ -299,30 +310,31 @@ export const isViewMode = staticApi.isViewMode;
 let clientApiPromise: Promise<CrimeDataApi> | null = null;
 
 export function loadCrimeDataApi(): Promise<CrimeDataApi> {
-  if (CRIME_DATA_MODE !== "official") {
+  if (!isRemoteDataMode()) {
     return Promise.resolve(staticApi);
   }
+  const url = officialDatasetUrl();
   if (!clientApiPromise) {
-    clientApiPromise = fetch(OFFICIAL_DATASET_PUBLIC_PATH)
+    clientApiPromise = fetch(url)
       .then(async (response) => {
         if (!response.ok || !response.body) {
           throw new Error(`HTTP ${response.status}`);
         }
-        // A carga e servida gzipped (.gz) para caber no limite de tamanho do
-        // repo e minimizar o download; descomprime no cliente.
+        // A carga e servida gzipped (.gz); descomprime no cliente.
         const stream = response.body.pipeThrough(new DecompressionStream("gzip"));
         return (await new Response(stream).json()) as OfficialCrimeDataset;
       })
       .then((dataset) => {
         // Sucesso: avisa uma vez se a carga vier vazia (placeholder por gerar).
         warnIfEmptyOfficial(dataset);
+        // Os dados sao oficiais independentemente da origem (local ou Supabase).
         return createCrimeDataApi("official", dataset);
       })
       .catch((error) => {
         // Falha de rede/HTTP: avisa uma vez (sem o aviso de "vazio" em duplicado).
         if (typeof console !== "undefined") {
           console.warn(
-            `[crimeDataService] Falha ao carregar ${OFFICIAL_DATASET_PUBLIC_PATH}: ${String(error)}. A usar placeholder vazio.`,
+            `[crimeDataService] Falha ao carregar ${url}: ${String(error)}. A usar placeholder vazio.`,
           );
         }
         return createCrimeDataApi("official", EMPTY_OFFICIAL_DATASET);

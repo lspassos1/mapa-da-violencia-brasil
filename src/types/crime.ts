@@ -104,7 +104,7 @@ export interface CrimeMetadata {
   viewModes: Array<{ key: ViewMode; label: string }>;
   ufs: Array<{ uf: string; nome: string }>;
   defaultFilters: CrimeMapFilters;
-  dataMode: "official" | "official_sample" | "demo";
+  dataMode: "official" | "official_sample" | "demo" | "supabase";
   scope: {
     items: number;
     municipalities: number;

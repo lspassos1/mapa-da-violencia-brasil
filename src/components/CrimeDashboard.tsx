@@ -12,7 +12,7 @@ import { AccessibleDataTable } from "@/components/panels/AccessibleDataTable";
 import { MunicipalityDetailsPanel } from "@/components/panels/MunicipalityDetailsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
 import { getRankedMunicipalities } from "@/lib/ranking";
-import { CRIME_DATA_MODE } from "@/lib/dataMode";
+import { isRemoteDataMode } from "@/lib/dataMode";
 import { getStaticCrimeDataApi, loadCrimeDataApi, type CrimeDataApi } from "@/services/crimeDataService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 
@@ -27,7 +27,7 @@ export function CrimeDashboard() {
   // render (preserva o SSR). Em official iniciamos vazio e mostramos o estado de
   // carga ate o fetch do asset nacional resolver.
   const [api, setApi] = useState<CrimeDataApi | null>(
-    CRIME_DATA_MODE === "official" ? null : getStaticCrimeDataApi(),
+    isRemoteDataMode() ? null : getStaticCrimeDataApi(),
   );
 
   useEffect(() => {

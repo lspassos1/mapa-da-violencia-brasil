@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerCrimeDataApi } from "@/services/crimeDataService.server";
 
-export function GET() {
-  const officialStatus = getServerCrimeDataApi().getDemoDataStatus();
+export async function GET() {
+  const officialStatus = (await getServerCrimeDataApi()).getDemoDataStatus();
 
   return NextResponse.json({
     fontes: [

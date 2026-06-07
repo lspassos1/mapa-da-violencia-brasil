@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerCrimeDataApi } from "@/services/crimeDataService.server";
 
-export function GET(request: Request) {
-  const api = getServerCrimeDataApi();
+export async function GET(request: Request) {
+  const api = await getServerCrimeDataApi();
   const { searchParams } = new URL(request.url);
   const defaults = api.getDefaultCrimeMapFilters();
   const period = searchParams.get("periodo") ?? searchParams.get("period") ?? defaults.period;

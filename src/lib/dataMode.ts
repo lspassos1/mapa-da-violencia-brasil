@@ -4,7 +4,7 @@
 // `NEXT_PUBLIC_DATA_MODE` nunca teve efeito e foi descontinuado da documentacao
 // para evitar configuracoes enganosas.
 
-export type CrimeDataMode = "demo" | "official_sample" | "official";
+export type CrimeDataMode = "demo" | "official_sample" | "official" | "supabase";
 
 export const CRIME_DATA_MODE_FLAG = "NEXT_PUBLIC_CRIME_DATA_MODE";
 
@@ -18,6 +18,9 @@ export const CRIME_DATA_MODE_FLAG = "NEXT_PUBLIC_CRIME_DATA_MODE";
  * mascarar erros de configuracao.
  */
 export function resolveCrimeDataMode(raw: string | undefined): CrimeDataMode {
+  if (raw === "supabase") {
+    return "supabase";
+  }
   if (raw === "official") {
     return "official";
   }
@@ -40,3 +43,10 @@ export function resolveCrimeDataMode(raw: string | undefined): CrimeDataMode {
 export const CRIME_DATA_MODE: CrimeDataMode = resolveCrimeDataMode(
   process.env.NEXT_PUBLIC_CRIME_DATA_MODE,
 );
+
+// Modos cuja carga nacional e obtida de forma assincrona (asset estatico ou
+// Supabase Storage), em vez de estar embutida no bundle. Em ambos os casos os
+// dados sao oficiais; `supabase` muda apenas a origem (Storage publico).
+export function isRemoteDataMode(mode: CrimeDataMode = CRIME_DATA_MODE): boolean {
+  return mode === "official" || mode === "supabase";
+}
