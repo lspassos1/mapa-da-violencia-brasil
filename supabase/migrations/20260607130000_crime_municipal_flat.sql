@@ -28,5 +28,11 @@ drop policy if exists "public read crime_municipal" on public.crime_municipal;
 create policy "public read crime_municipal"
   on public.crime_municipal for select using (true);
 
+-- A RLS so e avaliada apos o privilegio de tabela: o PostgREST usa os roles
+-- `anon`/`authenticated`, que precisam de GRANT SELECT explicito para que a
+-- leitura publica (e o Power BI via anon) funcione. Sem escrita para estes
+-- roles — o ETL escreve com a service_role (que ignora RLS e privilegios).
+grant select on public.crime_municipal to anon, authenticated;
+
 create index if not exists crime_municipal_ano_ind_idx
   on public.crime_municipal (ano, indicador);
