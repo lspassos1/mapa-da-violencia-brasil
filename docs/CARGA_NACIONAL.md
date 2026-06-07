@@ -59,10 +59,30 @@ NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
 #   as views Postgres (#11).
 ```
 
+## Postgres (`crime_municipal`) — para BI e SQL
+
+Os mesmos dados estao tambem numa tabela Postgres **`public.crime_municipal`**
+(migration `supabase/migrations/20260607130000_crime_municipal_flat.sql`): uma
+linha por `(id_ibge, ano, indicador)` com `valor`, `taxa_100k`, `score`, etc.
+Tem **RLS de leitura publica**, pelo que e consultavel:
+
+- por **SQL / Power BI** (connection string do Postgres);
+- por **PostgREST** com a anon key:
+  `GET /rest/v1/crime_municipal?ano=eq.2025&indicador=eq.homicidioDoloso&order=valor.desc`.
+
+Carregar (credenciais sempre do ambiente):
+
+```bash
+npm i pg --no-save
+export SUPABASE_DB_URL='postgresql://postgres.<ref>:<DB_PASSWORD>@aws-1-<region>.pooler.supabase.com:5432/postgres'
+python3 -m etl.aggregate_vde finalize --year 2025   # gera public/officialCrimeData.json.gz
+node scripts/load_postgres.mjs                        # carrega para crime_municipal
+```
+
 Para a **historia completa (12 anos) com todas as dimensoes (sexo, faixa etaria,
-mes)** e os crimes patrimoniais a nivel UF, o passo seguinte e modelar isso em
-**tabelas Postgres** (schema ja em `supabase/migrations/`) com leitura por
-periodo nas rotas de API — ver #11.
+mes)** e os crimes patrimoniais a nivel UF, o passo seguinte e estender o ETL
+para varios anos (precisa de populacao IBGE por ano para a taxa) e, se quiser
+filtragem por periodo direto da BD, ligar as rotas de API a esta tabela — ver #11.
 
 ## Centroides municipais — VERSIONADO (este PR)
 
