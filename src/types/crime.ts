@@ -1,12 +1,18 @@
 export type CrimeIndicatorKey =
   | "indiceGeral"
   | "homicidioDoloso"
+  | "tentativaHomicidio"
+  | "latrocinio"
+  | "lesaoCorporalMorte"
+  | "morteIntervencaoEstado"
   | "feminicidio"
-  | "rouboVeiculos"
-  | "rouboCarga"
   | "estupro"
-  | "traficoDrogas"
-  | "furtoVeiculos";
+  | "estuproVulneravel"
+  | "rouboVeiculos"
+  | "furtoVeiculos"
+  | "rouboCarga"
+  | "rouboInstituicaoFinanceira"
+  | "traficoDrogas";
 
 export type ViewMode = "score" | "total" | "taxa100k" | "variacaoMensal";
 

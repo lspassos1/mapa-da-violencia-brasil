@@ -129,24 +129,48 @@ SINESP_COLUMN_ALIASES = {
 
 SINESP_INDICATOR_ALIASES = {
     "homicidio_doloso": ["homicidio_doloso", "homicidios_dolosos"],
+    "tentativa_homicidio": [
+        "tentativa_de_homicidio",
+        "tentativa_homicidio",
+        "tentativas_de_homicidio",
+        "homicidio_tentado",
+    ],
     "feminicidio": ["feminicidio", "feminicidios"],
-    "latrocinio": ["latrocinio", "roubo_seguido_de_morte"],
+    "latrocinio": ["latrocinio", "roubo_seguido_de_morte", "roubo_seguido_de_morte_latrocinio"],
     "lesao_corporal_seguida_de_morte": ["lesao_corporal_seguida_de_morte"],
+    "morte_intervencao_estado": [
+        "morte_por_intervencao_de_agente_do_estado",
+        "morte_decorrente_de_intervencao_policial",
+        "mortes_decorrentes_de_intervencoes_policiais",
+        "morte_por_intervencao_do_estado",
+    ],
     "roubo_veiculos": ["roubo_de_veiculo", "roubo_de_veiculos", "roubo_veiculo"],
     "furto_veiculos": ["furto_de_veiculo", "furto_de_veiculos", "furto_veiculo"],
     "roubo_carga": ["roubo_de_carga", "roubo_carga"],
+    "roubo_instituicao_financeira": [
+        "roubo_a_instituicao_financeira",
+        "roubo_instituicao_financeira",
+        "roubo_a_banco",
+    ],
     "estupro": ["estupro", "estupros"],
+    "estupro_vulneravel": ["estupro_de_vulneravel", "estupro_vulneravel"],
     "trafico_drogas": ["trafico_de_drogas", "trafico_drogas"],
 }
 SINESP_MUNICIPAL_DEFAULT_INDICATOR = "Homicídio doloso"
 APP_INDICATOR_KEYS = {
     "homicidio_doloso": "homicidioDoloso",
+    "tentativa_homicidio": "tentativaHomicidio",
+    "latrocinio": "latrocinio",
+    "lesao_corporal_seguida_de_morte": "lesaoCorporalMorte",
+    "morte_intervencao_estado": "morteIntervencaoEstado",
     "feminicidio": "feminicidio",
-    "roubo_veiculos": "rouboVeiculos",
-    "roubo_carga": "rouboCarga",
     "estupro": "estupro",
-    "trafico_drogas": "traficoDrogas",
+    "estupro_vulneravel": "estuproVulneravel",
+    "roubo_veiculos": "rouboVeiculos",
     "furto_veiculos": "furtoVeiculos",
+    "roubo_carga": "rouboCarga",
+    "roubo_instituicao_financeira": "rouboInstituicaoFinanceira",
+    "trafico_drogas": "traficoDrogas",
 }
 APP_READY_SAMPLE_CENTROIDS = {
     "1200138": (-9.821, -67.949),
@@ -965,10 +989,16 @@ def build_app_ready_indicators(rows: list[dict[str, object]]) -> list[dict[str, 
     keys = sorted({next(iter(dict(row["indicadores"]).keys())) for row in rows})
     labels = {
         "homicidioDoloso": ("homicidio_doloso", "Homicidio doloso", "vitimas"),
+        "tentativaHomicidio": ("tentativa_homicidio", "Tentativa de homicidio", "vitimas"),
+        "latrocinio": ("latrocinio", "Latrocinio", "vitimas"),
+        "lesaoCorporalMorte": ("lesao_corporal_seguida_de_morte", "Lesao corporal seguida de morte", "vitimas"),
+        "morteIntervencaoEstado": ("morte_intervencao_estado", "Morte por intervencao do Estado", "vitimas"),
         "feminicidio": ("feminicidio", "Feminicidio", "vitimas"),
+        "estupro": ("estupro", "Estupro", "ocorrencias"),
+        "estuproVulneravel": ("estupro_vulneravel", "Estupro de vulneravel", "ocorrencias"),
         "rouboVeiculos": ("roubo_veiculos", "Roubo de veiculos", "ocorrencias"),
         "rouboCarga": ("roubo_carga", "Roubo de carga", "ocorrencias"),
-        "estupro": ("estupro", "Estupro", "ocorrencias"),
+        "rouboInstituicaoFinanceira": ("roubo_instituicao_financeira", "Roubo a instituicao financeira", "ocorrencias"),
         "traficoDrogas": ("trafico_drogas", "Trafico de drogas", "ocorrencias"),
         "furtoVeiculos": ("furto_veiculos", "Furto de veiculos", "ocorrencias"),
     }

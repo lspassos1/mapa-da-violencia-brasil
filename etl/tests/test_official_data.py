@@ -135,6 +135,23 @@ class OfficialDataTests(unittest.TestCase):
     def test_canonical_indicator_code_maps_known_labels(self):
         self.assertEqual(canonical_indicator_code("Roubo de veículos"), "roubo_veiculos")
 
+    def test_vde_indicators_map_to_app_keys(self):
+        from etl.official_data import APP_INDICATOR_KEYS
+
+        # Os tipos de crime adicionais do VDE devem ser reconhecidos pelo
+        # normalizador e ter uma chave de aplicacao (senao seriam descartados).
+        expected = {
+            "Tentativa de homicídio": ("tentativa_homicidio", "tentativaHomicidio"),
+            "Latrocínio": ("latrocinio", "latrocinio"),
+            "Lesão corporal seguida de morte": ("lesao_corporal_seguida_de_morte", "lesaoCorporalMorte"),
+            "Morte por intervenção de agente do Estado": ("morte_intervencao_estado", "morteIntervencaoEstado"),
+            "Estupro de vulnerável": ("estupro_vulneravel", "estuproVulneravel"),
+            "Roubo a instituição financeira": ("roubo_instituicao_financeira", "rouboInstituicaoFinanceira"),
+        }
+        for label, (code, app_key) in expected.items():
+            self.assertEqual(canonical_indicator_code(label), code, label)
+            self.assertEqual(APP_INDICATOR_KEYS.get(code), app_key, code)
+
     def test_normalize_sinesp_rows_accepts_municipal_xlsx_victims_schema(self):
         with TemporaryDirectory() as tmpdir:
             source_file = Path(tmpdir) / "sinesp_municipios.xlsx"
