@@ -42,32 +42,46 @@ for (const item of dataset.items) {
 }
 
 const { default: pg } = await import("pg");
-const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: false } });
+// TLS com verificacao do certificado (o pooler Supabase apresenta um cert
+// assinado por CA publica). Nunca desativar a validacao: protege a DB_PASSWORD.
+const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: true } });
 await client.connect();
-await client.query("delete from public.crime_municipal where ano = $1", [ano]);
 
 const COLS = 15;
-for (let i = 0; i < rows.length; i += 500) {
-  const chunk = rows.slice(i, i + 500);
-  const values = [];
-  const placeholders = chunk.map((row, j) => {
-    values.push(...row);
-    return "(" + Array.from({ length: COLS }, (_, k) => `$${j * COLS + k + 1}`).join(",") + ")";
-  });
-  await client.query(
-    `insert into public.crime_municipal
-       (id_ibge,municipio,uf,estado,lat,lng,populacao,ano,indicador,unidade,valor,taxa_100k,score,nivel,data_status)
-     values ${placeholders.join(",")}
-     on conflict (id_ibge,ano,indicador) do update set
-       valor=excluded.valor, taxa_100k=excluded.taxa_100k, score=excluded.score,
-       nivel=excluded.nivel, data_status=excluded.data_status`,
-    values,
-  );
-}
+try {
+  // Delete + todos os inserts numa unica transacao: a troca de dados do ano e
+  // atomica e instantanea (nenhuma query de BI ve zero linhas a meio da carga).
+  await client.query("begin");
+  await client.query("delete from public.crime_municipal where ano = $1", [ano]);
 
-const { rows: [summary] } = await client.query(
-  "select count(*) n, count(distinct id_ibge) municipios, count(distinct indicador) indicadores from public.crime_municipal where ano=$1",
-  [ano],
-);
-console.log(`Ano ${ano}: ${summary.n} linhas (${summary.municipios} municipios, ${summary.indicadores} indicadores).`);
-await client.end();
+  for (let i = 0; i < rows.length; i += 500) {
+    const chunk = rows.slice(i, i + 500);
+    const values = [];
+    const placeholders = chunk.map((row, j) => {
+      values.push(...row);
+      return "(" + Array.from({ length: COLS }, (_, k) => `$${j * COLS + k + 1}`).join(",") + ")";
+    });
+    await client.query(
+      `insert into public.crime_municipal
+         (id_ibge,municipio,uf,estado,lat,lng,populacao,ano,indicador,unidade,valor,taxa_100k,score,nivel,data_status)
+       values ${placeholders.join(",")}
+       on conflict (id_ibge,ano,indicador) do update set
+         valor=excluded.valor, taxa_100k=excluded.taxa_100k, score=excluded.score,
+         nivel=excluded.nivel, data_status=excluded.data_status`,
+      values,
+    );
+  }
+
+  await client.query("commit");
+
+  const { rows: [summary] } = await client.query(
+    "select count(*) n, count(distinct id_ibge) municipios, count(distinct indicador) indicadores from public.crime_municipal where ano=$1",
+    [ano],
+  );
+  console.log(`Ano ${ano}: ${summary.n} linhas (${summary.municipios} municipios, ${summary.indicadores} indicadores).`);
+} catch (err) {
+  await client.query("rollback").catch(() => {});
+  throw err;
+} finally {
+  await client.end();
+}
