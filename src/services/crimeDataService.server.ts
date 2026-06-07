@@ -7,6 +7,7 @@
 // `server-only` faz o Next falhar cedo (build-time) se for importado no cliente.
 import "server-only";
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { join } from "node:path";
 import { CRIME_DATA_MODE } from "@/lib/dataMode";
 import {
@@ -21,13 +22,14 @@ import {
 let cachedApi: CrimeDataApi | null = null;
 
 function readOfficialDataset(): OfficialCrimeDataset {
+  // A carga e versionada gzipped (.gz). Le e descomprime via filesystem.
+  const path = join(process.cwd(), "public", "officialCrimeData.json.gz");
   try {
-    const path = join(process.cwd(), "public", "officialCrimeData.json");
-    return JSON.parse(readFileSync(path, "utf-8")) as OfficialCrimeDataset;
+    return JSON.parse(gunzipSync(readFileSync(path)).toString("utf-8")) as OfficialCrimeDataset;
   } catch (error) {
     if (typeof console !== "undefined") {
       console.warn(
-        `[crimeDataService.server] Falha ao ler public/officialCrimeData.json: ${String(error)}. A usar placeholder vazio.`,
+        `[crimeDataService.server] Falha ao ler ${path}: ${String(error)}. A usar placeholder vazio.`,
       );
     }
     return EMPTY_OFFICIAL_DATASET;

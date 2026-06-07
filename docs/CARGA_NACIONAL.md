@@ -3,6 +3,38 @@
 Estado de cada peça do caminho de dados reais e o que falta para a publicação
 nacional.
 
+## Carga real a partir da Base VDE (implementada)
+
+Os ficheiros anuais da Base VDE do SINESP/MJSP (XLSX, ~28 MB cada) vivem em
+`data/raw/vde/` (gitignored). `etl/aggregate_vde.py` le-os por **streaming**
+(`iterparse`, memoria limitada) e agrega por `(id_ibge, periodo, indicador)`:
+
+```bash
+# diagnostico (eventos, colunas, match de municipio)
+python3 -m etl.aggregate_vde diagnose --year 2025
+
+# pipeline completo e reproduzivel:
+#   agrega -> app-ready -> funde por municipio -> gzip para public/
+python3 -m etl.aggregate_vde finalize --year 2025 --granularity anual
+# -> public/officialCrimeData.json.gz
+```
+
+**Granularidade do VDE:** so os crimes de **vitima** (homicidio doloso,
+feminicidio, latrocinio, lesao corporal seguida de morte, tentativa de
+homicidio) vem por municipio; os patrimoniais (roubo/furto/trafico/estupro)
+vem so a nivel UF e nao entram no mapa municipal.
+
+**Servico gzipped:** a carga e fundida por municipio (um item com todos os
+indicadores), depois **gzipped** para `public/officialCrimeData.json.gz`
+(~0,3 MB; o JSON cru ~8,8 MB excederia o limite de 5 MB do CI e seria pesado de
+descarregar). O cliente descomprime com `DecompressionStream`; o servidor (rotas
+de API) com `node:zlib`. Publicar com `NEXT_PUBLIC_CRIME_DATA_MODE=official`.
+
+**Limite desta abordagem (ficheiro):** serve bem 1 ano. Para a **historia
+completa (12 anos) com todas as dimensoes do VDE (sexo, faixa etaria, mes)**, o
+destino correto e a **base de dados Supabase** (schema ja em
+`supabase/migrations/`) — ver #11.
+
 ## Centroides municipais — VERSIONADO (este PR)
 
 `etl/reference/municipal_centroids.csv` traz `id_ibge, lat, lng` para os **5.570
