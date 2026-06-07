@@ -19,7 +19,7 @@ import type {
 // fetch (cliente) ou filesystem (servidor) apenas no modo `official`, para que o
 // JSON nacional (potencialmente varios MB) fique FORA dos bundles de
 // demo/official_sample. Ver docs/CARGA_NACIONAL.md.
-export const OFFICIAL_DATASET_PUBLIC_PATH = "/officialCrimeData.json";
+export const OFFICIAL_DATASET_PUBLIC_PATH = "/officialCrimeData.json.gz";
 
 export interface OfficialCrimeDataset {
   status: DataStatus;
@@ -304,11 +304,14 @@ export function loadCrimeDataApi(): Promise<CrimeDataApi> {
   }
   if (!clientApiPromise) {
     clientApiPromise = fetch(OFFICIAL_DATASET_PUBLIC_PATH)
-      .then((response) => {
-        if (!response.ok) {
+      .then(async (response) => {
+        if (!response.ok || !response.body) {
           throw new Error(`HTTP ${response.status}`);
         }
-        return response.json() as Promise<OfficialCrimeDataset>;
+        // A carga e servida gzipped (.gz) para caber no limite de tamanho do
+        // repo e minimizar o download; descomprime no cliente.
+        const stream = response.body.pipeThrough(new DecompressionStream("gzip"));
+        return (await new Response(stream).json()) as OfficialCrimeDataset;
       })
       .then((dataset) => {
         // Sucesso: avisa uma vez se a carga vier vazia (placeholder por gerar).

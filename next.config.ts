@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
   // via fs (modo official), por isso incluimo-lo explicitamente no bundle de
   // tracing das funcoes para que process.cwd()/public/... exista em runtime.
   outputFileTracingIncludes: {
-    "/api/**": ["./public/officialCrimeData.json"],
+    "/api/**": ["./public/officialCrimeData.json.gz"],
   },
   async headers() {
     return [
