@@ -16,6 +16,8 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import gzip
+import json
 import re
 import unicodedata
 import zipfile
@@ -28,10 +30,15 @@ from etl.official_data import (
     PROCESSED_DIR,
     SINESP_WITH_POPULATION_FIELDNAMES,
     canonical_indicator_code,
+    generate_app_ready_dataset,
+    list_xlsx_sheets,
     parse_optional_int,
     parse_optional_month_year,
+    utc_now,
     write_csv,
 )
+
+OFFICIAL_DATASET_GZ = Path(__file__).resolve().parents[1] / "public" / "officialCrimeData.json.gz"
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VDE_DIR = PROJECT_ROOT / "data" / "raw" / "vde"
@@ -116,9 +123,11 @@ def cell_value(cell: ET.Element, shared: list[str]) -> str:
 
 def stream_rows(path: Path):
     """Itera linhas (lista de strings indexada por coluna) com memoria limitada."""
+    sheets = list_xlsx_sheets(path)
+    sheet_path = sheets[0]["path"] if sheets else "xl/worksheets/sheet1.xml"
     with zipfile.ZipFile(path) as archive:
         shared = load_shared_strings(archive)
-        with archive.open("xl/worksheets/sheet1.xml") as handle:
+        with archive.open(sheet_path) as handle:
             for _event, elem in ET.iterparse(handle, events=("end",)):
                 if elem.tag != f"{MAIN_NS}row":
                     continue
@@ -241,7 +250,10 @@ def build_combined_csv(year: int, granularity: str) -> Path:
         _y, month = year_month
         tv = parse_optional_int(values[COL["total_vitima"]]) or 0
         tt = parse_optional_int(values[COL["total"]]) or 0
-        value = tv if tv else tt
+        # A coluna correta depende da unidade do indicador (deterministico):
+        # crimes de vitima -> total_vitima; ocorrencias -> total. Evita somar a
+        # coluna errada quando total_vitima e zero explicito.
+        value = tv if INDICATOR_UNIT.get(app_indicator) == "vitimas" else tt
         period_month = month if granularity == "mensal" else 0
         agg[(id_ibge, period_month, app_indicator)] += value
 
@@ -261,7 +273,9 @@ def build_combined_csv(year: int, granularity: str) -> Path:
                 "uf": uf,
                 "municipio": municipio,
                 "ano": year,
-                "mes": month if month else 12,
+                # mes=0 e a sentinela anual (periodo "ANO-00"), distinta de
+                # Dezembro (12); finalize() reescreve o periodo anual para "ANO".
+                "mes": month,
                 "indicador_codigo": code,
                 "indicador_nome": app_indicator,
                 "valor": value,
@@ -282,6 +296,53 @@ def build_combined_csv(year: int, granularity: str) -> Path:
     return out
 
 
+def finalize(year: int, granularity: str) -> Path:
+    """Pipeline completo e reproduzivel: agrega -> app-ready -> funde por
+    municipio -> reescreve o periodo anual -> gzip para public/.
+    """
+    csv_path = build_combined_csv(year, granularity)
+    result = generate_app_ready_dataset(
+        input_path=csv_path,
+        output_path=PROCESSED_DIR / "app-ready" / f"vde-{year}.json",
+    )
+    payload = result["payload"]
+
+    # Funde um item por municipio (todos os indicadores), removendo a duplicacao
+    # de metadados do municipio por indicador.
+    merged: dict[str, dict] = {}
+    for item in payload["items"]:
+        key = item["idIbge"]
+        if key not in merged:
+            merged[key] = {k: v for k, v in item.items() if k != "indicadores"}
+            merged[key]["indicadores"] = {}
+        merged[key]["indicadores"].update(item["indicadores"])
+    items = list(merged.values())
+
+    period_key = str(year)  # anual: "2025"
+    if granularity == "anual":
+        for item in items:
+            item["periodo"] = period_key
+        payload["periods"] = [{"key": period_key, "label": period_key, "updatedAt": utc_now()[:10]}]
+        payload["status"]["latestPeriod"] = period_key
+    payload["items"] = items
+    payload["status"]["source"] = f"MJSP/SINESP - Base VDE {year}"
+    payload["status"]["status"] = f"Carga nacional oficial (Base VDE {year})"
+    payload["status"]["limitations"] = [
+        f"Base VDE do SINESP/MJSP, ano {year}, agregada por municipio (total anual).",
+        "Cobre os indicadores municipais de vitima do VDE; crimes patrimoniais do "
+        "VDE so existem a nivel UF e nao entram no mapa municipal.",
+        "Taxa por 100 mil calculada com populacao IBGE 2025.",
+    ]
+
+    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    OFFICIAL_DATASET_GZ.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(OFFICIAL_DATASET_GZ, "wb", compresslevel=9) as handle:
+        handle.write(raw)
+    size_kb = round(OFFICIAL_DATASET_GZ.stat().st_size / 1024, 1)
+    print(f"{len(items)} municipios -> {OFFICIAL_DATASET_GZ} ({size_kb} KB gz; {round(len(raw)/1e6,2)} MB cru)")
+    return OFFICIAL_DATASET_GZ
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -290,11 +351,16 @@ def main() -> int:
     b = sub.add_parser("build")
     b.add_argument("--year", type=int, default=2025)
     b.add_argument("--granularity", choices=["mensal", "anual"], default="anual")
+    f = sub.add_parser("finalize", help="Pipeline completo -> public/officialCrimeData.json.gz")
+    f.add_argument("--year", type=int, default=2025)
+    f.add_argument("--granularity", choices=["mensal", "anual"], default="anual")
     args = parser.parse_args()
     if args.command == "diagnose":
         diagnose(args.year)
     elif args.command == "build":
         build_combined_csv(args.year, args.granularity)
+    elif args.command == "finalize":
+        finalize(args.year, args.granularity)
     return 0
 
 

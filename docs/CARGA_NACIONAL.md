@@ -13,13 +13,10 @@ Os ficheiros anuais da Base VDE do SINESP/MJSP (XLSX, ~28 MB cada) vivem em
 # diagnostico (eventos, colunas, match de municipio)
 python3 -m etl.aggregate_vde diagnose --year 2025
 
-# agrega um ano -> CSV combinado (schema SINESP+populacao)
-python3 -m etl.aggregate_vde build --year 2025 --granularity anual
-
-# gera o app-ready a partir do CSV (centroides nacionais por omissao)
-python3 -m etl.official_data generate-app-ready \
-  --input data/processed/vde_combined_2025_anual.csv \
-  --output data/processed/app-ready/vde-2025.json
+# pipeline completo e reproduzivel:
+#   agrega -> app-ready -> funde por municipio -> gzip para public/
+python3 -m etl.aggregate_vde finalize --year 2025 --granularity anual
+# -> public/officialCrimeData.json.gz
 ```
 
 **Granularidade do VDE:** so os crimes de **vitima** (homicidio doloso,
