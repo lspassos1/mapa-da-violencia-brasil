@@ -11,12 +11,18 @@ import type {
 export const indicatorOptions: IndicatorOption[] = [
   { key: "indiceGeral", label: "Indice geral" },
   { key: "homicidioDoloso", label: "Homicidio doloso" },
+  { key: "tentativaHomicidio", label: "Tentativa de homicidio" },
+  { key: "latrocinio", label: "Latrocinio" },
+  { key: "lesaoCorporalMorte", label: "Lesao corporal seguida de morte" },
+  { key: "morteIntervencaoEstado", label: "Morte por intervencao do Estado" },
   { key: "feminicidio", label: "Feminicidio" },
-  { key: "rouboVeiculos", label: "Roubo de veiculos" },
-  { key: "rouboCarga", label: "Roubo de carga" },
   { key: "estupro", label: "Estupro" },
-  { key: "traficoDrogas", label: "Trafico de drogas" },
+  { key: "estuproVulneravel", label: "Estupro de vulneravel" },
+  { key: "rouboVeiculos", label: "Roubo de veiculos" },
   { key: "furtoVeiculos", label: "Furto de veiculos" },
+  { key: "rouboCarga", label: "Roubo de carga" },
+  { key: "rouboInstituicaoFinanceira", label: "Roubo a instituicao financeira" },
+  { key: "traficoDrogas", label: "Trafico de drogas" },
 ];
 
 export const periodOptions: PeriodOption[] = [
@@ -62,12 +68,18 @@ const municipalitySeeds: MunicipalitySeed[] = [
 const indicatorWeights: Record<CrimeIndicatorKey, number> = {
   indiceGeral: 1,
   homicidioDoloso: 1.12,
+  tentativaHomicidio: 0.98,
+  latrocinio: 0.46,
+  lesaoCorporalMorte: 0.42,
+  morteIntervencaoEstado: 0.52,
   feminicidio: 0.64,
-  rouboVeiculos: 0.91,
-  rouboCarga: 0.76,
   estupro: 0.72,
-  traficoDrogas: 0.86,
+  estuproVulneravel: 0.58,
+  rouboVeiculos: 0.91,
   furtoVeiculos: 0.68,
+  rouboCarga: 0.76,
+  rouboInstituicaoFinanceira: 0.34,
+  traficoDrogas: 0.86,
 };
 
 const periodModifiers: Record<string, number> = {
