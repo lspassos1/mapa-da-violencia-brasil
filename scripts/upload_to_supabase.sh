@@ -26,7 +26,10 @@ curl -sS -X POST "$SUPABASE_URL/storage/v1/bucket" \
   -d "{\"id\":\"$BUCKET\",\"name\":\"$BUCKET\",\"public\":true}" >/dev/null || true
 
 echo "==> A enviar $FILE -> $BUCKET/$OBJECT"
-curl -sS -X POST "$SUPABASE_URL/storage/v1/object/$BUCKET/$OBJECT" \
+# --fail: um 4xx/5xx do Storage (403, 413 ficheiro grande, etc.) faz o curl
+# sair com erro e, com `set -e`, aborta o script — em vez de reportar sucesso
+# falso. -w mostra o status HTTP.
+curl -fsS -w "HTTP %{http_code}\n" -X POST "$SUPABASE_URL/storage/v1/object/$BUCKET/$OBJECT" \
   -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
   -H "Content-Type: application/gzip" -H "x-upsert: true" \
   --data-binary "@$FILE"
