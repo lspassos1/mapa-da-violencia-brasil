@@ -343,6 +343,95 @@ def finalize(year: int, granularity: str) -> Path:
     return OFFICIAL_DATASET_GZ
 
 
+def _merged_year_items(year: int, granularity: str) -> tuple[list[dict], dict]:
+    """Agrega um ano e funde um item por municipio (todos os indicadores),
+    rotulando o periodo anual como "ANO". Reutilizado pela carga multi-ano."""
+    csv_path = build_combined_csv(year, granularity)
+    result = generate_app_ready_dataset(
+        input_path=csv_path,
+        output_path=PROCESSED_DIR / "app-ready" / f"vde-{year}.json",
+    )
+    payload = result["payload"]
+    merged: dict[str, dict] = {}
+    for item in payload["items"]:
+        key = item["idIbge"]
+        if key not in merged:
+            merged[key] = {k: v for k, v in item.items() if k != "indicadores"}
+            merged[key]["indicadores"] = {}
+        merged[key]["indicadores"].update(item["indicadores"])
+    items = list(merged.values())
+    if granularity == "anual":
+        for item in items:
+            item["periodo"] = str(year)
+    return items, payload
+
+
+def discover_years() -> list[int]:
+    """Anos com ficheiro `BancoVDE <ano>.xlsx` presente em data/raw/vde/."""
+    years = []
+    for path in VDE_DIR.glob("BancoVDE *.xlsx"):
+        match = re.search(r"(\d{4})", path.stem)
+        if match:
+            years.append(int(match.group(1)))
+    return sorted(years)
+
+
+def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) -> Path:
+    """Carga multi-ano: concatena os itens de varios anos num so dataset com
+    multiplos periodos (um item por municipio+ano). O periodo por omissao
+    (periods[0]) e o ano completo mais recente, que tem taxa por 100 mil."""
+    all_items: list[dict] = []
+    base_payload: dict | None = None
+    for year in years:
+        items, payload = _merged_year_items(year, granularity)
+        all_items.extend(items)
+        if base_payload is None:
+            base_payload = payload
+        print(f"  {year}: {len(items)} municipios")
+
+    if base_payload is None:
+        raise SystemExit("Nenhum ano agregado; verifique data/raw/vde/.")
+
+    # Ordena os periodos: anos completos do mais recente para o mais antigo,
+    # e os anos parciais (ex.: ano corrente incompleto) no fim. Assim o periodo
+    # que abre por omissao e o ano completo mais recente (com taxa valida).
+    full = sorted((y for y in years if y not in partial_years), reverse=True)
+    partial = sorted((y for y in years if y in partial_years), reverse=True)
+    ordered = full + partial
+
+    def _label(y: int) -> str:
+        return f"{y} (parcial)" if y in partial_years else str(y)
+
+    today = utc_now()[:10]
+    payload = base_payload
+    payload["items"] = all_items
+    payload["periods"] = [
+        {"key": str(y), "label": _label(y), "updatedAt": today} for y in ordered
+    ]
+    span = f"{min(years)}-{max(years)}"
+    payload["status"]["latestPeriod"] = str(ordered[0])
+    payload["status"]["source"] = f"MJSP/SINESP - Base VDE {span}"
+    payload["status"]["status"] = f"Carga nacional oficial (Base VDE {span})"
+    payload["status"]["limitations"] = [
+        f"Base VDE do SINESP/MJSP, anos {span}, agregada por municipio (total anual).",
+        "Cobre os indicadores municipais de vitima do VDE; crimes patrimoniais do "
+        "VDE so existem a nivel UF e nao entram no mapa municipal.",
+        "Taxa por 100 mil so esta disponivel para 2025 (populacao IBGE 2025); nos "
+        "demais anos mostra-se o total absoluto.",
+    ]
+
+    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    OFFICIAL_DATASET_GZ.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(OFFICIAL_DATASET_GZ, "wb", compresslevel=9) as handle:
+        handle.write(raw)
+    size_mb = round(OFFICIAL_DATASET_GZ.stat().st_size / 1e6, 2)
+    print(
+        f"{len(years)} anos, {len(all_items)} itens -> {OFFICIAL_DATASET_GZ} "
+        f"({size_mb} MB gz; {round(len(raw)/1e6,2)} MB cru)"
+    )
+    return OFFICIAL_DATASET_GZ
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -354,6 +443,10 @@ def main() -> int:
     f = sub.add_parser("finalize", help="Pipeline completo -> public/officialCrimeData.json.gz")
     f.add_argument("--year", type=int, default=2025)
     f.add_argument("--granularity", choices=["mensal", "anual"], default="anual")
+    m = sub.add_parser("finalize-multi", help="Carga multi-ano -> public/officialCrimeData.json.gz")
+    m.add_argument("--years", help="Lista 'ini-fim' (ex.: 2015-2026); por omissao, todos os encontrados")
+    m.add_argument("--granularity", choices=["mensal", "anual"], default="anual")
+    m.add_argument("--partial", default="2026", help="Anos parciais (CSV), rotulados e colocados no fim")
     args = parser.parse_args()
     if args.command == "diagnose":
         diagnose(args.year)
@@ -361,6 +454,15 @@ def main() -> int:
         build_combined_csv(args.year, args.granularity)
     elif args.command == "finalize":
         finalize(args.year, args.granularity)
+    elif args.command == "finalize-multi":
+        if args.years:
+            ini, fim = (int(x) for x in args.years.split("-"))
+            years = list(range(ini, fim + 1))
+        else:
+            years = discover_years()
+        partial = {int(x) for x in args.partial.split(",") if x.strip()}
+        years = [y for y in years if (VDE_DIR / f"BancoVDE {y}.xlsx").exists()]
+        finalize_multi(years, args.granularity, partial)
     return 0
 
 

@@ -8,7 +8,12 @@ import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
 import { mapTileAttribution, mapTileUrls } from "@/lib/mapConfig";
 import { getBoundsForData, getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
-import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
+import {
+  buildStateFillColorExpression,
+  computeStateChoropleth,
+  createCityFeatureCollection,
+  createStateFeatureCollection,
+} from "@/services/geoService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import { MapTooltip } from "./MapTooltip";
 
@@ -56,6 +61,12 @@ export function BrazilCrimeMap({
     () => createCityFeatureCollection(selectedMunicipality ? [selectedMunicipality] : [], indicator, viewMode),
     [indicator, selectedMunicipality, viewMode],
   );
+  // Coropletico por UF (degrade de violencia) para o indicador/modo atuais.
+  const stateFillColor = useMemo(
+    () => buildStateFillColorExpression(computeStateChoropleth(data, indicator, viewMode)),
+    [data, indicator, viewMode],
+  );
+  const stateFillColorRef = useRef(stateFillColor);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const dataRef = useRef(data);
@@ -79,6 +90,10 @@ export function BrazilCrimeMap({
   useEffect(() => {
     selectedCityCollectionRef.current = selectedCityCollection;
   }, [selectedCityCollection]);
+
+  useEffect(() => {
+    stateFillColorRef.current = stateFillColor;
+  }, [stateFillColor]);
 
   useEffect(() => {
     onMunicipalitySelectRef.current = onMunicipalitySelect;
@@ -166,8 +181,9 @@ export function BrazilCrimeMap({
             type: "fill",
             source: "states",
             paint: {
-              "fill-color": "#38bdf8",
-              "fill-opacity": ["case", ["==", ["get", "uf"], ""], 0.16, 0.04],
+              // Coropletico: cada UF recebe a cor do seu nivel de violencia.
+              "fill-color": stateFillColorRef.current as never,
+              "fill-opacity": 0.55,
             },
           });
           map.addLayer({
@@ -259,6 +275,9 @@ export function BrazilCrimeMap({
             ],
             { padding: 48, maxZoom: 7, duration: 0 },
           );
+          // Garante que o canvas iguala o tamanho final do container (apos o
+          // layout do grid assentar), evitando um mapa renderizado a meio.
+          map.resize();
           setIsLoading(false);
         });
 
@@ -307,12 +326,6 @@ export function BrazilCrimeMap({
       return;
     }
     map.setFilter("selected-state-line", ["==", ["get", "uf"], selectedState ?? ""]);
-    map.setPaintProperty("states-fill", "fill-opacity", [
-      "case",
-      ["==", ["get", "uf"], selectedState ?? ""],
-      0.16,
-      0.04,
-    ]);
 
     if (selectedMunicipality) {
       const [west, south, east, north] = getMunicipalityBounds(selectedMunicipality.lng, selectedMunicipality.lat);
@@ -341,9 +354,34 @@ export function BrazilCrimeMap({
     );
   }, [selectedMunicipality, selectedState]);
 
+  // Degrade coropletico das UFs: atualiza a cor por nivel de violencia ao mudar
+  // indicador/modo/periodo e realca a UF selecionada (atenuando as restantes),
+  // sem re-enquadrar o mapa.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded()) {
+      return;
+    }
+    map.setPaintProperty("states-fill", "fill-color", stateFillColor as never);
+    map.setPaintProperty(
+      "states-fill",
+      "fill-opacity",
+      selectedState
+        ? ["case", ["==", ["get", "uf"], selectedState], 0.78, 0.28]
+        : 0.55,
+    );
+  }, [stateFillColor, selectedState]);
+
+    /* Altura fixa de viewport (nao "h-full"): no grid lg, a coluna de filtros
+       e alta e esticava a celula do mapa para ~1384px, mas o canvas do MapLibre
+       ficava nos ~600px iniciais — deixando o resto preto (mapa "invisivel"). Uma
+       altura propria e estavel resolve, e `self-start` evita o esticamento. */
   return (
-    <div className="relative h-full min-h-[620px]">
-      <div ref={containerRef} className="absolute inset-0 z-0" />
+    <div className="relative h-[78vh] min-h-[620px] max-h-[920px] self-start">
+      {/* O MapLibre forca `position: relative` na sua div (.maplibregl-map),
+          sobrepondo-se ao `absolute` do Tailwind e anulando o `inset-0`. Damos
+          altura explicita (h-full do wrapper de altura fixa) para o mapa preencher. */}
+      <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" />
       {useStaticFallback ? (
         <StaticCrimeMapFallback
           data={data}

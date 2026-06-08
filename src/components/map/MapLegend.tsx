@@ -27,6 +27,12 @@ export function MapLegend() {
           </div>
         ))}
       </div>
+      <p className="mt-3 border-t border-white/10 pt-2 text-[10px] leading-snug text-slate-400">
+        Os <span className="text-slate-200">círculos</span> mostram cada município pelo seu
+        índice; o <span className="text-slate-200">preenchimento dos estados</span> é um degradê
+        que ordena as UFs do menor para o maior nível de violência no indicador e período
+        selecionados.
+      </p>
     </div>
   );
 }

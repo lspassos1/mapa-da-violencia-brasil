@@ -1,9 +1,80 @@
 import brazilStatesMesh from "@/data/brazilStatesMesh.json";
 import { brazilBounds, stateMapData } from "@/data/stateGeometries";
-import { getScoreColor, getScoreRadius } from "@/lib/colorScale";
+import { getScoreColor, getScoreRadius, riskColors } from "@/lib/colorScale";
 import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import type { Bounds, GeoFeatureCollection, StateMapInfo } from "@/types/geo";
+
+// Escala sequencial (do menor para o maior nivel de violencia) usada no
+// preenchimento coropletico das UFs.
+const STATE_FILL_SCALE = [
+  riskColors.baixo,
+  riskColors.moderado,
+  riskColors.atencao,
+  riskColors.alto,
+  riskColors.critico,
+];
+
+// Cinza para UFs sem dados no indicador/periodo selecionado.
+const STATE_FILL_FALLBACK = "#334155";
+
+export interface StateChoroplethEntry {
+  uf: string;
+  value: number;
+  color: string;
+}
+
+// Agrega o indicador selecionado por UF (soma das vitimas; taxa por 100 mil
+// quando o modo e taxa) e mapeia cada UF a uma cor por quantil de rank, para
+// que o mapa mostre um degrade real de violencia entre os estados.
+export function computeStateChoropleth(
+  data: MunicipalityCrimeData[],
+  indicator: CrimeIndicatorKey,
+  viewMode: ViewMode,
+): StateChoroplethEntry[] {
+  const totals = new Map<string, { count: number; pop: number }>();
+  for (const item of data) {
+    const metric = item.indicadores[indicator];
+    if (!metric || metric.dataStatus === "sem_dados" || metric.dataStatus === "nao_aplicavel") {
+      continue;
+    }
+    const entry = totals.get(item.uf) ?? { count: 0, pop: 0 };
+    entry.count += metric.total ?? 0;
+    entry.pop += item.populacao ?? 0;
+    totals.set(item.uf, entry);
+  }
+
+  const useRate = viewMode === "taxa100k";
+  const entries: StateChoroplethEntry[] = [...totals.entries()].map(([uf, agg]) => ({
+    uf,
+    value: useRate ? (agg.pop > 0 ? (agg.count / agg.pop) * 100000 : 0) : agg.count,
+    color: STATE_FILL_FALLBACK,
+  }));
+
+  const sorted = [...entries].sort((a, b) => a.value - b.value);
+  const n = sorted.length;
+  sorted.forEach((row, index) => {
+    const bucket = Math.min(STATE_FILL_SCALE.length - 1, Math.floor((index / n) * STATE_FILL_SCALE.length));
+    row.color = STATE_FILL_SCALE[bucket];
+  });
+  return entries;
+}
+
+// Constroi a expressao `fill-color` (MapLibre) para a camada de estados a
+// partir do coropletico. UFs sem dados caem no cinza de fallback.
+export function buildStateFillColorExpression(
+  choropleth: StateChoroplethEntry[],
+): unknown {
+  if (choropleth.length === 0) {
+    return STATE_FILL_FALLBACK;
+  }
+  const match: unknown[] = ["match", ["get", "uf"]];
+  for (const entry of choropleth) {
+    match.push(entry.uf, entry.color);
+  }
+  match.push(STATE_FILL_FALLBACK);
+  return match;
+}
 
 // Malha estadual real (poligonos IBGE simplificados, qualidade intermediaria)
 // com propriedades { uf, nome }. Substitui as caixas retangulares para que o

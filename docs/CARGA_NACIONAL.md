@@ -17,7 +17,20 @@ python3 -m etl.aggregate_vde diagnose --year 2025
 #   agrega -> app-ready -> funde por municipio -> gzip para public/
 python3 -m etl.aggregate_vde finalize --year 2025 --granularity anual
 # -> public/officialCrimeData.json.gz
+
+# carga MULTI-ANO (todos os anos com ficheiro em data/raw/vde/):
+#   um item por (municipio, ano); periods = anos completos (desc) + parciais no fim
+python3 -m etl.aggregate_vde finalize-multi --partial 2026
+#   ou um intervalo explicito:
+python3 -m etl.aggregate_vde finalize-multi --years 2015-2026 --partial 2026
+# -> public/officialCrimeData.json.gz (multi-periodo)
 ```
+
+**Multi-ano e taxa por 100 mil:** so existe populacao IBGE de 2025, por isso a
+**taxa/100k** so e calculada para o periodo **2025** (que abre por omissao, sendo
+`periods[0]`); nos restantes anos mostra-se o **total absoluto** (a app suprime a
+taxa cruzada de populacao). Anos parciais (ex.: 2026, ano corrente incompleto)
+ficam rotulados `(parcial)` e no fim da lista de periodos.
 
 **Granularidade do VDE:** so os crimes de **vitima** (homicidio doloso,
 feminicidio, latrocinio, lesao corporal seguida de morte, tentativa de
