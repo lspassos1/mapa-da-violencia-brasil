@@ -309,6 +309,9 @@ export function BrazilCrimeMap({
 
     return () => {
       isDisposed = true;
+      // Repoe o estado de prontidao: ao remontar (ex.: Strict Mode), os effects
+      // nao devem tocar no novo mapa antes do seu evento 'load' recriar as camadas.
+      styleReadyRef.current = false;
       mapRef.current?.remove();
       mapRef.current = null;
     };
