@@ -22,15 +22,18 @@ if (!connectionString) {
 const file = process.argv[2] ?? "public/officialCrimeData.json.gz";
 const dataset = JSON.parse(gunzipSync(readFileSync(file)).toString("utf-8"));
 
-// O periodo anual e "YYYY"; deriva o ano do primeiro periodo.
-const ano = Number.parseInt(String(dataset.periods?.[0]?.key ?? "").slice(0, 4), 10);
-if (!Number.isInteger(ano)) {
-  console.error("Nao foi possivel derivar o ano a partir de periods[0].key.");
-  process.exit(1);
-}
-
+// Suporta carga anual e multi-ano: o ano de cada linha vem do `periodo` do
+// proprio item ("YYYY"), nao de um unico periods[0]. Reescreve todos os anos
+// presentes no dataset.
 const rows = [];
+const anos = new Set();
 for (const item of dataset.items) {
+  const ano = Number.parseInt(String(item.periodo ?? "").slice(0, 4), 10);
+  if (!Number.isInteger(ano)) {
+    console.error(`Item ${item.idIbge} sem periodo anual valido (periodo=${item.periodo}).`);
+    process.exit(1);
+  }
+  anos.add(ano);
   for (const [indicador, metric] of Object.entries(item.indicadores)) {
     rows.push([
       item.idIbge, item.municipio, item.uf, item.estado, item.lat, item.lng,
@@ -40,6 +43,7 @@ for (const item of dataset.items) {
     ]);
   }
 }
+const anosList = [...anos].sort((a, b) => a - b);
 
 const { default: pg } = await import("pg");
 // TLS com verificacao do certificado (o pooler Supabase apresenta um cert
@@ -49,10 +53,10 @@ await client.connect();
 
 const COLS = 15;
 try {
-  // Delete + todos os inserts numa unica transacao: a troca de dados do ano e
-  // atomica e instantanea (nenhuma query de BI ve zero linhas a meio da carga).
+  // Delete + todos os inserts numa unica transacao: a troca dos anos presentes
+  // e atomica e instantanea (nenhuma query de BI ve zero linhas a meio da carga).
   await client.query("begin");
-  await client.query("delete from public.crime_municipal where ano = $1", [ano]);
+  await client.query("delete from public.crime_municipal where ano = any($1::int[])", [anosList]);
 
   for (let i = 0; i < rows.length; i += 500) {
     const chunk = rows.slice(i, i + 500);
@@ -75,10 +79,11 @@ try {
   await client.query("commit");
 
   const { rows: [summary] } = await client.query(
-    "select count(*) n, count(distinct id_ibge) municipios, count(distinct indicador) indicadores from public.crime_municipal where ano=$1",
-    [ano],
+    "select count(*) n, count(distinct id_ibge) municipios, count(distinct indicador) indicadores, count(distinct ano) anos from public.crime_municipal where ano = any($1::int[])",
+    [anosList],
   );
-  console.log(`Ano ${ano}: ${summary.n} linhas (${summary.municipios} municipios, ${summary.indicadores} indicadores).`);
+  const span = anosList.length === 1 ? `${anosList[0]}` : `${anosList[0]}-${anosList[anosList.length - 1]}`;
+  console.log(`Anos ${span}: ${summary.n} linhas (${summary.municipios} municipios, ${summary.indicadores} indicadores, ${summary.anos} anos).`);
 } catch (err) {
   await client.query("rollback").catch(() => {});
   throw err;

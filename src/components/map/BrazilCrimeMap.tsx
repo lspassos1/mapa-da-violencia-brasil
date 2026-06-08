@@ -8,7 +8,12 @@ import { getMetricValueFromMetric } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
 import { mapTileAttribution, mapTileUrls } from "@/lib/mapConfig";
 import { getBoundsForData, getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
-import { createCityFeatureCollection, createStateFeatureCollection } from "@/services/geoService";
+import {
+  buildStateFillColorExpression,
+  computeStateChoropleth,
+  createCityFeatureCollection,
+  createStateFeatureCollection,
+} from "@/services/geoService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 import { MapTooltip } from "./MapTooltip";
 
@@ -56,6 +61,12 @@ export function BrazilCrimeMap({
     () => createCityFeatureCollection(selectedMunicipality ? [selectedMunicipality] : [], indicator, viewMode),
     [indicator, selectedMunicipality, viewMode],
   );
+  // Coropletico por UF (degrade de violencia) para o indicador/modo atuais.
+  const stateFillColor = useMemo(
+    () => buildStateFillColorExpression(computeStateChoropleth(data, indicator, viewMode)),
+    [data, indicator, viewMode],
+  );
+  const stateFillColorRef = useRef(stateFillColor);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const dataRef = useRef(data);
@@ -79,6 +90,10 @@ export function BrazilCrimeMap({
   useEffect(() => {
     selectedCityCollectionRef.current = selectedCityCollection;
   }, [selectedCityCollection]);
+
+  useEffect(() => {
+    stateFillColorRef.current = stateFillColor;
+  }, [stateFillColor]);
 
   useEffect(() => {
     onMunicipalitySelectRef.current = onMunicipalitySelect;
@@ -166,8 +181,9 @@ export function BrazilCrimeMap({
             type: "fill",
             source: "states",
             paint: {
-              "fill-color": "#38bdf8",
-              "fill-opacity": ["case", ["==", ["get", "uf"], ""], 0.16, 0.04],
+              // Coropletico: cada UF recebe a cor do seu nivel de violencia.
+              "fill-color": stateFillColorRef.current as never,
+              "fill-opacity": 0.55,
             },
           });
           map.addLayer({
@@ -307,12 +323,6 @@ export function BrazilCrimeMap({
       return;
     }
     map.setFilter("selected-state-line", ["==", ["get", "uf"], selectedState ?? ""]);
-    map.setPaintProperty("states-fill", "fill-opacity", [
-      "case",
-      ["==", ["get", "uf"], selectedState ?? ""],
-      0.16,
-      0.04,
-    ]);
 
     if (selectedMunicipality) {
       const [west, south, east, north] = getMunicipalityBounds(selectedMunicipality.lng, selectedMunicipality.lat);
@@ -340,6 +350,24 @@ export function BrazilCrimeMap({
       { padding: selectedState ? 96 : 48, maxZoom: selectedState ? undefined : 7, duration: 900 },
     );
   }, [selectedMunicipality, selectedState]);
+
+  // Degrade coropletico das UFs: atualiza a cor por nivel de violencia ao mudar
+  // indicador/modo/periodo e realca a UF selecionada (atenuando as restantes),
+  // sem re-enquadrar o mapa.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded()) {
+      return;
+    }
+    map.setPaintProperty("states-fill", "fill-color", stateFillColor as never);
+    map.setPaintProperty(
+      "states-fill",
+      "fill-opacity",
+      selectedState
+        ? ["case", ["==", ["get", "uf"], selectedState], 0.78, 0.28]
+        : 0.55,
+    );
+  }, [stateFillColor, selectedState]);
 
   return (
     <div className="relative h-full min-h-[620px]">
