@@ -275,6 +275,9 @@ export function BrazilCrimeMap({
             ],
             { padding: 48, maxZoom: 7, duration: 0 },
           );
+          // Garante que o canvas iguala o tamanho final do container (apos o
+          // layout do grid assentar), evitando um mapa renderizado a meio.
+          map.resize();
           setIsLoading(false);
         });
 
@@ -369,9 +372,16 @@ export function BrazilCrimeMap({
     );
   }, [stateFillColor, selectedState]);
 
+    /* Altura fixa de viewport (nao "h-full"): no grid lg, a coluna de filtros
+       e alta e esticava a celula do mapa para ~1384px, mas o canvas do MapLibre
+       ficava nos ~600px iniciais — deixando o resto preto (mapa "invisivel"). Uma
+       altura propria e estavel resolve, e `self-start` evita o esticamento. */
   return (
-    <div className="relative h-full min-h-[620px]">
-      <div ref={containerRef} className="absolute inset-0 z-0" />
+    <div className="relative h-[78vh] min-h-[620px] max-h-[920px] self-start">
+      {/* O MapLibre forca `position: relative` na sua div (.maplibregl-map),
+          sobrepondo-se ao `absolute` do Tailwind e anulando o `inset-0`. Damos
+          altura explicita (h-full do wrapper de altura fixa) para o mapa preencher. */}
+      <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" />
       {useStaticFallback ? (
         <StaticCrimeMapFallback
           data={data}
