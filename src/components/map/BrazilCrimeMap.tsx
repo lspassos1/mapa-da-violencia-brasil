@@ -9,13 +9,18 @@ import { formatMetricValue } from "@/lib/formatters";
 import { mapTileAttribution, mapTileUrls } from "@/lib/mapConfig";
 import { getBoundsForData, getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
 import {
+  buildMunicipalFillColorExpression,
   buildStateFillColorExpression,
+  computeMunicipalChoropleth,
   computeStateChoropleth,
-  createCityFeatureCollection,
   createStateFeatureCollection,
 } from "@/services/geoService";
+import { loadStateMunicipalMesh } from "@/services/geoMeshService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
+import type { GeoFeatureCollection } from "@/types/geo";
 import { MapTooltip } from "./MapTooltip";
+
+const EMPTY_FC: GeoFeatureCollection = { type: "FeatureCollection", features: [] };
 
 interface BrazilCrimeMapProps {
   data: MunicipalityCrimeData[];
@@ -56,24 +61,31 @@ export function BrazilCrimeMap({
   onMunicipalitySelect,
   onStateSelect,
 }: BrazilCrimeMapProps) {
-  const cityCollection = useMemo(() => createCityFeatureCollection(data, indicator, viewMode), [data, indicator, viewMode]);
-  const selectedCityCollection = useMemo(
-    () => createCityFeatureCollection(selectedMunicipality ? [selectedMunicipality] : [], indicator, viewMode),
-    [indicator, selectedMunicipality, viewMode],
-  );
   // Coropletico por UF (degrade de violencia) para o indicador/modo atuais.
   const stateFillColor = useMemo(
     () => buildStateFillColorExpression(computeStateChoropleth(data, indicator, viewMode)),
     [data, indicator, viewMode],
   );
+  // Coropletico municipal (cores por id_ibge) do estado aberto, para pintar os
+  // poligonos das cidades pelo indice. Vazio ao nivel nacional.
+  const municipalFillColor = useMemo(
+    () =>
+      buildMunicipalFillColorExpression(
+        selectedState ? computeMunicipalChoropleth(data, indicator, selectedState) : [],
+      ),
+    [data, indicator, selectedState],
+  );
   const stateFillColorRef = useRef(stateFillColor);
+  // Verdadeiro apos o evento 'load' (estilo + camadas prontos). Guardamos os
+  // effects por este ref em vez de map.isStyleLoaded(), que tambem fica falso
+  // enquanto os tiles carregam — o que fazia fitBounds/pintura sair cedo (sem
+  // zoom e com o degrade obsoleto) ao selecionar um estado.
+  const styleReadyRef = useRef(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const dataRef = useRef(data);
   const onMunicipalitySelectRef = useRef(onMunicipalitySelect);
   const onStateSelectRef = useRef(onStateSelect);
-  const cityCollectionRef = useRef(cityCollection);
-  const selectedCityCollectionRef = useRef(selectedCityCollection);
   const [isLoading, setIsLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const [useStaticFallback, setUseStaticFallback] = useState(false);
@@ -82,14 +94,6 @@ export function BrazilCrimeMap({
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
-
-  useEffect(() => {
-    cityCollectionRef.current = cityCollection;
-  }, [cityCollection]);
-
-  useEffect(() => {
-    selectedCityCollectionRef.current = selectedCityCollection;
-  }, [selectedCityCollection]);
 
   useEffect(() => {
     stateFillColorRef.current = stateFillColor;
@@ -166,14 +170,11 @@ export function BrazilCrimeMap({
             type: "geojson",
             data: createStateFeatureCollection(),
           });
-          map.addSource("cities", {
+          // Malha municipal do estado aberto (carregada sob demanda no clique).
+          map.addSource("municipios", {
             type: "geojson",
-            data: cityCollectionRef.current,
-            promoteId: "idIbge",
-          });
-          map.addSource("selected-city", {
-            type: "geojson",
-            data: selectedCityCollectionRef.current,
+            data: EMPTY_FC,
+            promoteId: "id",
           });
 
           map.addLayer({
@@ -196,6 +197,38 @@ export function BrazilCrimeMap({
               "line-width": 1.2,
             },
           });
+          // Municipios do estado aberto: preenchimento coropletico por indice e
+          // fronteiras reais (substitui os antigos circulos).
+          map.addLayer({
+            id: "municipios-fill",
+            type: "fill",
+            source: "municipios",
+            paint: {
+              "fill-color": "#334155",
+              "fill-opacity": 0.78,
+            },
+          });
+          map.addLayer({
+            id: "municipios-line",
+            type: "line",
+            source: "municipios",
+            paint: {
+              "line-color": "#0f172a",
+              "line-opacity": 0.55,
+              "line-width": 0.6,
+            },
+          });
+          map.addLayer({
+            id: "selected-municipio-line",
+            type: "line",
+            source: "municipios",
+            filter: ["==", ["get", "id"], ""],
+            paint: {
+              "line-color": "#f8fafc",
+              "line-opacity": 0.95,
+              "line-width": 2.4,
+            },
+          });
           map.addLayer({
             id: "selected-state-line",
             type: "line",
@@ -207,30 +240,6 @@ export function BrazilCrimeMap({
               "line-width": 2.4,
             },
           });
-          map.addLayer({
-            id: "city-points",
-            type: "circle",
-            source: "cities",
-            paint: {
-              "circle-color": ["get", "color"],
-              "circle-radius": ["get", "radius"],
-              "circle-stroke-width": 1.8,
-              "circle-stroke-color": "#f8fafc",
-              "circle-opacity": 0.92,
-            },
-          });
-          map.addLayer({
-            id: "selected-city",
-            type: "circle",
-            source: "selected-city",
-            paint: {
-              "circle-color": ["get", "color"],
-              "circle-radius": 24,
-              "circle-stroke-width": 4,
-              "circle-stroke-color": "#f8fafc",
-              "circle-opacity": 0.45,
-            },
-          });
 
           map.on("click", "states-fill", (event) => {
             const feature = event.features?.[0];
@@ -239,24 +248,26 @@ export function BrazilCrimeMap({
               onStateSelectRef.current(uf);
             }
           });
-          map.on("click", "city-points", (event) => {
+          map.on("click", "municipios-fill", (event) => {
             const feature = event.features?.[0];
-            const idIbge = feature?.properties?.idIbge;
+            const idIbge = feature?.properties?.id;
             const item = dataRef.current.find((municipality) => municipality.idIbge === idIbge);
             if (item) {
               onMunicipalitySelectRef.current(item);
             }
           });
-          map.on("mousemove", "city-points", (event) => {
+          map.on("mousemove", "municipios-fill", (event) => {
             map.getCanvas().style.cursor = "pointer";
             const feature = event.features?.[0];
-            const idIbge = feature?.properties?.idIbge;
+            const idIbge = feature?.properties?.id;
             const item = dataRef.current.find((municipality) => municipality.idIbge === idIbge);
             if (item) {
               setTooltip({ x: event.point.x, y: event.point.y, item });
+            } else {
+              setTooltip(null);
             }
           });
-          map.on("mouseleave", "city-points", () => {
+          map.on("mouseleave", "municipios-fill", () => {
             map.getCanvas().style.cursor = "";
             setTooltip(null);
           });
@@ -278,6 +289,7 @@ export function BrazilCrimeMap({
           // Garante que o canvas iguala o tamanho final do container (apos o
           // layout do grid assentar), evitando um mapa renderizado a meio.
           map.resize();
+          styleReadyRef.current = true;
           setIsLoading(false);
         });
 
@@ -302,27 +314,48 @@ export function BrazilCrimeMap({
     };
   }, []);
 
+  // Carrega (sob demanda) a malha municipal do estado aberto; ao nivel nacional
+  // limpa a fonte para que so o degrade dos estados fique visivel.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.isStyleLoaded()) {
+    if (!map || !styleReadyRef.current) {
       return;
     }
-    const cities = map.getSource("cities") as GeoJSONSource | undefined;
-    cities?.setData(cityCollection);
-  }, [cityCollection]);
+    const source = map.getSource("municipios") as GeoJSONSource | undefined;
+    if (!source) {
+      return;
+    }
+    if (!selectedState) {
+      source.setData(EMPTY_FC);
+      return;
+    }
+    let cancelled = false;
+    void loadStateMunicipalMesh(selectedState).then((mesh) => {
+      // `cancelled` (via cleanup) garante que so a malha do estado atual e escrita.
+      if (cancelled) {
+        return;
+      }
+      const current = mapRef.current?.getSource("municipios") as GeoJSONSource | undefined;
+      current?.setData(mesh);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedState]);
+
+  // Pinta os municipios pelo indice (degrade) e realca o municipio selecionado.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReadyRef.current) {
+      return;
+    }
+    map.setPaintProperty("municipios-fill", "fill-color", municipalFillColor as never);
+    map.setFilter("selected-municipio-line", ["==", ["get", "id"], selectedMunicipality?.idIbge ?? ""]);
+  }, [municipalFillColor, selectedMunicipality]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.isStyleLoaded()) {
-      return;
-    }
-    const selectedCity = map.getSource("selected-city") as GeoJSONSource | undefined;
-    selectedCity?.setData(selectedCityCollection);
-  }, [selectedCityCollection]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map?.isStyleLoaded()) {
+    if (!map || !styleReadyRef.current) {
       return;
     }
     map.setFilter("selected-state-line", ["==", ["get", "uf"], selectedState ?? ""]);
@@ -359,7 +392,7 @@ export function BrazilCrimeMap({
   // sem re-enquadrar o mapa.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.isStyleLoaded()) {
+    if (!map || !styleReadyRef.current) {
       return;
     }
     map.setPaintProperty("states-fill", "fill-color", stateFillColor as never);

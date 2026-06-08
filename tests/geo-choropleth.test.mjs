@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { riskColors } from "../src/lib/colorScale.ts";
-import { buildStateFillColorExpression, computeStateChoropleth } from "../src/services/geoService.ts";
+import { getScoreColor, riskColors } from "../src/lib/colorScale.ts";
+import {
+  buildMunicipalFillColorExpression,
+  buildStateFillColorExpression,
+  computeMunicipalChoropleth,
+  computeStateChoropleth,
+} from "../src/services/geoService.ts";
 import { makeMetric, makeMunicipality } from "./helpers/crime-fixtures.mjs";
 
 function muni(uf, total, overrides = {}) {
@@ -77,4 +82,34 @@ test("buildStateFillColorExpression devolve uma expressao match valida do MapLib
 test("buildStateFillColorExpression com lista vazia devolve uma cor solida (fallback)", () => {
   const expr = buildStateFillColorExpression([]);
   assert.equal(typeof expr, "string");
+});
+
+test("computeMunicipalChoropleth pinta so a UF pedida, por score, ignorando sem_dados", () => {
+  const data = [
+    makeMunicipality({ idIbge: "3500001", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ score: 90 }) } }),
+    makeMunicipality({ idIbge: "3500002", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ score: 10 }) } }),
+    makeMunicipality({ idIbge: "3300001", uf: "RJ", indicadores: { homicidioDoloso: makeMetric({ score: 50 }) } }),
+    makeMunicipality({ idIbge: "3500003", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ dataStatus: "sem_dados" }) } }),
+  ];
+  const choropleth = computeMunicipalChoropleth(data, "homicidioDoloso", "SP");
+  const byId = Object.fromEntries(choropleth.map((entry) => [entry.id, entry.color]));
+  assert.deepEqual(Object.keys(byId).sort(), ["3500001", "3500002"]);
+  assert.equal(byId["3500001"], getScoreColor(90));
+  assert.equal(byId["3500002"], getScoreColor(10));
+});
+
+test("buildMunicipalFillColorExpression casa por `id` (id_ibge) com fallback", () => {
+  const expr = buildMunicipalFillColorExpression([
+    { id: "3500001", color: "#aaa" },
+    { id: "3500002", color: "#bbb" },
+  ]);
+  assert.ok(Array.isArray(expr));
+  assert.equal(expr[0], "match");
+  assert.deepEqual(expr[1], ["get", "id"]);
+  assert.deepEqual(expr.slice(2, 6), ["3500001", "#aaa", "3500002", "#bbb"]);
+  assert.equal(typeof expr[expr.length - 1], "string");
+});
+
+test("buildMunicipalFillColorExpression vazio devolve cor solida (fallback)", () => {
+  assert.equal(typeof buildMunicipalFillColorExpression([]), "string");
 });
