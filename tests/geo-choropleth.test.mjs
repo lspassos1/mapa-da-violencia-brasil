@@ -115,24 +115,25 @@ test("buildMunicipalFillColorExpression vazio devolve cor solida (fallback)", ()
   assert.equal(typeof buildMunicipalFillColorExpression([]), "string");
 });
 
-test("computeStateChoroplethFromUf ordena as UFs por total (ou taxa)", () => {
+test("computeStateChoroplethFromUf colore pelo score do ETL (coerente com o nivel)", () => {
   const ufData = [
-    { uf: "AC", total: 5, taxa100k: 50 },
-    { uf: "SP", total: 1000, taxa100k: 10 },
-    { uf: "RJ", total: 500, taxa100k: 90 },
+    { uf: "AC", score: 10, total: 5, taxa100k: 50 },
+    { uf: "SP", score: 95, total: 1000, taxa100k: 10 },
   ];
-  const scale = [riskColors.baixo, riskColors.moderado, riskColors.atencao, riskColors.alto, riskColors.critico];
-  // por total: SP (1000) e o maior -> bucket mais alto que AC (5).
-  const byTotal = Object.fromEntries(computeStateChoroplethFromUf(ufData, "total").map((e) => [e.uf, e.color]));
-  assert.ok(scale.indexOf(byTotal.SP) > scale.indexOf(byTotal.AC));
-  // por taxa: RJ (90) e o maior -> bucket mais alto que SP (10).
-  const byRate = Object.fromEntries(computeStateChoroplethFromUf(ufData, "taxa100k").map((e) => [e.uf, e.color]));
-  assert.ok(scale.indexOf(byRate.RJ) > scale.indexOf(byRate.SP));
+  const byUf = Object.fromEntries(computeStateChoroplethFromUf(ufData, "total").map((e) => [e.uf, e.color]));
+  assert.equal(byUf.AC, getScoreColor(10)); // baixo
+  assert.equal(byUf.SP, getScoreColor(95)); // critico
+});
+
+test("computeStateChoroplethFromUf usa total ou taxa no `value` conforme o modo", () => {
+  const ufData = [{ uf: "RJ", score: 80, total: 1000, taxa100k: 146.5 }];
+  assert.equal(computeStateChoroplethFromUf(ufData, "total")[0].value, 1000);
+  assert.equal(computeStateChoroplethFromUf(ufData, "taxa100k")[0].value, 146.5);
 });
 
 test("computeStateChoroplethFromUf trata taxa null como 0 no modo taxa", () => {
   const result = computeStateChoroplethFromUf(
-    [{ uf: "AM", total: 9, taxa100k: null }],
+    [{ uf: "AM", score: 50, total: 9, taxa100k: null }],
     "taxa100k",
   );
   assert.equal(result[0].value, 0);

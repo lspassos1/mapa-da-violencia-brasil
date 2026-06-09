@@ -16,9 +16,12 @@ import { getRankedMunicipalities } from "@/lib/ranking";
 import { isRemoteDataMode } from "@/lib/dataMode";
 import { ufDatumToMunicipality } from "@/lib/ufDisplay";
 import { getStaticCrimeDataApi, loadCrimeDataApi, type CrimeDataApi } from "@/services/crimeDataService";
-import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
+import type { CrimeIndicatorKey, MunicipalityCrimeData, UfDatum, ViewMode } from "@/types/crime";
 
 const TABLE_ROW_LIMIT = 200;
+// Sentinela estavel para o caminho nao-UF: evita um array novo a cada render que
+// invalidaria o useMemo de BrazilCrimeMap (re-disparo de setPaintProperty).
+const EMPTY_UF: UfDatum[] = [];
 
 // Em demo/official_sample a carga e sincrona (loadCrimeDataApi resolve de
 // imediato), por isso a API ja esta disponivel no primeiro render — preservando
@@ -100,7 +103,7 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
   const isUf = api.isUfIndicator(indicator);
   // Consts simples: com o React Compiler ativo, a memoizacao e automatica
   // (evita o conflito de "preserve-manual-memoization" com deps de membro).
-  const ufChoropleth = isUf ? api.getUfChoropleth(period, indicator) : [];
+  const ufChoropleth = isUf ? api.getUfChoropleth(period, indicator) : EMPTY_UF;
   const nameByUf = new Map(metadata.ufs.map((entry) => [entry.uf, entry.nome]));
   const ufRankingItems = ufChoropleth.map((datum) =>
     ufDatumToMunicipality(datum, nameByUf.get(datum.uf) ?? datum.uf),

@@ -76,25 +76,19 @@ export function buildStateFillColorExpression(
   return match;
 }
 
-// Degrade dos estados para indicadores so-UF: ordena as UFs por valor (total ou
-// taxa) e mapeia a cor por quantil de rank, igual ao coropletico municipal-agregado.
+// Degrade dos estados para indicadores so-UF. A cor vem do `score` ja calculado
+// no ETL (mesmos limiares de getScoreColor), garantindo que a cor do mapa e o
+// `nivel` exibido no ranking/painel nunca discordam nas fronteiras das faixas.
 export function computeStateChoroplethFromUf(
-  ufData: ReadonlyArray<{ uf: string; total: number; taxa100k: number | null }>,
+  ufData: ReadonlyArray<{ uf: string; score: number; total: number; taxa100k: number | null }>,
   viewMode: ViewMode,
 ): StateChoroplethEntry[] {
   const useRate = viewMode === "taxa100k";
-  const entries: StateChoroplethEntry[] = ufData.map((datum) => ({
+  return ufData.map((datum) => ({
     uf: datum.uf,
     value: useRate ? datum.taxa100k ?? 0 : datum.total,
-    color: STATE_FILL_FALLBACK,
+    color: getScoreColor(datum.score),
   }));
-  const sorted = [...entries].sort((a, b) => a.value - b.value);
-  const n = sorted.length;
-  sorted.forEach((row, index) => {
-    const bucket = Math.min(STATE_FILL_SCALE.length - 1, Math.floor((index / n) * STATE_FILL_SCALE.length));
-    row.color = STATE_FILL_SCALE[bucket];
-  });
-  return entries;
 }
 
 export interface MunicipalChoroplethEntry {
