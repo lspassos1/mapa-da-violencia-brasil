@@ -76,6 +76,27 @@ export function buildStateFillColorExpression(
   return match;
 }
 
+// Degrade dos estados para indicadores so-UF: ordena as UFs por valor (total ou
+// taxa) e mapeia a cor por quantil de rank, igual ao coropletico municipal-agregado.
+export function computeStateChoroplethFromUf(
+  ufData: ReadonlyArray<{ uf: string; total: number; taxa100k: number | null }>,
+  viewMode: ViewMode,
+): StateChoroplethEntry[] {
+  const useRate = viewMode === "taxa100k";
+  const entries: StateChoroplethEntry[] = ufData.map((datum) => ({
+    uf: datum.uf,
+    value: useRate ? datum.taxa100k ?? 0 : datum.total,
+    color: STATE_FILL_FALLBACK,
+  }));
+  const sorted = [...entries].sort((a, b) => a.value - b.value);
+  const n = sorted.length;
+  sorted.forEach((row, index) => {
+    const bucket = Math.min(STATE_FILL_SCALE.length - 1, Math.floor((index / n) * STATE_FILL_SCALE.length));
+    row.color = STATE_FILL_SCALE[bucket];
+  });
+  return entries;
+}
+
 export interface MunicipalChoroplethEntry {
   id: string;
   color: string;

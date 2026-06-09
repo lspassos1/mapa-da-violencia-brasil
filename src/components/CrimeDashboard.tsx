@@ -10,9 +10,11 @@ import { MapLegend } from "@/components/map/MapLegend";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { AccessibleDataTable } from "@/components/panels/AccessibleDataTable";
 import { MunicipalityDetailsPanel } from "@/components/panels/MunicipalityDetailsPanel";
+import { UfDetailsPanel } from "@/components/panels/UfDetailsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
 import { getRankedMunicipalities } from "@/lib/ranking";
 import { isRemoteDataMode } from "@/lib/dataMode";
+import { ufDatumToMunicipality } from "@/lib/ufDisplay";
 import { getStaticCrimeDataApi, loadCrimeDataApi, type CrimeDataApi } from "@/services/crimeDataService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 
@@ -92,7 +94,21 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
   );
   const currentData = mapResult.items;
   const visibleMapData = selectedState ? rankingResult.items : currentData;
-  const ranking = rankingResult.ranking;
+
+  // Indicadores so-UF (patrimoniais/sexuais): o degrade dos estados vem de
+  // ufData e o ranking lista estados (nao municipios).
+  const isUf = api.isUfIndicator(indicator);
+  // Consts simples: com o React Compiler ativo, a memoizacao e automatica
+  // (evita o conflito de "preserve-manual-memoization" com deps de membro).
+  const ufChoropleth = isUf ? api.getUfChoropleth(period, indicator) : [];
+  const nameByUf = new Map(metadata.ufs.map((entry) => [entry.uf, entry.nome]));
+  const ufRankingItems = ufChoropleth.map((datum) =>
+    ufDatumToMunicipality(datum, nameByUf.get(datum.uf) ?? datum.uf),
+  );
+  const selectedUfDatum = isUf && selectedState ? api.getUfDatum(selectedState, period, indicator) : null;
+  const ranking = isUf
+    ? getRankedMunicipalities(ufRankingItems, indicator, viewMode, null, 10)
+    : rankingResult.ranking;
 
   const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
   // Modo 'official' sem carga gerada nao tem periodos: evita aceder a undefined.
@@ -170,9 +186,9 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
           <RankingPanel
             data={ranking}
             indicator={indicator}
-            selectedMunicipalityId={selectedMunicipality?.idIbge ?? null}
+            selectedMunicipalityId={isUf ? selectedState : selectedMunicipality?.idIbge ?? null}
             viewMode={viewMode}
-            onSelect={handleMunicipalitySelect}
+            onSelect={isUf ? (item) => handleStateSelect(item.uf) : handleMunicipalitySelect}
           />
         </aside>
 
@@ -244,6 +260,8 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
                 viewMode={viewMode}
                 onMunicipalitySelect={handleMunicipalitySelect}
                 onStateSelect={handleStateSelect}
+                isUfIndicator={isUf}
+                ufChoropleth={ufChoropleth}
               />
               <div className="absolute bottom-4 left-4 z-10">
                 <MapLegend />
@@ -283,15 +301,25 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
               </p>
             </div>
           </div>
-          <MunicipalityDetailsPanel
-            allData={currentData}
-            indicator={indicator}
-            indicators={indicators}
-            dataStatus={demoStatus}
-            municipality={selectedMunicipality}
-            selectedState={selectedState}
-            viewMode={viewMode}
-          />
+          {isUf ? (
+            <UfDetailsPanel
+              indicators={indicators}
+              indicatorKey={indicator}
+              ufNome={selectedState ? nameByUf.get(selectedState) ?? selectedState : null}
+              selectedState={selectedState}
+              datum={selectedUfDatum}
+            />
+          ) : (
+            <MunicipalityDetailsPanel
+              allData={currentData}
+              indicator={indicator}
+              indicators={indicators}
+              dataStatus={demoStatus}
+              municipality={selectedMunicipality}
+              selectedState={selectedState}
+              viewMode={viewMode}
+            />
+          )}
         </aside>
       </section>
     </main>
