@@ -9,12 +9,12 @@ import { formatMetricValue } from "@/lib/formatters";
 import { mapTileAttribution, mapTileUrls } from "@/lib/mapConfig";
 import { getBoundsForData, getBoundsForState, getMunicipalityBounds } from "@/lib/mapNavigation";
 import {
-  buildMunicipalFillColorExpression,
   buildStateFillColorExpression,
-  computeMunicipalChoropleth,
+  colorizeMunicipalMesh,
   computeStateChoropleth,
   computeStateChoroplethFromUf,
   createStateFeatureCollection,
+  municipalColorById,
 } from "@/services/geoService";
 import { loadStateMunicipalMesh } from "@/services/geoMeshService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, UfDatum, ViewMode } from "@/types/crime";
@@ -78,15 +78,6 @@ export function BrazilCrimeMap({
           : computeStateChoropleth(data, indicator, viewMode),
       ),
     [data, indicator, viewMode, isUfIndicator, ufChoropleth],
-  );
-  // Coropletico municipal (cores por id_ibge) do estado aberto. Vazio ao nivel
-  // nacional e para indicadores so-UF (municipios ficam neutros).
-  const municipalFillColor = useMemo(
-    () =>
-      buildMunicipalFillColorExpression(
-        selectedState && !isUfIndicator ? computeMunicipalChoropleth(data, indicator, selectedState) : [],
-      ),
-    [data, indicator, selectedState, isUfIndicator],
   );
   const stateFillColorRef = useRef(stateFillColor);
   // Verdadeiro apos o evento 'load' (estilo + camadas prontos). Guardamos os
@@ -217,8 +208,10 @@ export function BrazilCrimeMap({
             type: "fill",
             source: "municipios",
             paint: {
-              "fill-color": "#334155",
-              "fill-opacity": 0.78,
+              // Cor injetada por feature (properties.color) — evita uma expressao
+              // `match` com centenas de ramos que travava o GPU ao abrir um estado.
+              "fill-color": ["get", "color"],
+              "fill-opacity": 0.82,
             },
           });
           map.addLayer({
@@ -347,28 +340,29 @@ export function BrazilCrimeMap({
       return;
     }
     let cancelled = false;
+    // Cor por id_ibge no indicador atual; injetada em cada feature da malha.
+    const colorById = municipalColorById(data, indicator, selectedState);
     void loadStateMunicipalMesh(selectedState).then((mesh) => {
       // `cancelled` (via cleanup) garante que so a malha do estado atual e escrita.
       if (cancelled) {
         return;
       }
       const current = mapRef.current?.getSource("municipios") as GeoJSONSource | undefined;
-      current?.setData(mesh);
+      current?.setData(colorizeMunicipalMesh(mesh, colorById));
     });
     return () => {
       cancelled = true;
     };
-  }, [selectedState, isUfIndicator]);
+  }, [selectedState, isUfIndicator, data, indicator]);
 
-  // Pinta os municipios pelo indice (degrade) e realca o municipio selecionado.
+  // Realca o municipio selecionado (o preenchimento ja vem por feature.color).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReadyRef.current) {
       return;
     }
-    map.setPaintProperty("municipios-fill", "fill-color", municipalFillColor as never);
     map.setFilter("selected-municipio-line", ["==", ["get", "id"], selectedMunicipality?.idIbge ?? ""]);
-  }, [municipalFillColor, selectedMunicipality]);
+  }, [selectedMunicipality]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -91,6 +91,45 @@ export function computeStateChoroplethFromUf(
   }));
 }
 
+// Cor por id_ibge dos municipios de uma UF (degrade por indice). Usada para
+// injetar `properties.color` em cada poligono e pintar com ["get","color"] —
+// evita uma expressao `match` com centenas de ramos (que pode travar o GPU).
+export function municipalColorById(
+  data: MunicipalityCrimeData[],
+  indicator: CrimeIndicatorKey,
+  uf: string,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const item of data) {
+    if (item.uf !== uf) {
+      continue;
+    }
+    const metric = item.indicadores[indicator];
+    if (!metric || metric.dataStatus === "sem_dados" || metric.dataStatus === "nao_aplicavel") {
+      continue;
+    }
+    out[item.idIbge] = getScoreColor(metric.score);
+  }
+  return out;
+}
+
+// Clona a malha injetando `properties.color` por id_ibge (fallback para sem dado).
+export function colorizeMunicipalMesh(
+  mesh: GeoFeatureCollection,
+  colorById: Record<string, string>,
+): GeoFeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: mesh.features.map((feature) => {
+      const id = String((feature.properties as { id?: string } | undefined)?.id ?? "");
+      return {
+        ...feature,
+        properties: { ...feature.properties, color: colorById[id] ?? STATE_FILL_FALLBACK },
+      };
+    }),
+  };
+}
+
 export interface MunicipalChoroplethEntry {
   id: string;
   color: string;

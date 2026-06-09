@@ -5,9 +5,11 @@ import { getScoreColor, riskColors } from "../src/lib/colorScale.ts";
 import {
   buildMunicipalFillColorExpression,
   buildStateFillColorExpression,
+  colorizeMunicipalMesh,
   computeMunicipalChoropleth,
   computeStateChoropleth,
   computeStateChoroplethFromUf,
+  municipalColorById,
 } from "../src/services/geoService.ts";
 import { makeMetric, makeMunicipality } from "./helpers/crime-fixtures.mjs";
 
@@ -113,6 +115,33 @@ test("buildMunicipalFillColorExpression casa por `id` (id_ibge) com fallback", (
 
 test("buildMunicipalFillColorExpression vazio devolve cor solida (fallback)", () => {
   assert.equal(typeof buildMunicipalFillColorExpression([]), "string");
+});
+
+test("municipalColorById mapeia id_ibge -> cor por score, so da UF, ignorando sem_dados", () => {
+  const data = [
+    makeMunicipality({ idIbge: "1700251", uf: "TO", indicadores: { homicidioDoloso: makeMetric({ score: 95 }) } }),
+    makeMunicipality({ idIbge: "1700300", uf: "TO", indicadores: { homicidioDoloso: makeMetric({ score: 5 }) } }),
+    makeMunicipality({ idIbge: "3500001", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ score: 50 }) } }),
+    makeMunicipality({ idIbge: "1700400", uf: "TO", indicadores: { homicidioDoloso: makeMetric({ dataStatus: "sem_dados" }) } }),
+  ];
+  const colors = municipalColorById(data, "homicidioDoloso", "TO");
+  assert.deepEqual(Object.keys(colors).sort(), ["1700251", "1700300"]);
+  assert.equal(colors["1700251"], getScoreColor(95));
+  assert.equal(colors["1700300"], getScoreColor(5));
+});
+
+test("colorizeMunicipalMesh injeta properties.color por id (fallback p/ sem dado)", () => {
+  const mesh = {
+    type: "FeatureCollection",
+    features: [
+      { type: "Feature", properties: { id: "1700251" }, geometry: { type: "Polygon", coordinates: [] } },
+      { type: "Feature", properties: { id: "9999999" }, geometry: { type: "Polygon", coordinates: [] } },
+    ],
+  };
+  const out = colorizeMunicipalMesh(mesh, { "1700251": "#abc123" });
+  assert.equal(out.features[0].properties.color, "#abc123");
+  assert.equal(typeof out.features[1].properties.color, "string"); // fallback
+  assert.equal(out.features[0].properties.id, "1700251"); // preserva props originais
 });
 
 test("computeStateChoroplethFromUf colore pelo score do ETL (coerente com o nivel)", () => {
