@@ -91,21 +91,15 @@ export function computeStateChoroplethFromUf(
   }));
 }
 
-export interface MunicipalChoroplethEntry {
-  id: string;
-  color: string;
-}
-
-// Cor (degrade) de cada municipio de uma UF pelo seu indice (score), para
-// pintar os poligonos municipais quando se entra num estado. Reutiliza a mesma
-// escala dos circulos/legenda (getScoreColor). Municipios sem dado ficam de fora
-// (caem no fallback da expressao).
-export function computeMunicipalChoropleth(
+// Cor por id_ibge dos municipios de uma UF (degrade por indice). Usada para
+// injetar `properties.color` em cada poligono e pintar com ["get","color"] —
+// evita uma expressao `match` com centenas de ramos (que pode travar o GPU).
+export function municipalColorById(
   data: MunicipalityCrimeData[],
   indicator: CrimeIndicatorKey,
   uf: string,
-): MunicipalChoroplethEntry[] {
-  const entries: MunicipalChoroplethEntry[] = [];
+): Record<string, string> {
+  const out: Record<string, string> = {};
   for (const item of data) {
     if (item.uf !== uf) {
       continue;
@@ -114,25 +108,26 @@ export function computeMunicipalChoropleth(
     if (!metric || metric.dataStatus === "sem_dados" || metric.dataStatus === "nao_aplicavel") {
       continue;
     }
-    entries.push({ id: item.idIbge, color: getScoreColor(metric.score) });
+    out[item.idIbge] = getScoreColor(metric.score);
   }
-  return entries;
+  return out;
 }
 
-// Expressao `fill-color` para a camada de municipios, casada por `id` (id_ibge).
-// Municipios sem dado caem num cinza translucido de fallback.
-export function buildMunicipalFillColorExpression(
-  choropleth: MunicipalChoroplethEntry[],
-): unknown {
-  if (choropleth.length === 0) {
-    return STATE_FILL_FALLBACK;
-  }
-  const match: unknown[] = ["match", ["get", "id"]];
-  for (const entry of choropleth) {
-    match.push(entry.id, entry.color);
-  }
-  match.push(STATE_FILL_FALLBACK);
-  return match;
+// Clona a malha injetando `properties.color` por id_ibge (fallback para sem dado).
+export function colorizeMunicipalMesh(
+  mesh: GeoFeatureCollection,
+  colorById: Record<string, string>,
+): GeoFeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: mesh.features.map((feature) => {
+      const id = String((feature.properties as { id?: string } | undefined)?.id ?? "");
+      return {
+        ...feature,
+        properties: { ...feature.properties, color: colorById[id] ?? STATE_FILL_FALLBACK },
+      };
+    }),
+  };
 }
 
 // Malha estadual real (poligonos IBGE simplificados, qualidade intermediaria)

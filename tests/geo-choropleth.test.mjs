@@ -3,11 +3,11 @@ import test from "node:test";
 
 import { getScoreColor, riskColors } from "../src/lib/colorScale.ts";
 import {
-  buildMunicipalFillColorExpression,
   buildStateFillColorExpression,
-  computeMunicipalChoropleth,
+  colorizeMunicipalMesh,
   computeStateChoropleth,
   computeStateChoroplethFromUf,
+  municipalColorById,
 } from "../src/services/geoService.ts";
 import { makeMetric, makeMunicipality } from "./helpers/crime-fixtures.mjs";
 
@@ -85,34 +85,31 @@ test("buildStateFillColorExpression com lista vazia devolve uma cor solida (fall
   assert.equal(typeof expr, "string");
 });
 
-test("computeMunicipalChoropleth pinta so a UF pedida, por score, ignorando sem_dados", () => {
+test("municipalColorById mapeia id_ibge -> cor por score, so da UF, ignorando sem_dados", () => {
   const data = [
-    makeMunicipality({ idIbge: "3500001", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ score: 90 }) } }),
-    makeMunicipality({ idIbge: "3500002", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ score: 10 }) } }),
-    makeMunicipality({ idIbge: "3300001", uf: "RJ", indicadores: { homicidioDoloso: makeMetric({ score: 50 }) } }),
-    makeMunicipality({ idIbge: "3500003", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ dataStatus: "sem_dados" }) } }),
+    makeMunicipality({ idIbge: "1700251", uf: "TO", indicadores: { homicidioDoloso: makeMetric({ score: 95 }) } }),
+    makeMunicipality({ idIbge: "1700300", uf: "TO", indicadores: { homicidioDoloso: makeMetric({ score: 5 }) } }),
+    makeMunicipality({ idIbge: "3500001", uf: "SP", indicadores: { homicidioDoloso: makeMetric({ score: 50 }) } }),
+    makeMunicipality({ idIbge: "1700400", uf: "TO", indicadores: { homicidioDoloso: makeMetric({ dataStatus: "sem_dados" }) } }),
   ];
-  const choropleth = computeMunicipalChoropleth(data, "homicidioDoloso", "SP");
-  const byId = Object.fromEntries(choropleth.map((entry) => [entry.id, entry.color]));
-  assert.deepEqual(Object.keys(byId).sort(), ["3500001", "3500002"]);
-  assert.equal(byId["3500001"], getScoreColor(90));
-  assert.equal(byId["3500002"], getScoreColor(10));
+  const colors = municipalColorById(data, "homicidioDoloso", "TO");
+  assert.deepEqual(Object.keys(colors).sort(), ["1700251", "1700300"]);
+  assert.equal(colors["1700251"], getScoreColor(95));
+  assert.equal(colors["1700300"], getScoreColor(5));
 });
 
-test("buildMunicipalFillColorExpression casa por `id` (id_ibge) com fallback", () => {
-  const expr = buildMunicipalFillColorExpression([
-    { id: "3500001", color: "#aaa" },
-    { id: "3500002", color: "#bbb" },
-  ]);
-  assert.ok(Array.isArray(expr));
-  assert.equal(expr[0], "match");
-  assert.deepEqual(expr[1], ["get", "id"]);
-  assert.deepEqual(expr.slice(2, 6), ["3500001", "#aaa", "3500002", "#bbb"]);
-  assert.equal(typeof expr[expr.length - 1], "string");
-});
-
-test("buildMunicipalFillColorExpression vazio devolve cor solida (fallback)", () => {
-  assert.equal(typeof buildMunicipalFillColorExpression([]), "string");
+test("colorizeMunicipalMesh injeta properties.color por id (fallback p/ sem dado)", () => {
+  const mesh = {
+    type: "FeatureCollection",
+    features: [
+      { type: "Feature", properties: { id: "1700251" }, geometry: { type: "Polygon", coordinates: [] } },
+      { type: "Feature", properties: { id: "9999999" }, geometry: { type: "Polygon", coordinates: [] } },
+    ],
+  };
+  const out = colorizeMunicipalMesh(mesh, { "1700251": "#abc123" });
+  assert.equal(out.features[0].properties.color, "#abc123");
+  assert.equal(typeof out.features[1].properties.color, "string"); // fallback
+  assert.equal(out.features[0].properties.id, "1700251"); // preserva props originais
 });
 
 test("computeStateChoroplethFromUf colore pelo score do ETL (coerente com o nivel)", () => {
