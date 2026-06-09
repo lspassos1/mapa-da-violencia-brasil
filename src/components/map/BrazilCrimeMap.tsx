@@ -23,6 +23,42 @@ import { MapTooltip } from "./MapTooltip";
 
 const EMPTY_FC: GeoFeatureCollection = { type: "FeatureCollection", features: [] };
 
+// Enquadramento defensivo: o MapLibre lanca "Invalid LngLat (NaN, NaN)" e
+// perde o contexto WebGL (matando o render -> "This page couldn't load") se o
+// fitBounds receber bounds nao-finitos OU correr com o canvas a 0 px (a matematica
+// da camera divide pelas dimensoes do viewport). Validamos antes de chamar.
+function fitBoundsSafe(
+  map: MapLibreMap,
+  bounds: [number, number, number, number],
+  options: Parameters<MapLibreMap["fitBounds"]>[1],
+): void {
+  const [west, south, east, north] = bounds;
+  // Sincroniza o transform interno do MapLibre com o tamanho real do container.
+  // Sem isto, o transform pode ainda ter 0 px (logo apos mudancas de layout), o
+  // que faz a matematica da camera no fitBounds produzir NaN.
+  map.resize();
+  const finite = [west, south, east, north].every((v) => Number.isFinite(v));
+  const canvas = map.getCanvas();
+  const sized = !!canvas && canvas.width > 0 && canvas.height > 0;
+  // Bounds com area nula (cantos iguais) tambem geram zoom Infinito -> NaN.
+  const hasArea = west !== east && south !== north;
+  if (!finite || !sized || !hasArea) {
+    if (typeof console !== "undefined") {
+      console.warn(
+        `[map] fitBounds ignorado (bounds=${JSON.stringify(bounds)} canvas=${canvas?.width}x${canvas?.height})`,
+      );
+    }
+    return;
+  }
+  try {
+    map.fitBounds([[west, south], [east, north]], options);
+  } catch (error) {
+    if (typeof console !== "undefined") {
+      console.warn(`[map] fitBounds falhou: ${String(error)}`);
+    }
+  }
+}
+
 interface BrazilCrimeMapProps {
   data: MunicipalityCrimeData[];
   indicator: CrimeIndicatorKey;
@@ -284,18 +320,12 @@ export function BrazilCrimeMap({
             map.getCanvas().style.cursor = "";
           });
 
-          const [initWest, initSouth, initEast, initNorth] = getNationalBounds(dataRef.current);
-          map.fitBounds(
-            [
-              [initWest, initSouth],
-              [initEast, initNorth],
-            ],
-            { padding: 48, maxZoom: 7, duration: 0 },
-          );
           // Garante que o canvas iguala o tamanho final do container (apos o
-          // layout do grid assentar), evitando um mapa renderizado a meio.
+          // layout do grid assentar) ANTES do primeiro fit — fitBounds com o
+          // canvas a 0 px produz NaN na camera e perde o contexto WebGL.
           map.resize();
           styleReadyRef.current = true;
+          fitBoundsSafe(map, getNationalBounds(dataRef.current), { padding: 48, maxZoom: 7, duration: 0 });
           setIsLoading(false);
         });
 
@@ -372,29 +402,24 @@ export function BrazilCrimeMap({
     map.setFilter("selected-state-line", ["==", ["get", "uf"], selectedState ?? ""]);
 
     if (selectedMunicipality) {
-      const [west, south, east, north] = getMunicipalityBounds(selectedMunicipality.lng, selectedMunicipality.lat);
-      map.fitBounds(
-        [
-          [west, south],
-          [east, north],
-        ],
-        { padding: 120, duration: 900 },
-      );
+      fitBoundsSafe(map, getMunicipalityBounds(selectedMunicipality.lng, selectedMunicipality.lat), {
+        padding: 120,
+        duration: 900,
+      });
       return;
     }
 
     // Com estado selecionado, enquadra o estado; ao nivel nacional, enquadra a
     // extensao dos dados visiveis (cai no Brasil inteiro quando ha dados em todo
     // o pais ou quando nao ha dados).
-    const [west, south, east, north] = selectedState
-      ? getBoundsForState(selectedState)
-      : getNationalBounds(dataRef.current);
-    map.fitBounds(
-      [
-        [west, south],
-        [east, north],
-      ],
-      { padding: selectedState ? 96 : 48, maxZoom: selectedState ? undefined : 7, duration: 900 },
+    const bounds = selectedState ? getBoundsForState(selectedState) : getNationalBounds(dataRef.current);
+    // NUNCA passar `maxZoom: undefined`: o MapLibre faz Math.min(zoom, maxZoom),
+    // e Math.min(n, undefined) === NaN -> "Invalid LngLat (NaN, NaN)" -> perda do
+    // contexto WebGL -> crash. Ao nivel nacional limitamos o zoom; com estado, nao.
+    fitBoundsSafe(
+      map,
+      bounds,
+      selectedState ? { padding: 96, duration: 900 } : { padding: 48, maxZoom: 7, duration: 900 },
     );
   }, [selectedMunicipality, selectedState]);
 
