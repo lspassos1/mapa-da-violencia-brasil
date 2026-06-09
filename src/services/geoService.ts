@@ -130,50 +130,6 @@ export function colorizeMunicipalMesh(
   };
 }
 
-export interface MunicipalChoroplethEntry {
-  id: string;
-  color: string;
-}
-
-// Cor (degrade) de cada municipio de uma UF pelo seu indice (score), para
-// pintar os poligonos municipais quando se entra num estado. Reutiliza a mesma
-// escala dos circulos/legenda (getScoreColor). Municipios sem dado ficam de fora
-// (caem no fallback da expressao).
-export function computeMunicipalChoropleth(
-  data: MunicipalityCrimeData[],
-  indicator: CrimeIndicatorKey,
-  uf: string,
-): MunicipalChoroplethEntry[] {
-  const entries: MunicipalChoroplethEntry[] = [];
-  for (const item of data) {
-    if (item.uf !== uf) {
-      continue;
-    }
-    const metric = item.indicadores[indicator];
-    if (!metric || metric.dataStatus === "sem_dados" || metric.dataStatus === "nao_aplicavel") {
-      continue;
-    }
-    entries.push({ id: item.idIbge, color: getScoreColor(metric.score) });
-  }
-  return entries;
-}
-
-// Expressao `fill-color` para a camada de municipios, casada por `id` (id_ibge).
-// Municipios sem dado caem num cinza translucido de fallback.
-export function buildMunicipalFillColorExpression(
-  choropleth: MunicipalChoroplethEntry[],
-): unknown {
-  if (choropleth.length === 0) {
-    return STATE_FILL_FALLBACK;
-  }
-  const match: unknown[] = ["match", ["get", "id"]];
-  for (const entry of choropleth) {
-    match.push(entry.id, entry.color);
-  }
-  match.push(STATE_FILL_FALLBACK);
-  return match;
-}
-
 // Malha estadual real (poligonos IBGE simplificados, qualidade intermediaria)
 // com propriedades { uf, nome }. Substitui as caixas retangulares para que o
 // preenchimento, as fronteiras e o clique sigam o contorno real de cada UF.
