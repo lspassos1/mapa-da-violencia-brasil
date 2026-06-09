@@ -13,10 +13,11 @@ import {
   buildStateFillColorExpression,
   computeMunicipalChoropleth,
   computeStateChoropleth,
+  computeStateChoroplethFromUf,
   createStateFeatureCollection,
 } from "@/services/geoService";
 import { loadStateMunicipalMesh } from "@/services/geoMeshService";
-import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
+import type { CrimeIndicatorKey, MunicipalityCrimeData, UfDatum, ViewMode } from "@/types/crime";
 import type { GeoFeatureCollection } from "@/types/geo";
 import { MapTooltip } from "./MapTooltip";
 
@@ -30,6 +31,10 @@ interface BrazilCrimeMapProps {
   viewMode: ViewMode;
   onMunicipalitySelect: (item: MunicipalityCrimeData) => void;
   onStateSelect: (uf: string) => void;
+  // Indicadores so-UF: o degrade dos estados vem destes registos e os municipios
+  // ficam neutros (sem detalhe). Vazio/false para indicadores municipais.
+  isUfIndicator?: boolean;
+  ufChoropleth?: UfDatum[];
 }
 
 const BRAZIL_VIEWPORT = {
@@ -60,20 +65,28 @@ export function BrazilCrimeMap({
   viewMode,
   onMunicipalitySelect,
   onStateSelect,
+  isUfIndicator = false,
+  ufChoropleth,
 }: BrazilCrimeMapProps) {
-  // Coropletico por UF (degrade de violencia) para o indicador/modo atuais.
+  // Coropletico dos estados: para indicadores so-UF vem de ufChoropleth; para os
+  // municipais, da soma por UF dos municipios.
   const stateFillColor = useMemo(
-    () => buildStateFillColorExpression(computeStateChoropleth(data, indicator, viewMode)),
-    [data, indicator, viewMode],
+    () =>
+      buildStateFillColorExpression(
+        isUfIndicator
+          ? computeStateChoroplethFromUf(ufChoropleth ?? [], viewMode)
+          : computeStateChoropleth(data, indicator, viewMode),
+      ),
+    [data, indicator, viewMode, isUfIndicator, ufChoropleth],
   );
-  // Coropletico municipal (cores por id_ibge) do estado aberto, para pintar os
-  // poligonos das cidades pelo indice. Vazio ao nivel nacional.
+  // Coropletico municipal (cores por id_ibge) do estado aberto. Vazio ao nivel
+  // nacional e para indicadores so-UF (municipios ficam neutros).
   const municipalFillColor = useMemo(
     () =>
       buildMunicipalFillColorExpression(
-        selectedState ? computeMunicipalChoropleth(data, indicator, selectedState) : [],
+        selectedState && !isUfIndicator ? computeMunicipalChoropleth(data, indicator, selectedState) : [],
       ),
-    [data, indicator, selectedState],
+    [data, indicator, selectedState, isUfIndicator],
   );
   const stateFillColorRef = useRef(stateFillColor);
   // Verdadeiro apos o evento 'load' (estilo + camadas prontos). Guardamos os
@@ -318,7 +331,8 @@ export function BrazilCrimeMap({
   }, []);
 
   // Carrega (sob demanda) a malha municipal do estado aberto; ao nivel nacional
-  // limpa a fonte para que so o degrade dos estados fique visivel.
+  // limpa a fonte. Para indicadores so-UF nao ha dado municipal: mantemos a malha
+  // vazia (sem poligonos cinza sem informacao) e o foco fica no total estadual.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReadyRef.current) {
@@ -328,7 +342,7 @@ export function BrazilCrimeMap({
     if (!source) {
       return;
     }
-    if (!selectedState) {
+    if (!selectedState || isUfIndicator) {
       source.setData(EMPTY_FC);
       return;
     }
@@ -344,7 +358,7 @@ export function BrazilCrimeMap({
     return () => {
       cancelled = true;
     };
-  }, [selectedState]);
+  }, [selectedState, isUfIndicator]);
 
   // Pinta os municipios pelo indice (degrade) e realca o municipio selecionado.
   useEffect(() => {

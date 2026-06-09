@@ -76,6 +76,21 @@ export function buildStateFillColorExpression(
   return match;
 }
 
+// Degrade dos estados para indicadores so-UF. A cor vem do `score` ja calculado
+// no ETL (mesmos limiares de getScoreColor), garantindo que a cor do mapa e o
+// `nivel` exibido no ranking/painel nunca discordam nas fronteiras das faixas.
+export function computeStateChoroplethFromUf(
+  ufData: ReadonlyArray<{ uf: string; score: number; total: number; taxa100k: number | null }>,
+  viewMode: ViewMode,
+): StateChoroplethEntry[] {
+  const useRate = viewMode === "taxa100k";
+  return ufData.map((datum) => ({
+    uf: datum.uf,
+    value: useRate ? datum.taxa100k ?? 0 : datum.total,
+    color: getScoreColor(datum.score),
+  }));
+}
+
 export interface MunicipalChoroplethEntry {
   id: string;
   color: string;

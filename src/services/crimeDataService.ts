@@ -11,6 +11,7 @@ import type {
   IndicatorOption,
   MunicipalityCrimeData,
   PeriodOption,
+  UfDatum,
   ViewMode,
 } from "@/types/crime";
 
@@ -41,6 +42,8 @@ export interface OfficialCrimeDataset {
   indicators: IndicatorOption[];
   periods: PeriodOption[];
   items: MunicipalityCrimeData[];
+  // Indicadores so-UF (patrimoniais/sexuais): um registo por (uf, periodo, indicador).
+  ufData?: UfDatum[];
 }
 
 // Superficie sincrona do servico de dados: as funcoes consumidas pelo dashboard
@@ -56,6 +59,10 @@ export interface CrimeDataApi {
   getMunicipalityById(idIbge: string, period?: string): MunicipalityCrimeData | null;
   isCrimeIndicatorKey(value: string): value is CrimeIndicatorKey;
   isViewMode(value: string): value is ViewMode;
+  // Indicadores so-UF (degrade nacional dos estados; sem detalhe municipal).
+  isUfIndicator(indicator: CrimeIndicatorKey): boolean;
+  getUfChoropleth(period: string, indicator: CrimeIndicatorKey): UfDatum[];
+  getUfDatum(uf: string, period: string, indicator: CrimeIndicatorKey): UfDatum | null;
 }
 
 // Placeholder do modo `official` enquanto a carga nacional nao for gerada. Antes
@@ -110,6 +117,10 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
   const activeIndicators = dataset.indicators;
   const activePeriods = dataset.periods;
   const activeData = dataset.items;
+  const activeUfData = dataset.ufData ?? [];
+  const ufIndicatorKeys = new Set(
+    activeIndicators.filter((option) => option.nivelDado === "uf").map((option) => option.key),
+  );
   const activeStatus: DataStatus = dataset.status;
 
   const defaultIndicator = activeIndicators[0]?.key ?? "homicidioDoloso";
@@ -199,6 +210,23 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
     return activeViewModes.some((option) => option.key === value);
   }
 
+  function isUfIndicator(indicator: CrimeIndicatorKey): boolean {
+    return ufIndicatorKeys.has(indicator);
+  }
+
+  function getUfChoropleth(period: string, indicator: CrimeIndicatorKey): UfDatum[] {
+    return activeUfData.filter((datum) => datum.periodo === period && datum.indicador === indicator);
+  }
+
+  function getUfDatum(uf: string, period: string, indicator: CrimeIndicatorKey): UfDatum | null {
+    const target = uf.toUpperCase();
+    return (
+      activeUfData.find(
+        (datum) => datum.uf === target && datum.periodo === period && datum.indicador === indicator,
+      ) ?? null
+    );
+  }
+
   function resolveFilters(filters: Partial<CrimeMapFilters>): CrimeMapFilters {
     const indicator = filters.indicator && isCrimeIndicatorKey(filters.indicator)
       ? filters.indicator
@@ -274,6 +302,9 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
     getMunicipalityById,
     isCrimeIndicatorKey,
     isViewMode,
+    isUfIndicator,
+    getUfChoropleth,
+    getUfDatum,
   };
 }
 

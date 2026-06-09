@@ -7,6 +7,7 @@ import {
   buildStateFillColorExpression,
   computeMunicipalChoropleth,
   computeStateChoropleth,
+  computeStateChoroplethFromUf,
 } from "../src/services/geoService.ts";
 import { makeMetric, makeMunicipality } from "./helpers/crime-fixtures.mjs";
 
@@ -112,4 +113,28 @@ test("buildMunicipalFillColorExpression casa por `id` (id_ibge) com fallback", (
 
 test("buildMunicipalFillColorExpression vazio devolve cor solida (fallback)", () => {
   assert.equal(typeof buildMunicipalFillColorExpression([]), "string");
+});
+
+test("computeStateChoroplethFromUf colore pelo score do ETL (coerente com o nivel)", () => {
+  const ufData = [
+    { uf: "AC", score: 10, total: 5, taxa100k: 50 },
+    { uf: "SP", score: 95, total: 1000, taxa100k: 10 },
+  ];
+  const byUf = Object.fromEntries(computeStateChoroplethFromUf(ufData, "total").map((e) => [e.uf, e.color]));
+  assert.equal(byUf.AC, getScoreColor(10)); // baixo
+  assert.equal(byUf.SP, getScoreColor(95)); // critico
+});
+
+test("computeStateChoroplethFromUf usa total ou taxa no `value` conforme o modo", () => {
+  const ufData = [{ uf: "RJ", score: 80, total: 1000, taxa100k: 146.5 }];
+  assert.equal(computeStateChoroplethFromUf(ufData, "total")[0].value, 1000);
+  assert.equal(computeStateChoroplethFromUf(ufData, "taxa100k")[0].value, 146.5);
+});
+
+test("computeStateChoroplethFromUf trata taxa null como 0 no modo taxa", () => {
+  const result = computeStateChoroplethFromUf(
+    [{ uf: "AM", score: 50, total: 9, taxa100k: null }],
+    "taxa100k",
+  );
+  assert.equal(result[0].value, 0);
 });

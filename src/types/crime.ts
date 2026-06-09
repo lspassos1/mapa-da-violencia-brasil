@@ -63,6 +63,22 @@ export interface IndicatorOption {
   codigo?: string;
   unidade?: CrimeMetricUnit;
   oficial?: boolean;
+  // "municipio" (detalhe por cidade) ou "uf" (so a nivel estadual no VDE).
+  nivelDado?: "municipio" | "uf";
+}
+
+// Indicadores que o VDE so fornece a nivel estadual (patrimoniais/sexuais e
+// morte por intervencao do Estado): coloreiam o mapa nacional dos estados.
+export interface UfDatum {
+  uf: string;
+  periodo: string;
+  indicador: CrimeIndicatorKey;
+  total: number;
+  taxa100k: number | null;
+  score: number;
+  nivel: RiskLevel;
+  unidade: CrimeMetricUnit;
+  dataStatus: DataAvailabilityStatus;
 }
 
 export interface PeriodOption {

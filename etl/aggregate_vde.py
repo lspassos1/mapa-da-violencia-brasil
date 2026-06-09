@@ -44,6 +44,23 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VDE_DIR = PROJECT_ROOT / "data" / "raw" / "vde"
 REGISTRY_CSV = PROJECT_ROOT / "data" / "processed" / "ibge_municipalities.csv"
 POPULATION_CSV = PROJECT_ROOT / "data" / "processed" / "ibge_population_2025.csv"
+UF_POPULATION_CSV = PROJECT_ROOT / "etl" / "reference" / "uf_population.csv"
+
+UF_SIGLAS = {
+    "RO", "AC", "AM", "RR", "PA", "AP", "TO", "MA", "PI", "CE", "RN", "PB",
+    "PE", "AL", "SE", "BA", "MG", "ES", "RJ", "SP", "PR", "SC", "RS", "MS",
+    "MT", "GO", "DF",
+}
+UF_NOME = {
+    "RO": "Rondonia", "AC": "Acre", "AM": "Amazonas", "RR": "Roraima",
+    "PA": "Para", "AP": "Amapa", "TO": "Tocantins", "MA": "Maranhao",
+    "PI": "Piaui", "CE": "Ceara", "RN": "Rio Grande do Norte", "PB": "Paraiba",
+    "PE": "Pernambuco", "AL": "Alagoas", "SE": "Sergipe", "BA": "Bahia",
+    "MG": "Minas Gerais", "ES": "Espirito Santo", "RJ": "Rio de Janeiro",
+    "SP": "Sao Paulo", "PR": "Parana", "SC": "Santa Catarina",
+    "RS": "Rio Grande do Sul", "MS": "Mato Grosso do Sul", "MT": "Mato Grosso",
+    "GO": "Goias", "DF": "Distrito Federal",
+}
 
 # Unidade canonica por indicador da app (os municipais do VDE sao de vitima).
 INDICATOR_UNIT = {
@@ -53,13 +70,42 @@ INDICATOR_UNIT = {
     "lesaoCorporalMorte": "vitimas",
     "morteIntervencaoEstado": "vitimas",
     "feminicidio": "vitimas",
-    "estupro": "ocorrencias",
-    "estuproVulneravel": "ocorrencias",
+    # estupro/estupro de vulneravel sao contados por vitima no VDE (coluna
+    # total_vitima); marca-los como "ocorrencias" leria a coluna errada (0).
+    "estupro": "vitimas",
+    "estuproVulneravel": "vitimas",
     "rouboVeiculos": "ocorrencias",
     "furtoVeiculos": "ocorrencias",
     "rouboCarga": "ocorrencias",
     "rouboInstituicaoFinanceira": "ocorrencias",
     "traficoDrogas": "ocorrencias",
+}
+
+# Indicadores que o VDE so fornece a nivel de UF (municipio "NAO INFORMADO"):
+# patrimoniais, sexuais e morte por intervencao do Estado. Sao agregados por
+# estado e servidos em `ufData` (degrade nacional dos estados; sem detalhe
+# municipal). Os restantes 5 sao municipais (por vitima).
+UF_LEVEL_INDICATORS = {
+    "morteIntervencaoEstado",
+    "estupro",
+    "estuproVulneravel",
+    "rouboVeiculos",
+    "furtoVeiculos",
+    "rouboCarga",
+    "rouboInstituicaoFinanceira",
+    "traficoDrogas",
+}
+
+# Rotulos para o catalogo de indicadores (codigo, label, unidade).
+UF_INDICATOR_LABELS = {
+    "morteIntervencaoEstado": ("morte_intervencao_estado", "Morte por intervencao do Estado", "vitimas"),
+    "estupro": ("estupro", "Estupro", "vitimas"),
+    "estuproVulneravel": ("estupro_vulneravel", "Estupro de vulneravel", "vitimas"),
+    "rouboVeiculos": ("roubo_veiculos", "Roubo de veiculos", "ocorrencias"),
+    "furtoVeiculos": ("furto_veiculos", "Furto de veiculos", "ocorrencias"),
+    "rouboCarga": ("roubo_carga", "Roubo de carga", "ocorrencias"),
+    "rouboInstituicaoFinanceira": ("roubo_instituicao_financeira", "Roubo a instituicao financeira", "ocorrencias"),
+    "traficoDrogas": ("trafico_drogas", "Trafico de drogas", "ocorrencias"),
 }
 APP_KEY_TO_CODE = {app_key: code for code, app_key in APP_INDICATOR_KEYS.items()}
 
@@ -217,19 +263,88 @@ def load_population() -> dict[str, int]:
     return pop
 
 
-def build_combined_csv(year: int, granularity: str) -> Path:
+def load_uf_population() -> dict[tuple[str, int], int]:
+    """(uf, ano) -> populacao, a partir de etl/reference/uf_population.csv."""
+    import csv
+
+    pop: dict[tuple[str, int], int] = {}
+    if not UF_POPULATION_CSV.exists():
+        return pop
+    with open(UF_POPULATION_CSV, encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            value = parse_optional_int(row.get("populacao", ""))
+            ano = parse_optional_int(row.get("ano", ""))
+            uf = (row.get("uf") or "").strip().upper()
+            if uf and ano and value:
+                pop[(uf, ano)] = value
+    return pop
+
+
+def _uf_score_and_level(value_by_uf: dict[str, float]) -> dict[str, tuple[int, str]]:
+    """Pontua as UFs por quantil de rank (0-100) dentro de um indicador/periodo,
+    devolvendo (score, nivel). Coerente com o degrade do mapa (ranking relativo)."""
+    levels = [(20, "baixo"), (40, "moderado"), (60, "atencao"), (80, "alto"), (101, "critico")]
+    ordered = sorted(value_by_uf.items(), key=lambda kv: kv[1])
+    n = len(ordered)
+    out: dict[str, tuple[int, str]] = {}
+    for index, (uf, _value) in enumerate(ordered):
+        score = round(((index + 0.5) / n) * 100) if n else 0
+        nivel = next(name for threshold, name in levels if score < threshold)
+        out[uf] = (score, nivel)
+    return out
+
+
+def build_uf_data(uf_agg_by_year: dict[int, dict[tuple[str, int, str], int]]) -> list[dict]:
+    """Constroi `ufData`: um registo por (uf, ano, indicador) com total, taxa por
+    100 mil (populacao UF do ano), score (quantil) e nivel. Alimenta o degrade
+    nacional dos estados nos indicadores que so existem a nivel UF."""
+    uf_pop = load_uf_population()
+    records: list[dict] = []
+    for year, uf_agg in uf_agg_by_year.items():
+        # totais anuais por (uf, indicador): soma os meses (mes=0 ja e anual).
+        totals: dict[str, dict[str, int]] = defaultdict(dict)
+        for (uf, _month, indicador), value in uf_agg.items():
+            totals[indicador][uf] = totals[indicador].get(uf, 0) + value
+        for indicador, by_uf in totals.items():
+            unidade = INDICATOR_UNIT.get(indicador, "ocorrencias")
+            # taxa por 100 mil por UF (populacao do ano); score por quantil do total.
+            scores = _uf_score_and_level({uf: float(v) for uf, v in by_uf.items()})
+            for uf, value in by_uf.items():
+                pop = uf_pop.get((uf, year))
+                taxa = round((value / pop) * 100000, 4) if pop else None
+                score, nivel = scores[uf]
+                records.append(
+                    {
+                        "uf": uf,
+                        "periodo": str(year),
+                        "indicador": indicador,
+                        "total": value,
+                        "taxa100k": taxa,
+                        "score": score,
+                        "nivel": nivel,
+                        "unidade": unidade,
+                        "dataStatus": "oficial",
+                    }
+                )
+    return records
+
+
+def build_combined_csv(year: int, granularity: str) -> tuple[Path, dict[tuple[str, int, str], int]]:
     """Agrega um ano do VDE para o CSV combinado (schema SINESP+populacao).
 
     granularity: "mensal" (periodo = ano-mes) ou "anual" (periodo = ano-00,
-    soma dos 12 meses). So inclui linhas com municipio identificado (id_ibge).
+    soma dos 12 meses). Os indicadores municipais (por vitima) vao para o CSV;
+    os indicadores so-UF (patrimoniais/sexuais) sao agregados por estado e
+    devolvidos como `uf_agg` para alimentar `ufData`.
     """
     path = VDE_DIR / f"BancoVDE {year}.xlsx"
     registry = load_registry()
     registry_by_id = load_registry_by_id()
     population = load_population()
 
-    # chave -> [valor, unidade] agregado
+    # (id_ibge, mes, indicador) -> valor (municipal); (uf, mes, indicador) -> valor (UF)
     agg: dict[tuple[str, int, str], int] = defaultdict(int)
+    uf_agg: dict[tuple[str, int, str], int] = defaultdict(int)
     header = None
     for values in stream_rows(path):
         if header is None:
@@ -237,9 +352,6 @@ def build_combined_csv(year: int, granularity: str) -> Path:
             continue
         if len(values) <= COL["total"]:
             values = values + [""] * (COL["total"] + 1 - len(values))
-        id_ibge = registry.get(name_key(values[COL["uf"]], values[COL["municipio"]]))
-        if not id_ibge:
-            continue  # municipio nao identificado (ex.: NAO INFORMADO) ou nivel UF
         code = canonical_indicator_code(values[COL["evento"]])
         app_indicator = APP_INDICATOR_KEYS.get(code)
         if not app_indicator:
@@ -255,6 +367,16 @@ def build_combined_csv(year: int, granularity: str) -> Path:
         # coluna errada quando total_vitima e zero explicito.
         value = tv if INDICATOR_UNIT.get(app_indicator) == "vitimas" else tt
         period_month = month if granularity == "mensal" else 0
+
+        if app_indicator in UF_LEVEL_INDICATORS:
+            uf = strip_accents_upper(values[COL["uf"]]).strip()
+            if uf in UF_SIGLAS:
+                uf_agg[(uf, period_month, app_indicator)] += value
+            continue
+
+        id_ibge = registry.get(name_key(values[COL["uf"]], values[COL["municipio"]]))
+        if not id_ibge:
+            continue  # municipio nao identificado (ex.: NAO INFORMADO)
         agg[(id_ibge, period_month, app_indicator)] += value
 
     rows = []
@@ -292,15 +414,15 @@ def build_combined_csv(year: int, granularity: str) -> Path:
 
     out = PROCESSED_DIR / f"vde_combined_{year}_{granularity}.csv"
     write_csv(out, rows, SINESP_WITH_POPULATION_FIELDNAMES)
-    print(f"{len(rows)} linhas agregadas -> {out}")
-    return out
+    print(f"{len(rows)} linhas municipais + {len(uf_agg)} agregados UF -> {out}")
+    return out, uf_agg
 
 
 def finalize(year: int, granularity: str) -> Path:
     """Pipeline completo e reproduzivel: agrega -> app-ready -> funde por
     municipio -> reescreve o periodo anual -> gzip para public/.
     """
-    csv_path = build_combined_csv(year, granularity)
+    csv_path, uf_agg = build_combined_csv(year, granularity)
     result = generate_app_ready_dataset(
         input_path=csv_path,
         output_path=PROCESSED_DIR / "app-ready" / f"vde-{year}.json",
@@ -328,10 +450,16 @@ def finalize(year: int, granularity: str) -> Path:
     payload["status"]["source"] = f"MJSP/SINESP - Base VDE {year}"
     payload["status"]["status"] = f"Carga nacional oficial (Base VDE {year})"
     payload["status"]["limitations"] = [
-        f"Base VDE do SINESP/MJSP, ano {year}, agregada por municipio (total anual).",
-        "Cobre os indicadores municipais de vitima do VDE; crimes patrimoniais do "
-        "VDE so existem a nivel UF e nao entram no mapa municipal.",
-        "Taxa por 100 mil calculada com populacao IBGE 2025.",
+        f"Base VDE do SINESP/MJSP, ano {year}, agregada por municipio (vitima) e por estado.",
+        "Indicadores so-UF (patrimoniais/sexuais, morte por intervencao do Estado) "
+        "coloreiam o mapa nacional dos estados; sem detalhe municipal.",
+        "Taxa por 100 mil: municipal com populacao IBGE 2025; estadual com estimativa IBGE/UF.",
+    ]
+
+    payload["ufData"] = build_uf_data({year: uf_agg})
+    existing_keys = {ind["key"] for ind in payload.get("indicators", [])}
+    payload["indicators"] = payload.get("indicators", []) + [
+        ind for ind in _uf_indicator_catalog() if ind["key"] not in existing_keys
     ]
 
     raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -343,10 +471,11 @@ def finalize(year: int, granularity: str) -> Path:
     return OFFICIAL_DATASET_GZ
 
 
-def _merged_year_items(year: int, granularity: str) -> tuple[list[dict], dict]:
+def _merged_year_items(year: int, granularity: str) -> tuple[list[dict], dict, dict]:
     """Agrega um ano e funde um item por municipio (todos os indicadores),
-    rotulando o periodo anual como "ANO". Reutilizado pela carga multi-ano."""
-    csv_path = build_combined_csv(year, granularity)
+    rotulando o periodo anual como "ANO". Reutilizado pela carga multi-ano.
+    Devolve tambem o agregado UF do ano (para `ufData`)."""
+    csv_path, uf_agg = build_combined_csv(year, granularity)
     result = generate_app_ready_dataset(
         input_path=csv_path,
         output_path=PROCESSED_DIR / "app-ready" / f"vde-{year}.json",
@@ -363,7 +492,22 @@ def _merged_year_items(year: int, granularity: str) -> tuple[list[dict], dict]:
     if granularity == "anual":
         for item in items:
             item["periodo"] = str(year)
-    return items, payload
+    return items, payload, uf_agg
+
+
+def _uf_indicator_catalog() -> list[dict]:
+    """Entradas de catalogo para os indicadores so-UF (degrade nacional)."""
+    return [
+        {
+            "key": key,
+            "codigo": codigo,
+            "label": label,
+            "unidade": unidade,
+            "oficial": True,
+            "nivelDado": "uf",
+        }
+        for key, (codigo, label, unidade) in UF_INDICATOR_LABELS.items()
+    ]
 
 
 def discover_years() -> list[int]:
@@ -381,10 +525,12 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
     multiplos periodos (um item por municipio+ano). O periodo por omissao
     (periods[0]) e o ano completo mais recente, que tem taxa por 100 mil."""
     all_items: list[dict] = []
+    uf_agg_by_year: dict[int, dict] = {}
     base_payload: dict | None = None
     for year in years:
-        items, payload = _merged_year_items(year, granularity)
+        items, payload, uf_agg = _merged_year_items(year, granularity)
         all_items.extend(items)
+        uf_agg_by_year[year] = uf_agg
         if base_payload is None:
             base_payload = payload
         print(f"  {year}: {len(items)} municipios")
@@ -413,11 +559,21 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
     payload["status"]["source"] = f"MJSP/SINESP - Base VDE {span}"
     payload["status"]["status"] = f"Carga nacional oficial (Base VDE {span})"
     payload["status"]["limitations"] = [
-        f"Base VDE do SINESP/MJSP, anos {span}, agregada por municipio (total anual).",
-        "Cobre os indicadores municipais de vitima do VDE; crimes patrimoniais do "
-        "VDE so existem a nivel UF e nao entram no mapa municipal.",
-        "Taxa por 100 mil so esta disponivel para 2025 (populacao IBGE 2025); nos "
-        "demais anos mostra-se o total absoluto.",
+        f"Base VDE do SINESP/MJSP, anos {span}, agregada por municipio (vitima) e "
+        "por estado (patrimoniais/sexuais).",
+        "Indicadores municipais (homicidio, feminicidio, etc.) tem detalhe por "
+        "cidade; os so-UF (roubo/furto de veiculos, carga, trafico, estupro, morte "
+        "por intervencao do Estado) so existem por estado e coloreiam o mapa nacional.",
+        "Taxa por 100 mil: municipal com populacao IBGE 2025; estadual com "
+        "estimativa IBGE por ano (UF).",
+    ]
+
+    # ufData: indicadores so-UF (degrade nacional dos estados). Catalogo de
+    # indicadores estendido com esses indicadores (marcados nivelDado=uf).
+    payload["ufData"] = build_uf_data(uf_agg_by_year)
+    existing_keys = {ind["key"] for ind in payload.get("indicators", [])}
+    payload["indicators"] = payload.get("indicators", []) + [
+        ind for ind in _uf_indicator_catalog() if ind["key"] not in existing_keys
     ]
 
     raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
