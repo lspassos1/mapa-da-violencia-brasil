@@ -33,13 +33,14 @@ function fitBoundsSafe(
   options: Parameters<MapLibreMap["fitBounds"]>[1],
 ): void {
   const [west, south, east, north] = bounds;
-  // Sincroniza o transform interno do MapLibre com o tamanho real do container.
-  // Sem isto, o transform pode ainda ter 0 px (logo apos mudancas de layout), o
-  // que faz a matematica da camera no fitBounds produzir NaN.
-  map.resize();
   const finite = [west, south, east, north].every((v) => Number.isFinite(v));
   const canvas = map.getCanvas();
   const sized = !!canvas && canvas.width > 0 && canvas.height > 0;
+  // Canvas a 0 px faz a matematica da camera produzir NaN: ressincroniza o
+  // transform com o container e tenta de novo (em vez de chamar resize sempre).
+  if (!sized) {
+    map.resize();
+  }
   // Bounds com area nula (cantos iguais) tambem geram zoom Infinito -> NaN.
   const hasArea = west !== east && south !== north;
   if (!finite || !sized || !hasArea) {
