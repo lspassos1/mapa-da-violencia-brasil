@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, GitCompareArrows } from "lucide-react";
-import { AppHeader } from "@/components/layout/AppHeader";
 import { riskColors } from "@/lib/colorScale";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 import { riskLevelLabels } from "@/lib/riskLevel";
@@ -59,14 +58,13 @@ export function CompareDashboard() {
     };
   }, []);
 
+  // O <main> e o AppHeader vivem no page.tsx (fora da fronteira de Suspense),
+  // para a navegacao ficar visivel durante a suspensao/carga inicial.
   if (!api) {
     return (
-      <main className="flex min-h-screen flex-col text-slate-100">
-        <AppHeader />
-        <div className="flex flex-1 items-center justify-center p-8 text-sm text-slate-400" role="status" aria-live="polite">
-          A carregar a carga nacional…
-        </div>
-      </main>
+      <div className="flex flex-1 items-center justify-center p-8 text-sm text-slate-400" role="status" aria-live="polite">
+        A carregar a carga nacional…
+      </div>
     );
   }
 
@@ -138,9 +136,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
   }
 
   return (
-    <main className="flex min-h-screen flex-col text-slate-100">
-      <AppHeader />
-      <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 lg:p-6">
+    <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 lg:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <GitCompareArrows className="h-5 w-5 text-cyan-300" />
@@ -356,8 +352,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
             Verde = menor valor (melhor); vermelho = maior valor (pior) entre os estados selecionados.
           </p>
         </div>
-      </section>
-    </main>
+    </section>
   );
 }
 
