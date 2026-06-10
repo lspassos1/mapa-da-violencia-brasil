@@ -92,7 +92,8 @@ function CompareView({ api }: { api: CrimeDataApi }) {
     const raw = (searchParams.get("ufs") ?? "SP,RJ").split(",").map((u) => u.trim().toUpperCase());
     const known = new Set(allUfs.map((entry) => entry.uf));
     const valid = raw.filter((uf) => known.has(uf));
-    return (valid.length > 0 ? valid : ["SP", "RJ"]).slice(0, MAX_UFS);
+    // Comparacao exige pelo menos 2 estados; deep-links com menos caem no par padrao.
+    return (valid.length >= 2 ? valid : ["SP", "RJ"]).slice(0, MAX_UFS);
   });
   const [indicator, setIndicator] = useState<CrimeIndicatorKey>(() => {
     const raw = searchParams.get("indicador") ?? "";
@@ -120,7 +121,9 @@ function CompareView({ api }: { api: CrimeDataApi }) {
   const indicatorLabel = indicators.find((option) => option.key === indicator)?.label ?? indicator;
   const periodLabel = periods.find((option) => option.key === period)?.label ?? period;
 
-  // Serie do indicador por (uf, periodo) para o grafico e cartoes.
+  // Serie do indicador por (uf, periodo) para o grafico e cartoes. Com o ufData
+  // completo (todos os 14 indicadores tem agregados estaduais) isto nunca e
+  // vazio; o aviso abaixo cobre datasets antigos sem os agregados municipais.
   const ufSeries = api.getUfIndicatorData(indicator);
   const byUfPeriod = new Map(ufSeries.map((datum) => [`${datum.uf}|${datum.periodo}`, datum]));
   const periodsAsc = [...periods].sort((a, b) => a.key.localeCompare(b.key));
@@ -227,6 +230,16 @@ function CompareView({ api }: { api: CrimeDataApi }) {
             </select>
           </label>
         </div>
+
+        {ufSeries.length === 0 ? (
+          <p
+            className="rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-3 text-sm text-amber-100/90"
+            role="status"
+          >
+            Sem agregados estaduais para este indicador nesta carga de dados. Regenere o dataset
+            com o ETL atual (ufData completo) para habilitar a comparacao.
+          </p>
+        ) : null}
 
         {/* Cartoes por estado */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
