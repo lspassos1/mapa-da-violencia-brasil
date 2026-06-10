@@ -78,3 +78,30 @@ test("getMunicipalityRank devolve 0 para municipio inexistente ou sem dados", ()
   assert.equal(getMunicipalityRank(data, "999", "homicidioDoloso", "total"), 0);
   assert.equal(getMunicipalityRank(data, "4", "homicidioDoloso", "total"), 0);
 });
+
+test("order=asc devolve os menores valores primeiro (melhores indices)", () => {
+  const ranked = getRankedMunicipalities(dataset(), "homicidioDoloso", "total", null, 10, "asc");
+  assert.deepEqual(ranked.map((m) => m.idIbge), ["1", "3", "2"]);
+});
+
+test("order=asc desempata por populacao descendente (cidade maior primeiro)", () => {
+  const data = [
+    makeMunicipality({
+      idIbge: "small",
+      populacao: 1_000,
+      indicadores: { homicidioDoloso: makeMetric({ total: 0, dataStatus: "zero_registrado" }) },
+    }),
+    makeMunicipality({
+      idIbge: "big",
+      populacao: 900_000,
+      indicadores: { homicidioDoloso: makeMetric({ total: 0, dataStatus: "zero_registrado" }) },
+    }),
+    makeMunicipality({
+      idIbge: "worst",
+      populacao: 50_000,
+      indicadores: { homicidioDoloso: makeMetric({ total: 99 }) },
+    }),
+  ];
+  const ranked = getRankedMunicipalities(data, "homicidioDoloso", "total", null, 10, "asc");
+  assert.deepEqual(ranked.map((m) => m.idIbge), ["big", "small", "worst"]);
+});

@@ -2,6 +2,7 @@ import { getDataStatusLabel } from "@/lib/dataStatus";
 import { getMetricValue } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
 import { riskLevelLabels } from "@/lib/riskLevel";
+import { MapLegend } from "@/components/map/MapLegend";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, ViewMode } from "@/types/crime";
 
 interface AccessibleDataTableProps {
@@ -95,6 +96,10 @@ export function AccessibleDataTable({
           )}
         </tbody>
       </table>
+      {/* A mesma legenda de niveis do mapa, no fim da tabela (sem tapar linhas). */}
+      <div className="mt-4">
+        <MapLegend />
+      </div>
     </div>
   );
 }
