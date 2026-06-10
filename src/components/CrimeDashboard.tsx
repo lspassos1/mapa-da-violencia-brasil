@@ -109,9 +109,11 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
     ufDatumToMunicipality(datum, nameByUf.get(datum.uf) ?? datum.uf),
   );
   const selectedUfDatum = isUf && selectedState ? api.getUfDatum(selectedState, period, indicator) : null;
-  const ranking = isUf
-    ? getRankedMunicipalities(ufRankingItems, indicator, viewMode, null, 10)
-    : rankingResult.ranking;
+  // Dois rankings em qualquer nivel (nacional = pais inteiro; estado = municipios
+  // da UF; indicador so-UF = estados): os 10 piores e os 10 melhores indices.
+  const rankingBase = isUf ? ufRankingItems : rankingResult.items;
+  const rankingWorst = getRankedMunicipalities(rankingBase, indicator, viewMode, null, 10, "desc");
+  const rankingBest = getRankedMunicipalities(rankingBase, indicator, viewMode, null, 10, "asc");
 
   const selectedPeriod = periods.find((option) => option.key === period) ?? periods[0];
   // Modo 'official' sem carga gerada nao tem periodos: evita aceder a undefined.
@@ -187,10 +189,17 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
             }}
           />
           <RankingPanel
-            data={ranking}
+            data={rankingWorst}
             indicator={indicator}
             selectedMunicipalityId={isUf ? selectedState : selectedMunicipality?.idIbge ?? null}
-            viewMode={viewMode}
+            tone="worst"
+            onSelect={isUf ? (item) => handleStateSelect(item.uf) : handleMunicipalitySelect}
+          />
+          <RankingPanel
+            data={rankingBest}
+            indicator={indicator}
+            selectedMunicipalityId={isUf ? selectedState : selectedMunicipality?.idIbge ?? null}
+            tone="best"
             onSelect={isUf ? (item) => handleStateSelect(item.uf) : handleMunicipalitySelect}
           />
         </aside>
