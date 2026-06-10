@@ -24,14 +24,14 @@ export function RankingPanel({
 }: RankingPanelProps) {
   const isWorst = tone === "worst";
   return (
-    <section className="min-h-0 rounded-lg border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
-      <div className="mb-4 flex items-center gap-2">
+    <section className="flex max-h-[540px] min-h-0 flex-col rounded-lg border border-white/10 bg-white/[0.04] p-3 backdrop-blur">
+      <div className="mb-3 flex items-center gap-2">
         {isWorst ? (
-          <Trophy className="h-4 w-4 text-red-300" />
+          <Trophy className="h-4 w-4 shrink-0 text-red-300" />
         ) : (
-          <ShieldCheck className="h-4 w-4 text-emerald-300" />
+          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-300" />
         )}
-        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-200">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
           {isWorst ? "10 piores indices" : "10 melhores indices"}
         </h2>
       </div>
@@ -40,7 +40,7 @@ export function RankingPanel({
           Nenhum municipio no filtro atual.
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="min-h-0 space-y-2 overflow-y-auto pr-1">
           {data.map((item, index) => {
             const metric = item.indicadores[indicator];
             if (!metric) {
@@ -49,7 +49,7 @@ export function RankingPanel({
             const active = item.idIbge === selectedMunicipalityId;
             return (
               <button
-                className={`w-full rounded-lg border p-3 text-left transition ${
+                className={`w-full rounded-lg border p-2.5 text-left transition ${
                   active
                     ? "border-cyan-300/60 bg-cyan-300/10"
                     : "border-white/10 bg-slate-950/70 hover:border-cyan-300/30"
@@ -59,14 +59,14 @@ export function RankingPanel({
                 aria-current={active ? "true" : undefined}
                 onClick={() => onSelect(item)}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-slate-500">#{index + 1}</span>
-                  <span className="text-xs text-slate-400">{riskLevelLabels[metric.nivel]}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold text-slate-500">#{index + 1}</span>
+                  <span className="text-[11px] text-slate-400">{riskLevelLabels[metric.nivel]}</span>
                 </div>
-                <p className="mt-1 font-semibold text-slate-100">
+                <p className="mt-0.5 truncate text-sm font-semibold text-slate-100">
                   {item.municipio} <span className="text-slate-500">/{item.uf}</span>
                 </p>
-                <dl className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                <dl className="mt-1.5 grid grid-cols-3 gap-1 text-[10px]">
                   <div>
                     <dt className="uppercase tracking-wide text-slate-500">Indice</dt>
                     <dd className="font-semibold text-slate-200">{Math.round(metric.score)}/100</dd>
@@ -76,7 +76,9 @@ export function RankingPanel({
                     <dd className="font-semibold text-slate-200">{formatNumber(metric.total)}</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-slate-500">Taxa/100 mil</dt>
+                    <dt className="uppercase tracking-wide text-slate-500" title="Taxa por 100 mil">
+                      Taxa
+                    </dt>
                     <dd className="font-semibold text-slate-200">
                       {typeof metric.taxa100k === "number" ? formatDecimal(metric.taxa100k) : "—"}
                     </dd>

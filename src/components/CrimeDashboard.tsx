@@ -165,7 +165,7 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
       />
       <section
         id="conteudo-principal"
-        className="flex flex-1 flex-col gap-4 p-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)_340px] lg:p-5"
+        className="flex flex-1 flex-col gap-4 p-4 lg:grid lg:grid-cols-[440px_minmax(0,1fr)_340px] lg:p-5"
       >
         <aside className="flex min-h-0 flex-col gap-4">
           <CrimeFilters
@@ -188,20 +188,24 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
               setSelectedMunicipality(null);
             }}
           />
-          <RankingPanel
-            data={rankingWorst}
-            indicator={indicator}
-            selectedMunicipalityId={isUf ? selectedState : selectedMunicipality?.idIbge ?? null}
-            tone="worst"
-            onSelect={isUf ? (item) => handleStateSelect(item.uf) : handleMunicipalitySelect}
-          />
-          <RankingPanel
-            data={rankingBest}
-            indicator={indicator}
-            selectedMunicipalityId={isUf ? selectedState : selectedMunicipality?.idIbge ?? null}
-            tone="best"
-            onSelect={isUf ? (item) => handleStateSelect(item.uf) : handleMunicipalitySelect}
-          />
+          {/* Piores e melhores lado a lado, cada um com scroll interno, para a
+              coluna nao crescer e esconder o segundo ranking. */}
+          <div className="grid min-h-0 grid-cols-1 gap-4 sm:grid-cols-2">
+            <RankingPanel
+              data={rankingWorst}
+              indicator={indicator}
+              selectedMunicipalityId={isUf ? selectedState : selectedMunicipality?.idIbge ?? null}
+              tone="worst"
+              onSelect={isUf ? (item) => handleStateSelect(item.uf) : handleMunicipalitySelect}
+            />
+            <RankingPanel
+              data={rankingBest}
+              indicator={indicator}
+              selectedMunicipalityId={isUf ? selectedState : selectedMunicipality?.idIbge ?? null}
+              tone="best"
+              onSelect={isUf ? (item) => handleStateSelect(item.uf) : handleMunicipalitySelect}
+            />
+          </div>
         </aside>
 
         <section className="relative min-h-[620px] overflow-hidden rounded-lg border border-white/10 bg-slate-950/80 shadow-2xl">
