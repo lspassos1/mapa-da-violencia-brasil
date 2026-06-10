@@ -329,6 +329,42 @@ def build_uf_data(uf_agg_by_year: dict[int, dict[tuple[str, int, str], int]]) ->
     return records
 
 
+def build_uf_data_from_items(items: list[dict]) -> list[dict]:
+    """Agrega os indicadores MUNICIPAIS (incl. indiceGeral) por (uf, periodo,
+    indicador), para que a comparacao entre estados funcione em qualquer
+    indicador — nao so nos que o VDE fornece a nivel UF. Taxa por 100 mil com a
+    populacao UF do ano; score por quantil de rank entre as UFs do periodo."""
+    uf_pop = load_uf_population()
+    totals: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    units: dict[str, str] = {}
+    for item in items:
+        for indicador, metric in item["indicadores"].items():
+            totals[(str(item["periodo"]), indicador)][str(item["uf"])] += int(metric.get("total") or 0)
+            units.setdefault(indicador, str(metric.get("unidade") or "ocorrencias"))
+
+    records: list[dict] = []
+    for (periodo, indicador), by_uf in sorted(totals.items()):
+        scores = _uf_score_and_level({uf: float(value) for uf, value in by_uf.items()})
+        year = int(periodo[:4])
+        for uf, value in by_uf.items():
+            pop = uf_pop.get((uf, year))
+            score, nivel = scores[uf]
+            records.append(
+                {
+                    "uf": uf,
+                    "periodo": periodo,
+                    "indicador": indicador,
+                    "total": value,
+                    "taxa100k": round((value / pop) * 100000, 4) if pop else None,
+                    "score": score,
+                    "nivel": nivel,
+                    "unidade": units.get(indicador, "ocorrencias"),
+                    "dataStatus": "oficial",
+                }
+            )
+    return records
+
+
 def build_combined_csv(year: int, granularity: str) -> tuple[Path, dict[tuple[str, int, str], int]]:
     """Agrega um ano do VDE para o CSV combinado (schema SINESP+populacao).
 
@@ -457,7 +493,7 @@ def finalize(year: int, granularity: str) -> Path:
         "Taxa por 100 mil: municipal com populacao IBGE 2025; estadual com estimativa IBGE/UF.",
     ]
 
-    payload["ufData"] = build_uf_data({year: uf_agg})
+    payload["ufData"] = build_uf_data({year: uf_agg}) + build_uf_data_from_items(items)
     existing_keys = {ind["key"] for ind in payload.get("indicators", [])}
     # Indice geral em 1.o (indicators[0] e o indicador padrao da app).
     payload["indicators"] = (
@@ -627,7 +663,7 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
 
     # ufData: indicadores so-UF (degrade nacional dos estados). Catalogo de
     # indicadores estendido com esses indicadores (marcados nivelDado=uf).
-    payload["ufData"] = build_uf_data(uf_agg_by_year)
+    payload["ufData"] = build_uf_data(uf_agg_by_year) + build_uf_data_from_items(all_items)
     existing_keys = {ind["key"] for ind in payload.get("indicators", [])}
     # Indice geral em 1.o (indicators[0] e o indicador padrao da app).
     payload["indicators"] = (
