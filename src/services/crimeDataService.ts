@@ -63,6 +63,9 @@ export interface CrimeDataApi {
   isUfIndicator(indicator: CrimeIndicatorKey): boolean;
   getUfChoropleth(period: string, indicator: CrimeIndicatorKey): UfDatum[];
   getUfDatum(uf: string, period: string, indicator: CrimeIndicatorKey): UfDatum | null;
+  // Todos os registos estaduais de um indicador (todas as UFs x periodos) —
+  // alimenta a comparacao entre estados e as series temporais por UF.
+  getUfIndicatorData(indicator: CrimeIndicatorKey): UfDatum[];
 }
 
 // Placeholder do modo `official` enquanto a carga nacional nao for gerada. Antes
@@ -227,6 +230,10 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
     );
   }
 
+  function getUfIndicatorData(indicator: CrimeIndicatorKey): UfDatum[] {
+    return activeUfData.filter((datum) => datum.indicador === indicator);
+  }
+
   function resolveFilters(filters: Partial<CrimeMapFilters>): CrimeMapFilters {
     const indicator = filters.indicator && isCrimeIndicatorKey(filters.indicator)
       ? filters.indicator
@@ -305,6 +312,7 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
     isUfIndicator,
     getUfChoropleth,
     getUfDatum,
+    getUfIndicatorData,
   };
 }
 
