@@ -333,7 +333,12 @@ def build_uf_data_from_items(items: list[dict]) -> list[dict]:
     """Agrega os indicadores MUNICIPAIS (incl. indiceGeral) por (uf, periodo,
     indicador), para que a comparacao entre estados funcione em qualquer
     indicador — nao so nos que o VDE fornece a nivel UF. Taxa por 100 mil com a
-    populacao UF do ano; score por quantil de rank entre as UFs do periodo."""
+    populacao UF do ano; score por quantil de rank entre as UFs do periodo.
+
+    Limitacao: pensado para a serie ANUAL (periodo "YYYY"). Com granularidade
+    mensal os items trazem "YYYY-MM", enquanto build_uf_data emite "YYYY" — os
+    formatos divergiriam no ufData concatenado. A serie mensal tera dataset
+    proprio (issue #72) em vez de passar por aqui."""
     uf_pop = load_uf_population()
     totals: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
     units: dict[str, str] = {}
