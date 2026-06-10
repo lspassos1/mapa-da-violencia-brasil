@@ -534,7 +534,13 @@ def add_general_index(items: list[dict]) -> None:
     E o indicador padrao da app (vai em 1.o no catalogo)."""
     totals: list[tuple[dict, int]] = []
     for item in items:
-        total = sum(int(metric.get("total") or 0) for metric in item["indicadores"].values())
+        # Exclui o proprio indiceGeral da soma: torna a funcao re-entrante (uma
+        # segunda chamada recalcula em vez de inflar o total com o agregado previo).
+        total = sum(
+            int(metric.get("total") or 0)
+            for key, metric in item["indicadores"].items()
+            if key != "indiceGeral"
+        )
         totals.append((item, total))
 
     ordered = sorted(totals, key=lambda pair: pair[1])
@@ -575,7 +581,8 @@ def discover_years() -> list[int]:
 def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) -> Path:
     """Carga multi-ano: concatena os itens de varios anos num so dataset com
     multiplos periodos (um item por municipio+ano). O periodo por omissao
-    (periods[0]) e o ano completo mais recente, que tem taxa por 100 mil."""
+    (periods[0]) e sempre o ANO ATUAL, mesmo que parcial — o rotulo '(parcial)'
+    sinaliza a cobertura incompleta."""
     all_items: list[dict] = []
     uf_agg_by_year: dict[int, dict] = {}
     base_payload: dict | None = None
