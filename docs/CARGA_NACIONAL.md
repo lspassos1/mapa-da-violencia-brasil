@@ -26,11 +26,15 @@ python3 -m etl.aggregate_vde finalize-multi --years 2015-2026 --partial 2026
 # -> public/officialCrimeData.json.gz (multi-periodo)
 ```
 
-**Multi-ano e taxa por 100 mil:** so existe populacao IBGE de 2025, por isso a
-**taxa/100k** so e calculada para o periodo **2025** (que abre por omissao, sendo
-`periods[0]`); nos restantes anos mostra-se o **total absoluto** (a app suprime a
-taxa cruzada de populacao). Anos parciais (ex.: 2026, ano corrente incompleto)
-ficam rotulados `(parcial)` e no fim da lista de periodos.
+**Periodos e padrao:** os periodos vao do mais recente para o mais antigo e o
+que abre por omissao (`periods[0]`) e o **ano atual**, mesmo que incompleto — o
+rotulo `(parcial)` sinaliza a cobertura. **Taxa por 100 mil** municipal so existe
+para 2025 (populacao IBGE 2025); nos demais anos mostra-se o total absoluto.
+
+**Indicador padrao:** `indiceGeral` ("Indice geral — todos os crimes") e gerado
+pelo ETL como a **soma das vitimas de todos os crimes municipais** do VDE por
+municipio/ano, com score por quantil dentro do ano; vai em 1.o no catalogo, por
+isso e o indicador que abre por omissao.
 
 **Granularidade do VDE:** so os crimes de **vitima** (homicidio doloso,
 feminicidio, latrocinio, lesao corporal seguida de morte, tentativa de

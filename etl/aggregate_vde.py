@@ -439,6 +439,7 @@ def finalize(year: int, granularity: str) -> Path:
             merged[key]["indicadores"] = {}
         merged[key]["indicadores"].update(item["indicadores"])
     items = list(merged.values())
+    add_general_index(items)
 
     period_key = str(year)  # anual: "2025"
     if granularity == "anual":
@@ -458,9 +459,12 @@ def finalize(year: int, granularity: str) -> Path:
 
     payload["ufData"] = build_uf_data({year: uf_agg})
     existing_keys = {ind["key"] for ind in payload.get("indicators", [])}
-    payload["indicators"] = payload.get("indicators", []) + [
-        ind for ind in _uf_indicator_catalog() if ind["key"] not in existing_keys
-    ]
+    # Indice geral em 1.o (indicators[0] e o indicador padrao da app).
+    payload["indicators"] = (
+        ([GENERAL_INDEX_ENTRY] if "indiceGeral" not in existing_keys else [])
+        + payload.get("indicators", [])
+        + [ind for ind in _uf_indicator_catalog() if ind["key"] not in existing_keys]
+    )
 
     raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     OFFICIAL_DATASET_GZ.parent.mkdir(parents=True, exist_ok=True)
@@ -492,6 +496,8 @@ def _merged_year_items(year: int, granularity: str) -> tuple[list[dict], dict, d
     if granularity == "anual":
         for item in items:
             item["periodo"] = str(year)
+    # Indice geral (todos os crimes municipais somados), pontuado dentro do ano.
+    add_general_index(items)
     return items, payload, uf_agg
 
 
@@ -510,6 +516,58 @@ def _uf_indicator_catalog() -> list[dict]:
     ]
 
 
+GENERAL_INDEX_ENTRY = {
+    "key": "indiceGeral",
+    "codigo": "indice_geral",
+    "label": "Indice geral (todos os crimes)",
+    "unidade": "vitimas",
+    "oficial": True,
+}
+
+_LEVELS = [(20, "baixo"), (40, "moderado"), (60, "atencao"), (80, "alto"), (101, "critico")]
+
+
+def add_general_index(items: list[dict]) -> None:
+    """Acrescenta o indicador `indiceGeral` a cada municipio de UM ano: a soma
+    das vitimas de todos os crimes municipais do VDE, com taxa por 100 mil
+    (quando ha populacao alinhada) e score por quantil de rank dentro do ano.
+    E o indicador padrao da app (vai em 1.o no catalogo)."""
+    totals: list[tuple[dict, int]] = []
+    for item in items:
+        # Exclui o proprio indiceGeral da soma: torna a funcao re-entrante (uma
+        # segunda chamada recalcula em vez de inflar o total com o agregado previo).
+        total = sum(
+            int(metric.get("total") or 0)
+            for key, metric in item["indicadores"].items()
+            if key != "indiceGeral"
+        )
+        totals.append((item, total))
+
+    ordered = sorted(totals, key=lambda pair: pair[1])
+    n = len(ordered)
+    for index, (item, total) in enumerate(ordered):
+        score = round(((index + 0.5) / n) * 100) if n else 0
+        nivel = next(name for threshold, name in _LEVELS if score < threshold)
+        pop = item.get("populacao") or 0
+        # So calcula a taxa quando os sub-indicadores tambem a tem (populacao do
+        # mesmo ano); evita misturar vintages.
+        has_taxa = any(
+            isinstance(metric.get("taxa100k"), (int, float))
+            for metric in item["indicadores"].values()
+        )
+        item["indicadores"]["indiceGeral"] = {
+            "score": score,
+            "nivel": nivel,
+            "total": total,
+            "taxa100k": round((total / pop) * 100000, 4) if pop and has_taxa else None,
+            "variacaoMensal": None,
+            "variacaoAnual": None,
+            "dataStatus": "oficial",
+            "unidade": "vitimas",
+            "fonte": "MJSP/SINESP - Base VDE (agregado)",
+        }
+
+
 def discover_years() -> list[int]:
     """Anos com ficheiro `BancoVDE <ano>.xlsx` presente em data/raw/vde/."""
     years = []
@@ -523,7 +581,8 @@ def discover_years() -> list[int]:
 def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) -> Path:
     """Carga multi-ano: concatena os itens de varios anos num so dataset com
     multiplos periodos (um item por municipio+ano). O periodo por omissao
-    (periods[0]) e o ano completo mais recente, que tem taxa por 100 mil."""
+    (periods[0]) e sempre o ANO ATUAL, mesmo que parcial — o rotulo '(parcial)'
+    sinaliza a cobertura incompleta."""
     all_items: list[dict] = []
     uf_agg_by_year: dict[int, dict] = {}
     base_payload: dict | None = None
@@ -538,12 +597,10 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
     if base_payload is None:
         raise SystemExit("Nenhum ano agregado; verifique data/raw/vde/.")
 
-    # Ordena os periodos: anos completos do mais recente para o mais antigo,
-    # e os anos parciais (ex.: ano corrente incompleto) no fim. Assim o periodo
-    # que abre por omissao e o ano completo mais recente (com taxa valida).
-    full = sorted((y for y in years if y not in partial_years), reverse=True)
-    partial = sorted((y for y in years if y in partial_years), reverse=True)
-    ordered = full + partial
+    # Ordena os periodos do mais recente para o mais antigo: o periodo que abre
+    # por omissao (periods[0]) e sempre o ANO ATUAL, mesmo que parcial — o rotulo
+    # "(parcial)" sinaliza a cobertura incompleta.
+    ordered = sorted(years, reverse=True)
 
     def _label(y: int) -> str:
         return f"{y} (parcial)" if y in partial_years else str(y)
@@ -572,9 +629,12 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
     # indicadores estendido com esses indicadores (marcados nivelDado=uf).
     payload["ufData"] = build_uf_data(uf_agg_by_year)
     existing_keys = {ind["key"] for ind in payload.get("indicators", [])}
-    payload["indicators"] = payload.get("indicators", []) + [
-        ind for ind in _uf_indicator_catalog() if ind["key"] not in existing_keys
-    ]
+    # Indice geral em 1.o (indicators[0] e o indicador padrao da app).
+    payload["indicators"] = (
+        ([GENERAL_INDEX_ENTRY] if "indiceGeral" not in existing_keys else [])
+        + payload.get("indicators", [])
+        + [ind for ind in _uf_indicator_catalog() if ind["key"] not in existing_keys]
+    )
 
     raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     OFFICIAL_DATASET_GZ.parent.mkdir(parents=True, exist_ok=True)
