@@ -122,6 +122,9 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
     .filter((datum) => datum.uf === selectedState)
     .sort((a, b) => a.periodo.localeCompare(b.periodo));
   const periodUfData = indicatorUfData.filter((datum) => datum.periodo === period);
+  const stateProfileCurrent = showStateProfile
+    ? periodUfData.find((datum) => datum.uf === selectedState) ?? null
+    : null;
   const stateNationalRank =
     [...periodUfData].sort((a, b) => b.total - a.total).findIndex((datum) => datum.uf === selectedState) + 1;
   const periodTaxas = periodUfData
@@ -351,9 +354,10 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
               ufNome={nameByUf.get(selectedState) ?? selectedState}
               indicatorLabel={indicatorLabel}
               periodLabel={selectedPeriodLabel}
-              current={api.getUfDatum(selectedState, period, indicator)}
+              current={stateProfileCurrent}
               series={stateSeries}
               nationalRank={stateNationalRank}
+              nationalRankTotal={periodUfData.length}
               nationalAvgTaxa={nationalAvgTaxa}
               topMunicipalities={rankingWorst.slice(0, 3)}
               indicator={indicator}

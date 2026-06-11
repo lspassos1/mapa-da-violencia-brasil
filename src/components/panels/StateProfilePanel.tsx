@@ -13,8 +13,10 @@ interface StateProfilePanelProps {
   current: UfDatum | null;
   // Serie completa do estado no indicador (ordenada por periodo asc).
   series: UfDatum[];
-  // Posicao 1-based do estado entre as 27 UFs no periodo (por total); 0 = n/d.
+  // Posicao 1-based do estado entre as UFs com dados no periodo (por total).
   nationalRank: number;
+  // Quantas UFs tem dados no periodo (denominador do ranking; nem sempre 27).
+  nationalRankTotal: number;
   // Media nacional da taxa por 100 mil no periodo (null sem taxas).
   nationalAvgTaxa: number | null;
   // Top municipios do estado no indicador/periodo.
@@ -34,6 +36,7 @@ export function StateProfilePanel({
   current,
   series,
   nationalRank,
+  nationalRankTotal,
   nationalAvgTaxa,
   topMunicipalities,
   indicator,
@@ -75,9 +78,14 @@ export function StateProfilePanel({
             </dd>
           </div>
           <div>
-            <dt className="uppercase tracking-wide text-slate-500">Ranking UF</dt>
+            <dt
+              className="uppercase tracking-wide text-slate-500"
+              title="Posicao entre as UFs com dados no periodo, ordenadas pelo total"
+            >
+              Ranking UF
+            </dt>
             <dd className="text-sm font-semibold text-slate-100">
-              {nationalRank > 0 ? `${nationalRank}º/27` : "—"}
+              {nationalRank > 0 && nationalRankTotal > 1 ? `${nationalRank}º/${nationalRankTotal}` : "—"}
             </dd>
           </div>
         </dl>
