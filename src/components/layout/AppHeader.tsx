@@ -16,6 +16,12 @@ export function AppHeader() {
       <nav className="flex items-center gap-2">
         <Link
           className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+          href="/comparar"
+        >
+          Comparar estados
+        </Link>
+        <Link
+          className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
           href="/metodologia"
         >
           Metodologia
