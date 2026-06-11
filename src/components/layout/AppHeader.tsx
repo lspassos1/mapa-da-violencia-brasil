@@ -22,6 +22,12 @@ export function AppHeader() {
         </Link>
         <Link
           className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+          href="/tendencias"
+        >
+          Tendencias
+        </Link>
+        <Link
+          className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
           href="/metodologia"
         >
           Metodologia
