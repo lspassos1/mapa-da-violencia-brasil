@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Map as MapIcon, Table as TableIcon } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AlertTriangle, Download, Map as MapIcon, Table as TableIcon } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { DataModeBanner } from "@/components/layout/DataModeBanner";
 import { CrimeFilters } from "@/components/filters/CrimeFilters";
@@ -15,6 +16,7 @@ import { UfDetailsPanel } from "@/components/panels/UfDetailsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
 import { getRankedMunicipalities } from "@/lib/ranking";
 import { isRemoteDataMode } from "@/lib/dataMode";
+import { riskLevelLabels } from "@/lib/riskLevel";
 import { ufDatumToMunicipality } from "@/lib/ufDisplay";
 import { getStaticCrimeDataApi, loadCrimeDataApi, type CrimeDataApi } from "@/services/crimeDataService";
 import type { CrimeIndicatorKey, MunicipalityCrimeData, UfDatum, ViewMode } from "@/types/crime";
@@ -23,6 +25,10 @@ const TABLE_ROW_LIMIT = 200;
 // Sentinela estavel para o caminho nao-UF: evita um array novo a cada render que
 // invalidaria o useMemo de BrazilCrimeMap (re-disparo de setPaintProperty).
 const EMPTY_UF: UfDatum[] = [];
+
+function riskLabelForCsv(nivel: keyof typeof riskLevelLabels): string {
+  return riskLevelLabels[nivel] ?? String(nivel);
+}
 
 // Em demo/official_sample a carga e sincrona (loadCrimeDataApi resolve de
 // imediato), por isso a API ja esta disponivel no primeiro render — preservando
@@ -67,6 +73,9 @@ export function CrimeDashboard() {
 }
 
 function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const defaultFilters = api.getDefaultCrimeMapFilters();
   const indicators = api.getAvailableIndicators();
   const periods = api.getAvailablePeriods();
@@ -81,12 +90,45 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
         ? "Dados oficiais agregados"
         : "Dados demonstrativos nesta versao";
 
-  const [indicator, setIndicator] = useState<CrimeIndicatorKey>(defaultFilters.indicator);
-  const [viewMode, setViewMode] = useState<ViewMode>(defaultFilters.viewMode);
-  const [period, setPeriod] = useState(defaultFilters.period);
-  const [selectedState, setSelectedState] = useState<string | null>(null);
-  const [selectedMunicipality, setSelectedMunicipality] = useState<MunicipalityCrimeData | null>(null);
-  const [showTable, setShowTable] = useState(false);
+  // Estado inicial a partir da URL (deep-link partilhavel); cada parametro e
+  // validado contra o catalogo — valores desconhecidos caem nos padroes.
+  const rawIndicator = searchParams.get("indicador") ?? "";
+  const rawMode = searchParams.get("modo") ?? "";
+  const rawPeriod = searchParams.get("periodo") ?? "";
+  const rawUf = (searchParams.get("uf") ?? "").toUpperCase();
+  const rawMunicipio = searchParams.get("municipio") ?? "";
+  const initialIndicator = api.isCrimeIndicatorKey(rawIndicator) ? rawIndicator : defaultFilters.indicator;
+  const initialMode = api.isViewMode(rawMode) ? rawMode : defaultFilters.viewMode;
+  const initialPeriod = periods.some((option) => option.key === rawPeriod) ? rawPeriod : defaultFilters.period;
+  const initialUf = metadata.ufs.some((entry) => entry.uf === rawUf) ? rawUf : null;
+  const initialMunicipality = initialUf && rawMunicipio ? api.getMunicipalityById(rawMunicipio, initialPeriod) : null;
+
+  const [indicator, setIndicator] = useState<CrimeIndicatorKey>(initialIndicator);
+  const [viewMode, setViewMode] = useState<ViewMode>(initialMode);
+  const [period, setPeriod] = useState(initialPeriod);
+  const [selectedState, setSelectedState] = useState<string | null>(initialUf);
+  const [selectedMunicipality, setSelectedMunicipality] = useState<MunicipalityCrimeData | null>(
+    initialMunicipality,
+  );
+  const [showTable, setShowTable] = useState(searchParams.get("vista") === "tabela");
+
+  // Reflete os filtros na URL para qualquer vista ser partilhavel/restauravel.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("indicador", indicator);
+    params.set("modo", viewMode);
+    params.set("periodo", period);
+    if (selectedState) {
+      params.set("uf", selectedState);
+    }
+    if (selectedMunicipality) {
+      params.set("municipio", selectedMunicipality.idIbge);
+    }
+    if (showTable) {
+      params.set("vista", "tabela");
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [indicator, viewMode, period, selectedState, selectedMunicipality, showTable, pathname, router]);
 
   const mapResult = useMemo(
     () => api.getCrimeMapData({ indicator, period, viewMode, uf: null }),
@@ -152,6 +194,38 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
     [visibleMapData, indicator, viewMode],
   );
   const tableData = rankedAll.slice(0, TABLE_ROW_LIMIT);
+
+  // Exporta TODAS as linhas filtradas (nao so as 200 renderizadas) em CSV com
+  // BOM UTF-8 e separador ';' (formato esperado pelo Excel pt-BR).
+  function handleExportCsv() {
+    const decimal = (value: number | null | undefined) =>
+      typeof value === "number" ? String(value).replace(".", ",") : "";
+    const header = ["posicao", "municipio", "uf", "id_ibge", "periodo", "indicador", "nivel", "total", "taxa_100k", "indice", "variacao_anual_pct"];
+    const lines = rankedAll.map((item, index) => {
+      const metric = item.indicadores[indicator];
+      return [
+        index + 1,
+        `"${item.municipio.replaceAll('"', '""')}"`,
+        item.uf,
+        item.idIbge,
+        item.periodo,
+        `"${indicatorLabel.replaceAll('"', '""')}"`,
+        metric ? riskLabelForCsv(metric.nivel) : "",
+        metric?.total ?? "",
+        decimal(metric?.taxa100k),
+        metric?.score ?? "",
+        decimal(metric?.variacaoAnual),
+      ].join(";");
+    });
+    const csv = "\ufeff" + [header.join(";"), ...lines].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `mapa-violencia_${indicator}_${period}${selectedState ? `_${selectedState}` : ""}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   function handleStateSelect(uf: string) {
     setSelectedState(uf);
@@ -281,6 +355,7 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
             <AccessibleDataTable
               data={tableData}
               total={rankedAll.length}
+              onExport={handleExportCsv}
               indicator={indicator}
               indicatorLabel={indicatorLabel}
               viewMode={viewMode}
