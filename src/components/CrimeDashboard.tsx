@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, Download, Map as MapIcon, Table as TableIcon } from "lucide-react";
+import { AlertTriangle, Map as MapIcon, Table as TableIcon } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { DataModeBanner } from "@/components/layout/DataModeBanner";
 import { CrimeFilters } from "@/components/filters/CrimeFilters";
@@ -223,7 +223,10 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `mapa-violencia_${indicator}_${period}${selectedState ? `_${selectedState}` : ""}.csv`;
+    // O Safari exige o anchor no DOM para aceitar o click sintetico de download.
+    document.body.appendChild(anchor);
     anchor.click();
+    anchor.remove();
     URL.revokeObjectURL(url);
   }
 

@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { getDataStatusLabel } from "@/lib/dataStatus";
 import { getMetricValue } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
@@ -41,9 +42,10 @@ export function AccessibleDataTable({
         <div className="mb-2 flex justify-end">
           <button
             type="button"
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
             onClick={onExport}
           >
+            <Download className="h-3.5 w-3.5" />
             Exportar CSV ({total} linhas)
           </button>
         </div>
