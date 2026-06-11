@@ -18,6 +18,20 @@ const STATE_FILL_SCALE = [
 // Cinza para UFs sem dados no indicador/periodo selecionado.
 const STATE_FILL_FALLBACK = "#334155";
 
+// Escala DIVERGENTE para a variacao anual: verde = queda (melhorou), cinza =
+// estavel (±5%), vermelho = subida (piorou). Null (ano parcial/sem ano
+// anterior) cai no cinza de fallback.
+export function getVariationColor(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return STATE_FILL_FALLBACK;
+  }
+  if (value <= -25) return "#15803d";
+  if (value <= -5) return "#4ade80";
+  if (value < 5) return "#94a3b8";
+  if (value < 25) return "#fb923c";
+  return "#dc2626";
+}
+
 export interface StateChoroplethEntry {
   uf: string;
   value: number;
@@ -80,9 +94,23 @@ export function buildStateFillColorExpression(
 // no ETL (mesmos limiares de getScoreColor), garantindo que a cor do mapa e o
 // `nivel` exibido no ranking/painel nunca discordam nas fronteiras das faixas.
 export function computeStateChoroplethFromUf(
-  ufData: ReadonlyArray<{ uf: string; score: number; total: number; taxa100k: number | null }>,
+  ufData: ReadonlyArray<{
+    uf: string;
+    score: number;
+    total: number;
+    taxa100k: number | null;
+    variacaoAnual?: number | null;
+  }>,
   viewMode: ViewMode,
 ): StateChoroplethEntry[] {
+  // Variacao anual: escala divergente propria (verde=queda, vermelho=subida).
+  if (viewMode === "variacaoAnual") {
+    return ufData.map((datum) => ({
+      uf: datum.uf,
+      value: datum.variacaoAnual ?? 0,
+      color: getVariationColor(datum.variacaoAnual),
+    }));
+  }
   const useRate = viewMode === "taxa100k";
   return ufData.map((datum) => ({
     uf: datum.uf,
@@ -98,6 +126,7 @@ export function municipalColorById(
   data: MunicipalityCrimeData[],
   indicator: CrimeIndicatorKey,
   uf: string,
+  viewMode: ViewMode = "score",
 ): Record<string, string> {
   const out: Record<string, string> = {};
   for (const item of data) {
@@ -108,7 +137,10 @@ export function municipalColorById(
     if (!metric || metric.dataStatus === "sem_dados" || metric.dataStatus === "nao_aplicavel") {
       continue;
     }
-    out[item.idIbge] = getScoreColor(metric.score);
+    // No modo variacao anual o degrade municipal e divergente; nos restantes,
+    // a cor vem do indice (score), como sempre.
+    out[item.idIbge] =
+      viewMode === "variacaoAnual" ? getVariationColor(metric.variacaoAnual) : getScoreColor(metric.score);
   }
   return out;
 }

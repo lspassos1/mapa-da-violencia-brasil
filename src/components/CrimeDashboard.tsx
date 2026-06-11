@@ -103,7 +103,10 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
   const isUf = api.isUfIndicator(indicator);
   // Consts simples: com o React Compiler ativo, a memoizacao e automatica
   // (evita o conflito de "preserve-manual-memoization" com deps de membro).
-  const ufChoropleth = isUf ? api.getUfChoropleth(period, indicator) : EMPTY_UF;
+  // O degrade dos estados tambem vem do ufData no modo "variacao anual" (a
+  // variacao por UF nao e somavel a partir dos municipios).
+  const needsUfChoropleth = isUf || viewMode === "variacaoAnual";
+  const ufChoropleth = needsUfChoropleth ? api.getUfChoropleth(period, indicator) : EMPTY_UF;
   const nameByUf = new Map(metadata.ufs.map((entry) => [entry.uf, entry.nome]));
   const ufRankingItems = ufChoropleth.map((datum) =>
     ufDatumToMunicipality(datum, nameByUf.get(datum.uf) ?? datum.uf),
@@ -280,7 +283,7 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
                 ufChoropleth={ufChoropleth}
               />
               <div className="absolute bottom-4 left-4 z-10">
-                <MapLegend />
+                <MapLegend viewMode={viewMode} />
               </div>
             </>
           )}

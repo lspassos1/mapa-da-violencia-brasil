@@ -20,7 +20,7 @@ export function formatMetricValue(value: number, viewMode: ViewMode): string {
   }
   if (viewMode === "total") return formatNumber(value);
   if (viewMode === "taxa100k") return `${formatDecimal(value)} / 100 mil`;
-  if (viewMode === "variacaoMensal") return `${value > 0 ? "+" : ""}${formatDecimal(value)}%`;
+  if (viewMode === "variacaoMensal" || viewMode === "variacaoAnual") return `${value > 0 ? "+" : ""}${formatDecimal(value)}%`;
   return `${Math.round(value)}/100`;
 }
 

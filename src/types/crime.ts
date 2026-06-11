@@ -14,7 +14,7 @@ export type CrimeIndicatorKey =
   | "rouboInstituicaoFinanceira"
   | "traficoDrogas";
 
-export type ViewMode = "score" | "total" | "taxa100k" | "variacaoMensal";
+export type ViewMode = "score" | "total" | "taxa100k" | "variacaoMensal" | "variacaoAnual";
 
 export type RiskLevel = "baixo" | "moderado" | "atencao" | "alto" | "critico";
 
@@ -75,6 +75,8 @@ export interface UfDatum {
   indicador: CrimeIndicatorKey;
   total: number;
   taxa100k: number | null;
+  // Variacao % vs ano anterior; null sem ano anterior ou em ano parcial.
+  variacaoAnual?: number | null;
   score: number;
   nivel: RiskLevel;
   unidade: CrimeMetricUnit;

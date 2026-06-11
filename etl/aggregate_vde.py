@@ -676,6 +676,41 @@ def discover_years() -> list[int]:
     return sorted(years)
 
 
+def fill_variacao_anual(all_items: list[dict], uf_data: list[dict], partial_years: set[int]) -> None:
+    """Preenche `variacaoAnual` (%) nos metrics municipais e nos registos de
+    ufData: (total_ano - total_ano_anterior) / total_ano_anterior * 100.
+
+    Fica null quando o ano anterior nao existe na serie ou tem total 0, e
+    tambem para ANOS PARCIAIS (ex.: 2026 com 4 meses): comparar um ano
+    incompleto com um completo seria enganoso — a leitura like-for-like vive na
+    aba Tendencias, que compara apenas os mesmos meses."""
+    partial = {str(year) for year in partial_years}
+
+    # Municipios: indexa total por (idIbge, indicador, periodo).
+    totals: dict[tuple[str, str, str], int] = {}
+    for item in all_items:
+        for indicador, metric in item["indicadores"].items():
+            totals[(item["idIbge"], indicador, str(item["periodo"]))] = int(metric.get("total") or 0)
+    for item in all_items:
+        periodo = str(item["periodo"])
+        if periodo in partial:
+            continue
+        prev_period = str(int(periodo) - 1)
+        for indicador, metric in item["indicadores"].items():
+            prev = totals.get((item["idIbge"], indicador, prev_period))
+            if prev:
+                metric["variacaoAnual"] = round((int(metric.get("total") or 0) - prev) / prev * 100, 1)
+
+    # UFs: mesma regra sobre os registos agregados.
+    uf_totals = {(r["uf"], r["indicador"], r["periodo"]): r["total"] for r in uf_data}
+    for record in uf_data:
+        if record["periodo"] in partial:
+            record["variacaoAnual"] = None
+            continue
+        prev = uf_totals.get((record["uf"], record["indicador"], str(int(record["periodo"]) - 1)))
+        record["variacaoAnual"] = round((record["total"] - prev) / prev * 100, 1) if prev else None
+
+
 def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) -> Path:
     """Carga multi-ano: concatena os itens de varios anos num so dataset com
     multiplos periodos (um item por municipio+ano). O periodo por omissao
@@ -726,6 +761,7 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
     # ufData: indicadores so-UF (degrade nacional dos estados). Catalogo de
     # indicadores estendido com esses indicadores (marcados nivelDado=uf).
     payload["ufData"] = build_uf_data(uf_agg_by_year) + build_uf_data_from_items(all_items)
+    fill_variacao_anual(all_items, payload["ufData"], partial_years)
     existing_keys = {ind["key"] for ind in payload.get("indicators", [])}
     # Indice geral em 1.o (indicators[0] e o indicador padrao da app).
     payload["indicators"] = (
