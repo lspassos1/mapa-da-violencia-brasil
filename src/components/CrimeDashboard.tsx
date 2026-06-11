@@ -359,7 +359,9 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
               nationalRank={stateNationalRank}
               nationalRankTotal={periodUfData.length}
               nationalAvgTaxa={nationalAvgTaxa}
-              topMunicipalities={rankingWorst.slice(0, 3)}
+              // Ordenado por TOTAL (e o valor exibido na lista), independente do
+              // modo de visualizacao ativo — evita rotulos #1..#3 contraditorios.
+              topMunicipalities={getRankedMunicipalities(rankingResult.items, indicator, "total", null, 3, "desc")}
               indicator={indicator}
               onSelectMunicipality={handleMunicipalitySelect}
             />
