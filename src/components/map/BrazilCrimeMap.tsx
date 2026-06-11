@@ -14,6 +14,7 @@ import {
   computeStateChoropleth,
   computeStateChoroplethFromUf,
   createStateFeatureCollection,
+  getVariationColor,
   municipalColorById,
 } from "@/services/geoService";
 import { loadStateMunicipalMesh } from "@/services/geoMeshService";
@@ -535,7 +536,10 @@ function StaticCrimeMapFallback({
         const size = Math.round(getScoreRadius(metric.score) * 1.45);
         const isSelected = selectedMunicipality?.idIbge === item.idIbge;
         const style = {
-          backgroundColor: getScoreColor(metric.score),
+          // No modo variacao anual a cor segue a escala divergente da legenda
+          // (verde=queda, vermelho=subida) — nao o indice de violencia.
+          backgroundColor:
+            viewMode === "variacaoAnual" ? getVariationColor(metric.variacaoAnual) : getScoreColor(metric.score),
           height: `${size}px`,
           left: `${longitudeToPercent(item.lng)}%`,
           top: `${latitudeToPercent(item.lat)}%`,
