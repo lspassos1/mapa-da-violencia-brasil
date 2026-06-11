@@ -637,6 +637,9 @@ def build_trends(years: list[int], partial_years: set[int]) -> Path:
                     series[(nivel, indicador)][periodo] += value
                     series[(nivel, "indiceGeral")][periodo] += value
         # Indicadores so-UF (patrimoniais/sexuais): ja vem agregados por estado.
+        # NAO entram no indiceGeral — tal como em add_general_index (anual), o
+        # indice geral soma apenas os indicadores municipais; os totais anual e
+        # mensal do indiceGeral batem exatamente.
         for (uf, month, indicador), value in uf_agg.items():
             if month < 1 or month > 12:
                 continue
@@ -743,6 +746,15 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
     return OFFICIAL_DATASET_GZ
 
 
+def parse_years_arg(raw: str) -> list[int]:
+    """Aceita "2015-2026" (intervalo) ou "2026" (ano unico)."""
+    parts = [int(x) for x in raw.split("-")]
+    if len(parts) == 1:
+        return parts
+    ini, fim = parts[0], parts[-1]
+    return list(range(ini, fim + 1))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -770,8 +782,7 @@ def main() -> int:
         finalize(args.year, args.granularity)
     elif args.command == "finalize-multi":
         if args.years:
-            ini, fim = (int(x) for x in args.years.split("-"))
-            years = list(range(ini, fim + 1))
+            years = parse_years_arg(args.years)
         else:
             years = discover_years()
         partial = {int(x) for x in args.partial.split(",") if x.strip()}
@@ -779,8 +790,7 @@ def main() -> int:
         finalize_multi(years, args.granularity, partial)
     elif args.command == "build-trends":
         if args.years:
-            ini, fim = (int(x) for x in args.years.split("-"))
-            years = list(range(ini, fim + 1))
+            years = parse_years_arg(args.years)
         else:
             years = discover_years()
         partial = {int(x) for x in args.partial.split(",") if x.strip()}

@@ -100,9 +100,11 @@ function TrendsView({ data }: { data: TrendsData }) {
     const raw = (searchParams.get("nivel") ?? "BR").toUpperCase();
     return NIVEIS.some((option) => option.key === raw) ? raw : "BR";
   });
+  // 0 e a sentinela de "todos os anos" (sem limite) — nao um numero fixo que
+  // truncaria silenciosamente quando a serie passar de 12 anos.
   const [yearWindow, setYearWindow] = useState<number>(() => {
     const raw = Number.parseInt(searchParams.get("anos") ?? "3", 10);
-    return [3, 5, 12].includes(raw) ? raw : 3;
+    return [3, 5, 0].includes(raw) ? raw : 3;
   });
 
   useEffect(() => {
@@ -127,6 +129,19 @@ function TrendsView({ data }: { data: TrendsData }) {
     byYear.get(year)!.set(month, total);
   }
   const years = [...byYear.keys()].sort((a, b) => a - b);
+
+  // Combinacao nivel/indicador sem dados: sai cedo (depois de todos os hooks)
+  // com uma mensagem clara, em vez de KPIs com "undefined"/NaN.
+  if (years.length === 0) {
+    return (
+      <section className="mx-auto w-full max-w-3xl p-6">
+        <p className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-300" role="status">
+          Sem serie mensal para esta combinacao de indicador e abrangencia.
+        </p>
+      </section>
+    );
+  }
+
   const latestYear = years[years.length - 1];
   const latestMonths = latestYear ? [...byYear.get(latestYear)!.keys()].sort((a, b) => a - b) : [];
   const isPartial = data.partialYears.includes(latestYear);
@@ -147,7 +162,7 @@ function TrendsView({ data }: { data: TrendsData }) {
 
   const indicatorLabel = INDICATOR_LABELS.find((option) => option.key === indicator)?.label ?? indicator;
   const nivelLabel = NIVEIS.find((option) => option.key === nivel)?.label ?? nivel;
-  const chartYears = years.slice(-yearWindow);
+  const chartYears = yearWindow === 0 ? years : years.slice(-yearWindow);
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 lg:p-6">
@@ -200,7 +215,7 @@ function TrendsView({ data }: { data: TrendsData }) {
           >
             <option value={3}>Ultimos 3</option>
             <option value={5}>Ultimos 5</option>
-            <option value={12}>Todos</option>
+            <option value={0}>Todos</option>
           </select>
         </label>
       </div>
@@ -226,14 +241,22 @@ function TrendsView({ data }: { data: TrendsData }) {
           </p>
           <p
             className={`mt-1 inline-flex items-center gap-1.5 text-2xl font-semibold ${
-              variation === null ? "text-slate-100" : variation > 0 ? "text-red-300" : "text-emerald-300"
+              variation === null || variation === 0
+                ? "text-slate-100"
+                : variation > 0
+                  ? "text-red-300"
+                  : "text-emerald-300"
             }`}
           >
             {variation === null ? (
               "—"
             ) : (
               <>
-                {variation > 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+                {variation > 0 ? (
+                  <TrendingUp className="h-5 w-5" />
+                ) : variation < 0 ? (
+                  <TrendingDown className="h-5 w-5" />
+                ) : null}
                 {variation > 0 ? "+" : ""}
                 {formatDecimal(variation)}%
               </>
