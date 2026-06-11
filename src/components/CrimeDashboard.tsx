@@ -10,6 +10,7 @@ import { MapLegend } from "@/components/map/MapLegend";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { AccessibleDataTable } from "@/components/panels/AccessibleDataTable";
 import { MunicipalityDetailsPanel } from "@/components/panels/MunicipalityDetailsPanel";
+import { StateProfilePanel } from "@/components/panels/StateProfilePanel";
 import { UfDetailsPanel } from "@/components/panels/UfDetailsPanel";
 import { RankingPanel } from "@/components/panels/RankingPanel";
 import { getRankedMunicipalities } from "@/lib/ranking";
@@ -112,6 +113,25 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
     ufDatumToMunicipality(datum, nameByUf.get(datum.uf) ?? datum.uf),
   );
   const selectedUfDatum = isUf && selectedState ? api.getUfDatum(selectedState, period, indicator) : null;
+
+  // Perfil do estado (indicador municipal, estado aberto sem municipio):
+  // serie historica da UF, posicao no ranking nacional e media da taxa.
+  const showStateProfile = !isUf && selectedState !== null && selectedMunicipality === null;
+  const indicatorUfData = showStateProfile ? api.getUfIndicatorData(indicator) : EMPTY_UF;
+  const stateSeries = indicatorUfData
+    .filter((datum) => datum.uf === selectedState)
+    .sort((a, b) => a.periodo.localeCompare(b.periodo));
+  const periodUfData = indicatorUfData.filter((datum) => datum.periodo === period);
+  const stateProfileCurrent = showStateProfile
+    ? periodUfData.find((datum) => datum.uf === selectedState) ?? null
+    : null;
+  const stateNationalRank =
+    [...periodUfData].sort((a, b) => b.total - a.total).findIndex((datum) => datum.uf === selectedState) + 1;
+  const periodTaxas = periodUfData
+    .map((datum) => datum.taxa100k)
+    .filter((taxa): taxa is number => typeof taxa === "number");
+  const nationalAvgTaxa =
+    periodTaxas.length > 0 ? periodTaxas.reduce((sum, taxa) => sum + taxa, 0) / periodTaxas.length : null;
   // Dois rankings em qualquer nivel (nacional = pais inteiro; estado = municipios
   // da UF; indicador so-UF = estados): os 10 piores e os 10 melhores indices.
   const rankingBase = isUf ? ufRankingItems : rankingResult.items;
@@ -327,6 +347,23 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
               ufNome={selectedState ? nameByUf.get(selectedState) ?? selectedState : null}
               selectedState={selectedState}
               datum={selectedUfDatum}
+            />
+          ) : selectedState && !selectedMunicipality ? (
+            <StateProfilePanel
+              uf={selectedState}
+              ufNome={nameByUf.get(selectedState) ?? selectedState}
+              indicatorLabel={indicatorLabel}
+              periodLabel={selectedPeriodLabel}
+              current={stateProfileCurrent}
+              series={stateSeries}
+              nationalRank={stateNationalRank}
+              nationalRankTotal={periodUfData.length}
+              nationalAvgTaxa={nationalAvgTaxa}
+              // Ordenado por TOTAL (e o valor exibido na lista), independente do
+              // modo de visualizacao ativo — evita rotulos #1..#3 contraditorios.
+              topMunicipalities={getRankedMunicipalities(rankingResult.items, indicator, "total", null, 3, "desc")}
+              indicator={indicator}
+              onSelectMunicipality={handleMunicipalitySelect}
             />
           ) : (
             <MunicipalityDetailsPanel
