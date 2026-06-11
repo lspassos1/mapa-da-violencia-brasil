@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { getDataStatusLabel } from "@/lib/dataStatus";
 import { getMetricValue } from "@/lib/crimeMetrics";
 import { formatMetricValue } from "@/lib/formatters";
@@ -15,6 +16,8 @@ interface AccessibleDataTableProps {
   periodLabel: string;
   selectedMunicipalityId: string | null;
   onSelect: (item: MunicipalityCrimeData) => void;
+  // Exporta as linhas filtradas atuais (todas, nao so as renderizadas) em CSV.
+  onExport?: () => void;
 }
 
 // Alternativa acessivel ao mapa WebGL: a mesma informacao numa tabela
@@ -30,10 +33,23 @@ export function AccessibleDataTable({
   periodLabel,
   selectedMunicipalityId,
   onSelect,
+  onExport,
 }: AccessibleDataTableProps) {
   const truncated = total > data.length;
   return (
     <div className="h-full overflow-auto px-4 pb-4 pt-20">
+      {onExport ? (
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+            onClick={onExport}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Exportar CSV ({total} linhas)
+          </button>
+        </div>
+      ) : null}
       {truncated ? (
         <p className="mb-2 rounded border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-xs text-amber-100">
           Mostrando os {data.length} primeiros de {total} municipios. Selecione um estado para refinar.
