@@ -28,6 +28,15 @@ test("ufDatumToMunicipality cria um item rankeavel com a sigla como id/uf", () =
   assert.equal(getMetricValue(item, "rouboVeiculos", "score"), 94);
 });
 
+test("ufDatumToMunicipality propaga a variacaoAnual do registo estadual", () => {
+  // Sem isto, o ranking de estados no modo 'variacao anual' ficaria vazio para
+  // os indicadores so-UF (variacaoAnual hardcoded a null).
+  const withVar = ufDatumToMunicipality({ ...DATUM, variacaoAnual: -7.3 }, "Sao Paulo");
+  assert.equal(withVar.indicadores.rouboVeiculos.variacaoAnual, -7.3);
+  const withoutVar = ufDatumToMunicipality(DATUM, "Sao Paulo");
+  assert.equal(withoutVar.indicadores.rouboVeiculos.variacaoAnual, null);
+});
+
 test("ufDatumToMunicipality preserva taxa null (sem inventar 0)", () => {
   const item = ufDatumToMunicipality({ ...DATUM, taxa100k: null }, "Sao Paulo");
   assert.equal(item.indicadores.rouboVeiculos.taxa100k, null);

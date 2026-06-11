@@ -14,6 +14,7 @@ import {
   computeStateChoropleth,
   computeStateChoroplethFromUf,
   createStateFeatureCollection,
+  getVariationColor,
   municipalColorById,
 } from "@/services/geoService";
 import { loadStateMunicipalMesh } from "@/services/geoMeshService";
@@ -105,16 +106,18 @@ export function BrazilCrimeMap({
   isUfIndicator = false,
   ufChoropleth,
 }: BrazilCrimeMapProps) {
-  // Coropletico dos estados: para indicadores so-UF vem de ufChoropleth; para os
-  // municipais, da soma por UF dos municipios.
+  // Coropletico dos estados: vem de ufChoropleth para indicadores so-UF e para
+  // o modo "variacao anual" (a variacao por UF vive no ufData — nao e somavel a
+  // partir dos municipios); nos restantes, da soma por UF dos municipios.
+  const statesFromUf = isUfIndicator || viewMode === "variacaoAnual";
   const stateFillColor = useMemo(
     () =>
       buildStateFillColorExpression(
-        isUfIndicator
+        statesFromUf
           ? computeStateChoroplethFromUf(ufChoropleth ?? [], viewMode)
           : computeStateChoropleth(data, indicator, viewMode),
       ),
-    [data, indicator, viewMode, isUfIndicator, ufChoropleth],
+    [data, indicator, viewMode, statesFromUf, ufChoropleth],
   );
   const stateFillColorRef = useRef(stateFillColor);
   // Verdadeiro apos o evento 'load' (estilo + camadas prontos). Guardamos os
@@ -371,8 +374,8 @@ export function BrazilCrimeMap({
       return;
     }
     let cancelled = false;
-    // Cor por id_ibge no indicador atual; injetada em cada feature da malha.
-    const colorById = municipalColorById(data, indicator, selectedState);
+    // Cor por id_ibge no indicador/modo atuais; injetada em cada feature da malha.
+    const colorById = municipalColorById(data, indicator, selectedState, viewMode);
     void loadStateMunicipalMesh(selectedState).then((mesh) => {
       // `cancelled` (via cleanup) garante que so a malha do estado atual e escrita.
       if (cancelled) {
@@ -384,7 +387,7 @@ export function BrazilCrimeMap({
     return () => {
       cancelled = true;
     };
-  }, [selectedState, isUfIndicator, data, indicator]);
+  }, [selectedState, isUfIndicator, data, indicator, viewMode]);
 
   // Realca o municipio selecionado (o preenchimento ja vem por feature.color).
   useEffect(() => {
@@ -533,7 +536,10 @@ function StaticCrimeMapFallback({
         const size = Math.round(getScoreRadius(metric.score) * 1.45);
         const isSelected = selectedMunicipality?.idIbge === item.idIbge;
         const style = {
-          backgroundColor: getScoreColor(metric.score),
+          // No modo variacao anual a cor segue a escala divergente da legenda
+          // (verde=queda, vermelho=subida) — nao o indice de violencia.
+          backgroundColor:
+            viewMode === "variacaoAnual" ? getVariationColor(metric.variacaoAnual) : getScoreColor(metric.score),
           height: `${size}px`,
           left: `${longitudeToPercent(item.lng)}%`,
           top: `${latitudeToPercent(item.lat)}%`,

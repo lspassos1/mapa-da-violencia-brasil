@@ -16,5 +16,6 @@ export function getMetricValueFromMetric(metric: CrimeMetric, viewMode: ViewMode
   if (viewMode === "total") return metric.total;
   if (viewMode === "taxa100k") return metric.taxa100k ?? Number.NEGATIVE_INFINITY;
   if (viewMode === "variacaoMensal") return metric.variacaoMensal ?? Number.NEGATIVE_INFINITY;
+  if (viewMode === "variacaoAnual") return metric.variacaoAnual ?? Number.NEGATIVE_INFINITY;
   return metric.score;
 }

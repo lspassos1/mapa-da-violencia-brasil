@@ -98,7 +98,7 @@ export function AccessibleDataTable({
       </table>
       {/* A mesma legenda de niveis do mapa, no fim da tabela (sem tapar linhas). */}
       <div className="mt-4">
-        <MapLegend />
+        <MapLegend viewMode={viewMode} />
       </div>
     </div>
   );

@@ -267,6 +267,9 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
     if (hasVariationSeries()) {
       options.push({ key: "variacaoMensal", label: "Variacao mensal" });
     }
+    if (hasAnnualVariationSeries()) {
+      options.push({ key: "variacaoAnual", label: "Variacao anual %" });
+    }
 
     return options;
   }
@@ -296,6 +299,12 @@ export function createCrimeDataApi(mode: CrimeDataMode, dataset: OfficialCrimeDa
   function hasVariationSeries(): boolean {
     return activeData.some((item) =>
       Object.values(item.indicadores).some((metric) => typeof metric?.variacaoMensal === "number"),
+    );
+  }
+
+  function hasAnnualVariationSeries(): boolean {
+    return activeData.some((item) =>
+      Object.values(item.indicadores).some((metric) => typeof metric?.variacaoAnual === "number"),
     );
   }
 
