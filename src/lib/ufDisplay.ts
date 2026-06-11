@@ -21,7 +21,7 @@ export function ufDatumToMunicipality(datum: UfDatum, nome: string): Municipalit
         total: datum.total,
         taxa100k: datum.taxa100k,
         variacaoMensal: null,
-        variacaoAnual: null,
+        variacaoAnual: datum.variacaoAnual ?? null,
         dataStatus: datum.dataStatus,
         unidade: datum.unidade,
         fonte: "MJSP/SINESP - Base VDE",
