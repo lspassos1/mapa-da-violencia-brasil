@@ -39,6 +39,7 @@ from etl.official_data import (
 )
 
 OFFICIAL_DATASET_GZ = Path(__file__).resolve().parents[1] / "public" / "officialCrimeData.json.gz"
+TRENDS_DATASET_GZ = Path(__file__).resolve().parents[1] / "public" / "trendsData.json.gz"
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VDE_DIR = PROJECT_ROOT / "data" / "raw" / "vde"
@@ -609,6 +610,62 @@ def add_general_index(items: list[dict]) -> None:
         }
 
 
+def build_trends(years: list[int], partial_years: set[int]) -> Path:
+    """Dataset mensal AGREGADO para a aba Tendencias (#72): total por
+    (nivel, indicador, "YYYY-MM"), onde nivel e "BR" (nacional) ou uma UF.
+    Sem municipios — fica pequeno (centenas de KB) e nao incha a carga
+    municipal. O indiceGeral mensal e a soma dos indicadores municipais,
+    consistente com o indiceGeral anual dos items."""
+    import csv as _csv
+
+    series: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for year in years:
+        csv_path, uf_agg = build_combined_csv(year, "mensal")
+        # Indicadores municipais: soma por UF e nacional, mes a mes.
+        with open(csv_path, encoding="utf-8") as handle:
+            for row in _csv.DictReader(handle):
+                month = parse_optional_int(row.get("mes", "")) or 0
+                if month < 1 or month > 12:
+                    continue
+                periodo = f"{year}-{month:02d}"
+                uf = (row.get("uf") or "").strip().upper()
+                indicador = row.get("indicador_nome") or ""
+                value = parse_optional_int(row.get("valor", "")) or 0
+                if not uf or not indicador:
+                    continue
+                for nivel in (uf, "BR"):
+                    series[(nivel, indicador)][periodo] += value
+                    series[(nivel, "indiceGeral")][periodo] += value
+        # Indicadores so-UF (patrimoniais/sexuais): ja vem agregados por estado.
+        # NAO entram no indiceGeral — tal como em add_general_index (anual), o
+        # indice geral soma apenas os indicadores municipais; os totais anual e
+        # mensal do indiceGeral batem exatamente.
+        for (uf, month, indicador), value in uf_agg.items():
+            if month < 1 or month > 12:
+                continue
+            periodo = f"{year}-{month:02d}"
+            for nivel in (uf, "BR"):
+                series[(nivel, indicador)][periodo] += value
+        print(f"  {year}: series mensais acumuladas")
+
+    payload = {
+        "updatedAt": utc_now(),
+        "source": "MJSP/SINESP - Base VDE",
+        "partialYears": sorted(y for y in years if y in partial_years),
+        "series": [
+            {"nivel": nivel, "indicador": indicador, "valores": dict(sorted(valores.items()))}
+            for (nivel, indicador), valores in sorted(series.items())
+        ],
+    }
+    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    TRENDS_DATASET_GZ.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(TRENDS_DATASET_GZ, "wb", compresslevel=9) as handle:
+        handle.write(raw)
+    size_kb = round(TRENDS_DATASET_GZ.stat().st_size / 1024, 1)
+    print(f"{len(payload['series'])} series mensais -> {TRENDS_DATASET_GZ} ({size_kb} KB gz)")
+    return TRENDS_DATASET_GZ
+
+
 def discover_years() -> list[int]:
     """Anos com ficheiro `BancoVDE <ano>.xlsx` presente em data/raw/vde/."""
     years = []
@@ -689,6 +746,15 @@ def finalize_multi(years: list[int], granularity: str, partial_years: set[int]) 
     return OFFICIAL_DATASET_GZ
 
 
+def parse_years_arg(raw: str) -> list[int]:
+    """Aceita "2015-2026" (intervalo) ou "2026" (ano unico)."""
+    parts = [int(x) for x in raw.split("-")]
+    if len(parts) == 1:
+        return parts
+    ini, fim = parts[0], parts[-1]
+    return list(range(ini, fim + 1))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -704,6 +770,9 @@ def main() -> int:
     m.add_argument("--years", help="Lista 'ini-fim' (ex.: 2015-2026); por omissao, todos os encontrados")
     m.add_argument("--granularity", choices=["mensal", "anual"], default="anual")
     m.add_argument("--partial", default="2026", help="Anos parciais (CSV), rotulados e colocados no fim")
+    t = sub.add_parser("build-trends", help="Series mensais BR/UF -> public/trendsData.json.gz")
+    t.add_argument("--years", help="Lista 'ini-fim' (ex.: 2015-2026); por omissao, todos os encontrados")
+    t.add_argument("--partial", default="2026", help="Anos parciais (CSV), expostos em partialYears")
     args = parser.parse_args()
     if args.command == "diagnose":
         diagnose(args.year)
@@ -713,13 +782,20 @@ def main() -> int:
         finalize(args.year, args.granularity)
     elif args.command == "finalize-multi":
         if args.years:
-            ini, fim = (int(x) for x in args.years.split("-"))
-            years = list(range(ini, fim + 1))
+            years = parse_years_arg(args.years)
         else:
             years = discover_years()
         partial = {int(x) for x in args.partial.split(",") if x.strip()}
         years = [y for y in years if (VDE_DIR / f"BancoVDE {y}.xlsx").exists()]
         finalize_multi(years, args.granularity, partial)
+    elif args.command == "build-trends":
+        if args.years:
+            years = parse_years_arg(args.years)
+        else:
+            years = discover_years()
+        partial = {int(x) for x in args.partial.split(",") if x.strip()}
+        years = [y for y in years if (VDE_DIR / f"BancoVDE {y}.xlsx").exists()]
+        build_trends(years, partial)
     return 0
 
 
