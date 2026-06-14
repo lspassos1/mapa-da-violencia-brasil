@@ -40,7 +40,7 @@ o header e o nome do modelo.
 | OpenRouter | `https://openrouter.ai/api/v1/chat/completions` | modelos com sufixo `:free` | `Authorization: Bearer $AI_OPENROUTER_API_KEY` |
 | Together | `https://api.together.xyz/v1/chat/completions` | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | `Authorization: Bearer $AI_TOGETHER_API_KEY` |
 | Mistral | `https://api.mistral.ai/v1/chat/completions` | `mistral-small-latest` | `Authorization: Bearer $AI_MISTRAL_API_KEY` |
-| Cloudflare | `https://api.cloudflare.com/client/v4/accounts/$AI_CLOUDFLARE_ACCOUNT_ID/ai/run/<model>` | `@cf/meta/llama-3.1-8b-instruct` | `Authorization: Bearer $AI_CLOUDFLARE_API_TOKEN` |
+| Cloudflare | `https://api.cloudflare.com/client/v4/accounts/$AI_CLOUDFLARE_ACCOUNT_ID/ai/run/<model>` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | `Authorization: Bearer $AI_CLOUDFLARE_API_TOKEN` |
 
 > Os IDs de modelo e os limites de free tier mudam com frequência — confirme no
 > painel de cada provedor antes de fixar em produção.
