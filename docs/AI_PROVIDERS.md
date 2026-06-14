@@ -17,14 +17,14 @@ matéria → JSON estruturado: tipo de crime, município/UF, vítimas, confianç
 
 | Variável | Provedor | Observação |
 |---|---|---|
-| `GEMINI_API_KEY` | Google Gemini | **Recomendado.** Melhor free tier, ótimo PT, JSON nativo. |
-| `GEMINI_PROJECT_NUMBER` | Google Gemini | Informativo (auth é pela API key). |
-| `GROQ_API_KEY` | Groq | Llama/Mixtral, muito rápido. |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI | Precisa também de `CLOUDFLARE_ACCOUNT_ID`. |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Workers AI | Obrigatório no path do endpoint (preencher). |
-| `OPENROUTER_API_KEY` | OpenRouter | Agregador; há modelos `:free`. |
-| `MISTRAL_API_KEY` | Mistral La Plateforme | Tier experimental. |
-| `TOGETHER_API_KEY` | Together AI | Também já configurada direto na Vercel. |
+| `AI_GEMINI_API_KEY` | Google Gemini | **Recomendado.** Melhor free tier, ótimo PT, JSON nativo. |
+| `AI_GEMINI_PROJECT_NUMBER` | Google Gemini | Informativo (auth é pela API key). |
+| `AI_GROQ_API_KEY` | Groq | Llama/Mixtral, muito rápido. |
+| `AI_CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI | Precisa também de `AI_CLOUDFLARE_ACCOUNT_ID`. |
+| `AI_CLOUDFLARE_ACCOUNT_ID` | Cloudflare Workers AI | Obrigatório no path do endpoint (preencher). |
+| `AI_OPENROUTER_API_KEY` | OpenRouter | Agregador; há modelos `:free`. |
+| `AI_MISTRAL_API_KEY` | Mistral La Plateforme | Tier experimental. |
+| `AI_TOGETHER_API_KEY` | Together AI | Também já configurada direto na Vercel. |
 
 ## Endpoints e modelos (referência rápida)
 
@@ -35,12 +35,12 @@ o header e o nome do modelo.
 
 | Provedor | Endpoint | Modelo barato/grátis sugerido | Header de auth |
 |---|---|---|---|
-| Gemini | `https://generativelanguage.googleapis.com/v1beta/models/<model>:generateContent?key=$GEMINI_API_KEY` | `gemini-2.0-flash` | key na query string |
-| Groq | `https://api.groq.com/openai/v1/chat/completions` | `llama-3.3-70b-versatile` | `Authorization: Bearer $GROQ_API_KEY` |
-| OpenRouter | `https://openrouter.ai/api/v1/chat/completions` | modelos com sufixo `:free` | `Authorization: Bearer $OPENROUTER_API_KEY` |
-| Together | `https://api.together.xyz/v1/chat/completions` | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | `Authorization: Bearer $TOGETHER_API_KEY` |
-| Mistral | `https://api.mistral.ai/v1/chat/completions` | `mistral-small-latest` | `Authorization: Bearer $MISTRAL_API_KEY` |
-| Cloudflare | `https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/ai/run/<model>` | `@cf/meta/llama-3.1-8b-instruct` | `Authorization: Bearer $CLOUDFLARE_API_TOKEN` |
+| Gemini | `https://generativelanguage.googleapis.com/v1beta/models/<model>:generateContent?key=$AI_GEMINI_API_KEY` | `gemini-2.0-flash` | key na query string |
+| Groq | `https://api.groq.com/openai/v1/chat/completions` | `llama-3.3-70b-versatile` | `Authorization: Bearer $AI_GROQ_API_KEY` |
+| OpenRouter | `https://openrouter.ai/api/v1/chat/completions` | modelos com sufixo `:free` | `Authorization: Bearer $AI_OPENROUTER_API_KEY` |
+| Together | `https://api.together.xyz/v1/chat/completions` | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | `Authorization: Bearer $AI_TOGETHER_API_KEY` |
+| Mistral | `https://api.mistral.ai/v1/chat/completions` | `mistral-small-latest` | `Authorization: Bearer $AI_MISTRAL_API_KEY` |
+| Cloudflare | `https://api.cloudflare.com/client/v4/accounts/$AI_CLOUDFLARE_ACCOUNT_ID/ai/run/<model>` | `@cf/meta/llama-3.1-8b-instruct` | `Authorization: Bearer $AI_CLOUDFLARE_API_TOKEN` |
 
 > Os IDs de modelo e os limites de free tier mudam com frequência — confirme no
 > painel de cada provedor antes de fixar em produção.

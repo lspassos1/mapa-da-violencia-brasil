@@ -40,32 +40,32 @@ async function ping(url, headers) {
 const checks = [
   {
     name: "Gemini",
-    key: env.GEMINI_API_KEY,
+    key: env.AI_GEMINI_API_KEY,
     run: (k) => ping(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k)}`),
   },
   {
     name: "Groq",
-    key: env.GROQ_API_KEY,
+    key: env.AI_GROQ_API_KEY,
     run: (k) => ping("https://api.groq.com/openai/v1/models", { Authorization: `Bearer ${k}` }),
   },
   {
     name: "OpenRouter",
-    key: env.OPENROUTER_API_KEY,
+    key: env.AI_OPENROUTER_API_KEY,
     run: (k) => ping("https://openrouter.ai/api/v1/key", { Authorization: `Bearer ${k}` }),
   },
   {
     name: "Together",
-    key: env.TOGETHER_API_KEY,
+    key: env.AI_TOGETHER_API_KEY,
     run: (k) => ping("https://api.together.xyz/v1/models", { Authorization: `Bearer ${k}` }),
   },
   {
     name: "Mistral",
-    key: env.MISTRAL_API_KEY,
+    key: env.AI_MISTRAL_API_KEY,
     run: (k) => ping("https://api.mistral.ai/v1/models", { Authorization: `Bearer ${k}` }),
   },
   {
     name: "Cloudflare",
-    key: env.CLOUDFLARE_API_TOKEN,
+    key: env.AI_CLOUDFLARE_API_TOKEN,
     run: (k) => ping("https://api.cloudflare.com/client/v4/user/tokens/verify", { Authorization: `Bearer ${k}` }),
   },
 ];
@@ -80,6 +80,6 @@ const results = await Promise.all(
 
 console.log("Estado das chaves de IA (de .env.local):\n");
 for (const r of results) console.log(`  ${r.name.padEnd(12)} ${r.label}`);
-if (!env.CLOUDFLARE_ACCOUNT_ID) {
-  console.log("\n  Nota: CLOUDFLARE_ACCOUNT_ID vazio — necessario para chamar o Workers AI.");
+if (!env.AI_CLOUDFLARE_ACCOUNT_ID) {
+  console.log("\n  Nota: AI_CLOUDFLARE_ACCOUNT_ID vazio — necessario para chamar o Workers AI.");
 }
