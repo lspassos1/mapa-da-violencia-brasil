@@ -1,7 +1,7 @@
 // Orquestrador da camada OSINT: artigos -> extracao IA -> geocoding -> dedupe.
 // As dependencias (extrator e geocoder) sao injetaveis para testes offline.
 import type { NewsIncident, NewsExtraction, RawArticle } from "@/types/news";
-import { extractArticle, type ExtractResult } from "@/server/osint/providers";
+import { createExtractor, type ExtractResult } from "@/server/osint/providers";
 import { geocode, type GeoMatch } from "@/server/osint/geocode";
 
 export interface PipelineDeps {
@@ -10,23 +10,19 @@ export interface PipelineDeps {
   now: () => string; // ISO datetime (injetavel p/ testes deterministicos)
 }
 
-const defaultDeps: PipelineDeps = {
-  extractor: extractArticle,
-  geocoder: geocode,
-  now: () => new Date().toISOString(),
-};
-
-// Hash estavel (djb2) -> base36. Suficiente p/ chave de dedupe (nao cripto).
+// Hash estavel (djb2) -> base36. Suficiente p/ id (nao cripto).
 function hash(s: string): string {
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
   return (h >>> 0).toString(36);
 }
 
-// Chave de dedupe: mesma ocorrencia coberta por varios veiculos colapsa.
-// (tipo, uf, municipio normalizado, dia). Mantem a de MAIOR confianca.
-function dedupeKey(tipo: string, uf: string, municipio: string, dia: string | null): string {
-  return `${tipo}|${uf}|${municipio.toLowerCase()}|${dia ?? "?"}`;
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url; // URL malformada nao deve derrubar o pipeline
+  }
 }
 
 // Confianca minima para nao cair direto em revisao manual (heuristica inicial).
@@ -38,14 +34,18 @@ function toIncident(
   a: RawArticle,
   provedor: string,
   now: string,
-): NewsIncident {
+): { incident: NewsIncident; dedupeKey: string } {
   const municipio = geo?.municipio ?? ex.municipio ?? "Desconhecido";
   const uf = geo?.uf ?? ex.uf ?? "??";
   const dia = ex.dataOcorrencia ?? (a.publicadoEm ? a.publicadoEm.slice(0, 10) : null);
   // Sem geocoding, a confianca cai (nao sabemos posicionar no mapa com seguranca).
   const confianca = geo ? ex.confianca : Math.min(ex.confianca, 0.4);
-  return {
-    id: hash(dedupeKey(ex.tipo, uf, municipio, dia) + "|" + new URL(a.url).hostname),
+  // Dedupe SO faz sentido quando ha local resolvido (mesma ocorrencia em varios
+  // veiculos). Sem geocoding, a chave e a propria URL (cada item e unico) —
+  // evita colapsar incidentes nao relacionados sob "Desconhecido/??".
+  const dedupeKey = geo ? `${ex.tipo}|${uf}|${municipio.toLowerCase()}|${dia ?? "?"}` : `url:${a.url}`;
+  const incident: NewsIncident = {
+    id: hash(dedupeKey + "|" + hostnameOf(a.url)),
     tipo: ex.tipo,
     municipio,
     uf,
@@ -62,6 +62,7 @@ function toIncident(
     extraidoEm: now,
     provedor,
   };
+  return { incident, dedupeKey };
 }
 
 export interface PipelineResult {
@@ -74,7 +75,10 @@ export async function runPipeline(
   articles: RawArticle[],
   deps: Partial<PipelineDeps> = {},
 ): Promise<PipelineResult> {
-  const { extractor, geocoder, now } = { ...defaultDeps, ...deps };
+  const extractor = deps.extractor ?? createExtractor();
+  const geocoder = deps.geocoder ?? geocode;
+  const now = deps.now ?? (() => new Date().toISOString());
+
   const byKey = new Map<string, NewsIncident>();
   let extraidos = 0;
   let descartados = 0;
@@ -87,10 +91,9 @@ export async function runPipeline(
     }
     extraidos++;
     const geo = geocoder(res.extraction.municipio, res.extraction.uf);
-    const inc = toIncident(res.extraction, geo, a, res.provedor, now());
-    const key = dedupeKey(inc.tipo, inc.uf, inc.municipio, inc.dataOcorrencia);
-    const prev = byKey.get(key);
-    if (!prev || inc.confianca > prev.confianca) byKey.set(key, inc);
+    const { incident, dedupeKey } = toIncident(res.extraction, geo, a, res.provedor, now());
+    const prev = byKey.get(dedupeKey);
+    if (!prev || incident.confianca > prev.confianca) byKey.set(dedupeKey, incident);
   }
 
   const incidents = [...byKey.values()].sort((x, y) => y.confianca - x.confianca);
