@@ -18,7 +18,8 @@
     "test:api": "node --experimental-strip-types --import ./tests/helpers/register-api-hooks.mjs --test tests/api/*.test.mjs",
     "test:app": "npm run test:contracts",
     "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "smoke": "node scripts/smoke-public-routes.mjs"
+    "smoke": "node scripts/smoke-public-routes.mjs",
+    "check:ai-keys": "node scripts/check_ai_keys.mjs"
   },
   "dependencies": {
     "lucide-react": "1.16.0",
