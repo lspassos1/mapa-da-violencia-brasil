@@ -5,13 +5,13 @@ import { tokenize, articleTokens, jaccard } from "../src/server/osint/similarity
 
 test("tokenize remove stopwords, acentos, caixa e tokens curtos", () => {
   const t = tokenize("A vítima foi morta em São Paulo");
-  assert.ok(t.has("vitima"));
-  assert.ok(t.has("morta"));
-  assert.ok(t.has("sao"));
+  assert.ok(t.has("sao")); // local discrimina -> fica
   assert.ok(t.has("paulo"));
   assert.ok(!t.has("a")); // curto + stopword
-  assert.ok(!t.has("em")); // stopword
-  assert.ok(!t.has("foi")); // stopword
+  assert.ok(!t.has("em")); // stopword conectivo
+  assert.ok(!t.has("foi")); // stopword conectivo
+  assert.ok(!t.has("vitima")); // vocabulario generico de crime -> stopword
+  assert.ok(!t.has("morta")); // idem
 });
 
 test("jaccard: identidade=1, disjunto=0, parcial calculado", () => {

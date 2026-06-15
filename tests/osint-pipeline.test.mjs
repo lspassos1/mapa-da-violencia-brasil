@@ -145,6 +145,20 @@ test("pipeline: crimes distintos na mesma cidade/dia NAO sao mesclados (anti ove
   assert.equal(incidents.length, 2); // mesmo tipo/municipio/dia, textos dissimilares
 });
 
+test("pipeline: ocorrencias sem-geo em cidades distintas NAO colam por vocabulario de crime", async () => {
+  // Bucket ungeo (so por tipo): vocabulario generico (morto/tiros/homem) e
+  // stopword, entao so o local (Xanadu vs Zorpia) discrimina -> nao mescla.
+  const articles = [
+    { titulo: "Homem morto a tiros em Xanadu", resumo: "vítima morta a tiros", url: "https://a.com/1", publicadoEm: "2026-06-10T00:00:00.000Z", veiculo: "A" },
+    { titulo: "Homem morto a tiros em Zorpia", resumo: "vítima morta a tiros", url: "https://b.com/2", publicadoEm: "2026-06-10T00:00:00.000Z", veiculo: "B" },
+  ];
+  const { incidents } = await runPipeline(articles, {
+    extractor: async (a) => ({ provedor: "fake", extraction: { ehCrimeViolento: true, tipo: "homicidio", municipio: a.titulo.includes("Xanadu") ? "Xanadu" : "Zorpia", uf: "ZZ", vitimas: 1, dataOcorrencia: "2026-06-10", confianca: 0.9, resumo: a.resumo } }),
+    now: NOW,
+  });
+  assert.equal(incidents.length, 2); // crimes distintos (cidades diferentes) nao colapsados
+});
+
 test("acceptance: reexecucao em ordem diferente e idempotente", async () => {
   const articles = [
     { titulo: "Homicídio a tiros em Maceió deixa um morto", resumo: "homem morto a tiros em Maceió", url: "https://g1.com/x", publicadoEm: "2026-06-10T00:00:00.000Z", veiculo: "G1" },

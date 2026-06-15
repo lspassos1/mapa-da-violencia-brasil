@@ -10,9 +10,18 @@ import { normalizeName } from "@/server/osint/geocode";
 
 // Palavras genericas que inflariam o Jaccard sem discriminar a ocorrencia.
 const STOPWORDS = new Set([
+  // Conectivos/comuns
   "de", "da", "do", "das", "dos", "em", "no", "na", "nos", "nas", "um", "uma",
   "uns", "umas", "que", "com", "por", "para", "pra", "os", "as", "ao", "aos",
   "e", "o", "a", "se", "sua", "seu", "foi", "apos", "sobre", "entre", "ate",
+  "pelo", "pela", "ser", "tem", "mais", "dia", "anos", "ano",
+  // Vocabulario generico de crime: aparece em quase toda noticia policial e
+  // inflaria a similaridade entre ocorrencias DISTINTAS — sobretudo no bucket
+  // sem-geo, onde nao ha municipio p/ desambiguar. Sai p/ que so o conteudo
+  // especifico (local, nomes, circunstancia) dirija a similaridade.
+  "morto", "morta", "mortos", "mortas", "morte", "mortes", "tiro", "tiros",
+  "baleado", "baleada", "baleados", "vitima", "vitimas", "homem", "mulher",
+  "preso", "presa", "presos", "crime", "policia", "suspeito", "caso",
 ]);
 
 // titulo+resumo -> conjunto de tokens significativos (sem acento/caixa, >=3 chars,

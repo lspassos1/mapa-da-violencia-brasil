@@ -75,8 +75,10 @@ function bySourceStrength(a: NewsSource, b: NewsSource): number {
   return a.fonteUrl < b.fonteUrl ? -1 : a.fonteUrl > b.fonteUrl ? 1 : 0;
 }
 
-// Clusteriza um bucket: guloso, single-link contra o REPRESENTANTE (1o do cluster)
-// — garante o mesmo agrupamento em qualquer ordem de entrada (idempotencia).
+// Clusteriza um bucket por LEADER CLUSTERING: cada item nao-usado abre um cluster
+// e atrai os seguintes que casam com o REPRESENTANTE (1o do cluster). Nao e
+// single-link (nao ha chaining A-B-C via membros intermediarios) — de proposito:
+// evita o efeito cadeia e garante o mesmo agrupamento em qualquer ordem (idempotente).
 function cluster(bucket: Candidate[]): Candidate[][] {
   const sorted = [...bucket].sort(byPubThenUrl);
   const used = new Array(sorted.length).fill(false);
