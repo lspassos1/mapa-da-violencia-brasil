@@ -5,14 +5,23 @@ import Link from "next/link";
 import { AlertTriangle, ExternalLink, Newspaper, RefreshCw } from "lucide-react";
 import { NewsMap } from "@/components/news/NewsMap";
 import { NEWS_TYPE_LABEL, REVIEW_LABEL, confidenceColor, confidencePct } from "@/lib/newsDisplay";
-import type { NewsIncident, NewsIncidentType } from "@/types/news";
+import type { NewsIncident, NewsIncidentType, NewsReviewStatus } from "@/types/news";
 
 interface ApiResponse {
   incidents: NewsIncident[];
   meta: {
     disclaimer: string;
     official: boolean;
-    stats?: { artigos: number; extraidos: number; descartados: number; deduplicados: number; provedores: number };
+    stats?: {
+      artigos: number;
+      extraidos: number;
+      descartados: number;
+      deduplicados: number;
+      fontesTotais: number;
+      incidentesMultiFonte: number;
+      porProvedor: Record<string, number>;
+      provedores: number;
+    };
     geradoEm?: string;
   };
 }
@@ -24,6 +33,7 @@ export function NewsDashboard() {
   const [tipo, setTipo] = useState<NewsIncidentType | "todos">("todos");
   const [minConf, setMinConf] = useState(0);
   const [soGeo, setSoGeo] = useState(false);
+  const [revisao, setRevisao] = useState<NewsReviewStatus | "todos">("todos");
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const cardRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 
@@ -65,9 +75,10 @@ export function NewsDashboard() {
         (i) =>
           (tipo === "todos" || i.tipo === tipo) &&
           i.confianca >= minConf &&
-          (!soGeo || i.idIbge !== null),
+          (!soGeo || i.idIbge !== null) &&
+          (revisao === "todos" || i.reviewStatus === revisao),
       ),
-    [incidents, tipo, minConf, soGeo],
+    [incidents, tipo, minConf, soGeo, revisao],
   );
   const tiposPresentes = useMemo(
     () => Array.from(new Set(incidents.map((i) => i.tipo))),
@@ -134,6 +145,19 @@ export function NewsDashboard() {
             <input type="checkbox" checked={soGeo} onChange={(e) => setSoGeo(e.target.checked)} />
             <span className="text-slate-400">Só geolocalizados</span>
           </label>
+          <label className="flex items-center gap-2">
+            <span className="text-slate-400">Revisão</span>
+            <select
+              className="rounded-md border border-white/10 bg-slate-950 px-2 py-1 text-slate-100"
+              value={revisao}
+              onChange={(e) => setRevisao(e.target.value as NewsReviewStatus | "todos")}
+            >
+              <option value="todos">Todas</option>
+              <option value="confirmado">{REVIEW_LABEL.confirmado}</option>
+              <option value="pendente">{REVIEW_LABEL.pendente}</option>
+              <option value="rejeitado">{REVIEW_LABEL.rejeitado}</option>
+            </select>
+          </label>
           <button
             type="button"
             onClick={carregar}
@@ -146,7 +170,8 @@ export function NewsDashboard() {
         {data?.meta.stats ? (
           <p className="text-xs text-slate-500">
             {filtrados.length} de {incidents.length} indícios ·{" "}
-            {incidents.filter((i) => i.idIbge).length} geolocalizados · {data.meta.stats.provedores} provedor(es) de IA ·
+            {incidents.filter((i) => i.idIbge).length} geolocalizados ·{" "}
+            {data.meta.stats.incidentesMultiFonte} com múltiplas fontes · {data.meta.stats.provedores} provedor(es) de IA ·
             de {data.meta.stats.artigos} notícias ({data.meta.stats.descartados} descartadas como não-crime)
           </p>
         ) : null}
@@ -212,6 +237,28 @@ export function NewsDashboard() {
                     ver notícia <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
+                {i.fontes.length > 1 ? (
+                  <details className="mt-1.5 text-[11px] text-slate-500">
+                    <summary className="cursor-pointer text-amber-300/80 hover:text-amber-200">
+                      +{i.fontes.length - 1} fonte(s) corroborando
+                    </summary>
+                    <ul className="mt-1 space-y-0.5 pl-1">
+                      {i.fontes.map((f) => (
+                        <li key={f.fonteUrl} className="flex items-center justify-between gap-2">
+                          <span className="truncate">{f.veiculo}</span>
+                          <a
+                            className="inline-flex shrink-0 items-center gap-1 text-cyan-300 hover:text-cyan-200"
+                            href={f.fonteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            ver <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
               </li>
             ))}
           </ul>
