@@ -13,9 +13,11 @@ export const dynamic = "force-dynamic";
 
 // Teto de artigos por execucao (custo de IA no free tier). Override por env p/
 // afinar sem deploy. O dedupe cross-source colapsa duplicatas depois.
-// Checagem explicita de undefined p/ permitir OSINT_MAX_ARTICLES=0 (desligar).
-const MAX_ARTICLES =
+// Aceita 0 (desliga a ingestao), mas valor invalido (NaN, "", negativo) recai
+// em 25 — evita zerar a ingestao silenciosamente por env malformado.
+const rawMaxArticles =
   process.env.OSINT_MAX_ARTICLES !== undefined ? Number(process.env.OSINT_MAX_ARTICLES) : 25;
+const MAX_ARTICLES = Number.isFinite(rawMaxArticles) && rawMaxArticles > 0 ? rawMaxArticles : 25;
 const TTL_MS = 10 * 60 * 1000; // 10 min
 
 interface NewsPayload {
