@@ -3,6 +3,9 @@ import { test, expect, type Page, type ConsoleMessage } from "@playwright/test";
 // Erros de carregamento de recursos externos (tiles do mapa, favicon, etc.) e
 // ruido conhecido NAO devem quebrar a checagem visual — so erros REAIS de JS
 // (pageerror) e console.error da aplicacao.
+// So ruido de REDE/recurso externo e benigno conhecido. NAO ignorar "maplibre"
+// em geral — erros reais do mapa (ex.: crash de render) devem quebrar o teste;
+// falhas de tile sao cobertas pelos padroes de rede abaixo.
 const IGNORAR = [
   /tile/i,
   /net::/i,
@@ -10,7 +13,6 @@ const IGNORAR = [
   /ERR_/i,
   /ResizeObserver/i,
   /favicon/i,
-  /maplibre/i,
   /React DevTools/i,
 ];
 
