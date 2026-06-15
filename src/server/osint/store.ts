@@ -148,10 +148,15 @@ export async function setReview(
     `${SUPABASE_URL}/rest/v1/news_incidents?incident_key=eq.${encodeURIComponent(key)}`,
     {
       method: "PATCH",
-      headers: { ...headers(), Prefer: "return=minimal" },
+      // count=exact -> Content-Range traz o total afetado, p/ distinguir
+      // "atualizou" de "0 linhas" (chave inexistente/typo) — que o PostgREST
+      // tambem responde 204. Sem isso, uma revisao a uma chave errada "sucederia".
+      headers: { ...headers(), Prefer: "return=minimal,count=exact" },
       body: JSON.stringify({ review_status: status, reviewed_by: reviewedBy, reviewed_at: new Date().toISOString() }),
       signal: AbortSignal.timeout(20000),
     },
   );
-  return res.ok;
+  if (!res.ok) return false;
+  const total = res.headers.get("content-range")?.split("/")[1];
+  return total != null && total !== "0" && total !== "*";
 }

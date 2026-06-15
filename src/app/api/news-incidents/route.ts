@@ -24,7 +24,10 @@ interface NewsPayload {
 let cache: { at: number; payload: NewsPayload } | null = null;
 let inflight: Promise<NewsPayload> | null = null;
 
-const REVIEW_STATUSES: readonly NewsReviewStatus[] = ["pendente", "confirmado", "rejeitado"];
+// Estados expostos no endpoint PUBLICO. `rejeitado` NUNCA — sao incidentes que
+// um humano excluiu da vista publica; o GET le via service-role (ignora RLS),
+// entao filtrar aqui e o que impede o vazamento via ?status=rejeitado.
+const PUBLIC_STATUSES: readonly NewsReviewStatus[] = ["pendente", "confirmado"];
 
 function aiConfigured(): boolean {
   return configuredProviderCount() > 0;
@@ -74,7 +77,7 @@ function applyStatusFilter(payload: NewsPayload, status: NewsReviewStatus | null
 
 function parseStatus(request: Request): NewsReviewStatus | null {
   const raw = new URL(request.url).searchParams.get("status");
-  return raw && REVIEW_STATUSES.includes(raw as NewsReviewStatus) ? (raw as NewsReviewStatus) : null;
+  return raw && PUBLIC_STATUSES.includes(raw as NewsReviewStatus) ? (raw as NewsReviewStatus) : null;
 }
 
 // Pipeline ao vivo com cache em memoria + single-flight (protege a quota diaria).
