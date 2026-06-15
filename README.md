@@ -84,6 +84,27 @@ O smoke test de APIs espera um servidor local ja iniciado em
 npm run smoke
 ```
 
+### Verificacao visual (Playwright)
+
+Checa que o dashboard renderiza de fato (mapa, ranking, paginas) em desktop e
+mobile, falhando em erro de JS, console error critico ou mapa vazio. A aba
+`/noticias` roda com a API mockada (sem custo de IA). Na primeira vez, instale o
+browser; depois e so buildar e rodar (o Playwright sobe o `next start` sozinho):
+
+```bash
+npx playwright install chromium   # uma vez
+npm run build && npm run test:visual
+```
+
+Para testar um deploy ja publicado em vez do servidor local, passe `BASE_URL`:
+
+```bash
+BASE_URL=https://mapa-da-violencia-brasil.vercel.app npm run test:visual
+```
+
+Relatorio em `playwright-report/` e capturas/trace em `test-results/` (ambos
+ignorados pelo git).
+
 Gerar JSON app-ready a partir do CSV SINESP municipal combinado com populacao:
 
 ```bash

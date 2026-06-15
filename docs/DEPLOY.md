@@ -150,3 +150,14 @@ BASE_URL=https://mapa-da-violencia-brasil.vercel.app SMOKE_EXPECT_DATA_MODE=demo
 # se esta em validacao official_sample
 BASE_URL=https://mapa-da-violencia-brasil.vercel.app SMOKE_EXPECT_DATA_MODE=official_sample npm run smoke
 ```
+
+### Verificacao visual (render real do dashboard)
+
+Alem do smoke (HTTP/JSON), a checagem visual confirma que o mapa, o ranking e as
+paginas renderizam de fato (desktop + mobile), falhando em mapa vazio ou erro de
+JS. Local: `npx playwright install chromium` (uma vez) e `npm run build && npm run
+test:visual`. Contra a URL publica:
+
+```bash
+BASE_URL=https://mapa-da-violencia-brasil.vercel.app npm run test:visual
+```
