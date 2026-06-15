@@ -178,7 +178,7 @@ export function NewsDashboard() {
             {incidents.filter((i) => i.corroboracao > 1).length} com múltiplas fontes
             {data.meta.stats?.provedores ? ` · ${data.meta.stats.provedores} provedor(es) de IA` : ""}
             {typeof data.meta.stats?.artigos === "number"
-              ? ` · de ${data.meta.stats.artigos} notícias (${data.meta.stats.descartados} descartadas como não-crime)`
+              ? ` · de ${data.meta.stats.artigos} notícias (${data.meta.stats.descartados ?? 0} descartadas como não-crime)`
               : ""}
             {data.meta.fonte === "persistido" ? ` · acumulado (janela ${data.meta.janelaDias}d)` : ""}
           </p>

@@ -3,6 +3,7 @@
 // nowcast). Protegido por CRON_SECRET. Chamado pelo Vercel Cron (GET) ou manual.
 import { NextResponse } from "next/server";
 import { ingestOnce } from "@/server/osint/ingest";
+import { configuredProviderCount } from "@/server/osint/providers";
 import { isPersistenceConfigured, upsertIncidents } from "@/server/osint/store";
 
 export const dynamic = "force-dynamic";
@@ -26,9 +27,13 @@ async function handle(request: Request) {
       { status: 503 },
     );
   }
+  if (configuredProviderCount() === 0) {
+    return NextResponse.json({ error: "nenhum provedor de IA (AI_*) configurado" }, { status: 503 });
+  }
   const { incidents, stats } = await ingestOnce();
-  const upserted = await upsertIncidents(incidents);
-  return NextResponse.json({ ok: true, upserted, stats, geradoEm: new Date().toISOString() });
+  // `processados` = linhas processadas pelo upsert (inserts + updates), nao so novas.
+  const processados = await upsertIncidents(incidents);
+  return NextResponse.json({ ok: true, processados, stats, geradoEm: new Date().toISOString() });
 }
 
 export const GET = handle; // Vercel Cron usa GET

@@ -86,7 +86,7 @@ begin
       review_status = case when ni.reviewed_by is null then excluded.review_status else ni.review_status end;
     n := n + 1;
   end loop;
-  return n;
+  return n; -- linhas PROCESSADAS (inserts + updates), nao so novas
 end;
 $$;
 

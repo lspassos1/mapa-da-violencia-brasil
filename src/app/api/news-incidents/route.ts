@@ -77,31 +77,9 @@ function parseStatus(request: Request): NewsReviewStatus | null {
   return raw && REVIEW_STATUSES.includes(raw as NewsReviewStatus) ? (raw as NewsReviewStatus) : null;
 }
 
-export async function GET(request: Request) {
-  const status = parseStatus(request);
-
-  // Caminho persistido: le o acumulado do banco (sem IA no hot path).
-  if (isPersistenceConfigured()) {
-    const stored = await buildStoredPayload(status);
-    // Tabela ainda fria e ha IA: aquece ao vivo e faz upsert (nao bloqueia a resposta).
-    if (stored.incidents.length === 0 && !status && aiConfigured()) {
-      const live = await buildLivePayload();
-      void upsertIncidents(live.incidents).catch(() => {});
-      return NextResponse.json(live);
-    }
-    return NextResponse.json(stored);
-  }
-
-  // Sem persistencia: pipeline ao vivo com cache + single-flight (protege a quota).
-  if (!aiConfigured()) {
-    return NextResponse.json({
-      incidents: [],
-      meta: { disclaimer: "Camada OSINT desativada: nenhum provedor de IA (AI_*) configurado.", official: false },
-    });
-  }
-  if (cache && Date.now() - cache.at < TTL_MS) {
-    return NextResponse.json(applyStatusFilter(cache.payload, status));
-  }
+// Pipeline ao vivo com cache em memoria + single-flight (protege a quota diaria).
+async function liveCachedPayload(): Promise<NewsPayload> {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache.payload;
   if (!inflight) {
     inflight = buildLivePayload()
       .then((payload) => {
@@ -112,6 +90,37 @@ export async function GET(request: Request) {
         inflight = null;
       });
   }
-  const payload = await inflight;
+  return inflight;
+}
+
+export async function GET(request: Request) {
+  const status = parseStatus(request);
+
+  // Caminho persistido: le o acumulado do banco (sem IA no hot path). Uma falha
+  // do Supabase NAO pode derrubar a aba — cai para o pipeline ao vivo (degradacao).
+  if (isPersistenceConfigured()) {
+    try {
+      const stored = await buildStoredPayload(status);
+      // So retorna o persistido se houver dados (ou filtro explicito). Tabela fria
+      // com IA disponivel: cai para o caminho ao vivo abaixo (que tambem aquece).
+      if (stored.incidents.length > 0 || status || !aiConfigured()) {
+        return NextResponse.json(stored);
+      }
+    } catch (err) {
+      console.warn(`[news-incidents] leitura persistida falhou; fallback ao vivo: ${String(err)}`);
+      // segue para o caminho ao vivo
+    }
+  }
+
+  // Caminho ao vivo (sem persistencia, tabela fria, ou falha no banco).
+  if (!aiConfigured()) {
+    return NextResponse.json({
+      incidents: [],
+      meta: { disclaimer: "Camada OSINT desativada: nenhum provedor de IA (AI_*) configurado.", official: false },
+    });
+  }
+  const payload = await liveCachedPayload();
+  // Se persistido (tabela fria/erro transitorio), aquece o banco com o que veio.
+  if (isPersistenceConfigured()) void upsertIncidents(payload.incidents).catch(() => {});
   return NextResponse.json(applyStatusFilter(payload, status));
 }
