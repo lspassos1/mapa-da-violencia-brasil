@@ -21,15 +21,28 @@ function tag(block: string, name: string): string {
   return m ? decodeEntities(m[1]) : "";
 }
 
-// Parseia o XML de um feed RSS num array de artigos. `veiculo` rotula a fonte.
-export function parseRss(xml: string, veiculo: string): RawArticle[] {
+// Parseia o XML de um feed RSS num array de artigos. `veiculoFallback` rotula a
+// fonte quando o item nao traz o veiculo real (o Google News o expoe em
+// <source url="...">Veiculo</source> — preferimos esse p/ corroboracao por veiculo).
+//
+// Nota: no Google News o <link> e um redirect opaco (news.google.com/...), nao a
+// URL canonica do artigo. Resolver a canonica (HEAD/GET extra) fica para o
+// follow-up de persistencia (ver canonicalUrl). Por ora o redirect serve de
+// chave de dedupe exata dentro de uma mesma busca.
+export function parseRss(xml: string, veiculoFallback: string): RawArticle[] {
   const items = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
   const out: RawArticle[] = [];
   for (const block of items) {
-    const titulo = tag(block, "title");
+    let titulo = tag(block, "title");
     const url = tag(block, "link");
     if (!titulo || !url) continue;
     const pub = tag(block, "pubDate");
+    const veiculo = tag(block, "source") || veiculoFallback;
+    // Google News anexa " - <Veiculo>" ao titulo; remove p/ nao enviesar a
+    // similaridade nem poluir o card (so quando casa com o veiculo extraido).
+    if (veiculo && titulo.endsWith(` - ${veiculo}`)) {
+      titulo = titulo.slice(0, -(veiculo.length + 3)).trim();
+    }
     out.push({
       titulo,
       resumo: tag(block, "description"),
@@ -39,6 +52,13 @@ export function parseRss(xml: string, veiculo: string): RawArticle[] {
     });
   }
   return out;
+}
+
+// Seam para o follow-up: resolver a URL canonica do artigo a partir do redirect
+// do Google News (hoje no-op). Mantido aqui p/ o pipeline poder adota-lo depois
+// sem mudar a assinatura. Ver issue de persistencia OSINT.
+export function canonicalUrl(url: string): string {
+  return url;
 }
 
 // Busca e parseia um feed RSS. Lanca em erro de rede/HTTP.
