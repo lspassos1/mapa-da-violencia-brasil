@@ -19,7 +19,8 @@
     "test:app": "npm run test:contracts",
     "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
     "smoke": "node scripts/smoke-public-routes.mjs",
-    "check:ai-keys": "node scripts/check_ai_keys.mjs"
+    "check:ai-keys": "node scripts/check_ai_keys.mjs",
+    "test:visual": "playwright test"
   },
   "dependencies": {
     "lucide-react": "1.16.0",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.3",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "4.3.0",
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",

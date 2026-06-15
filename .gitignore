@@ -34,3 +34,9 @@ data/geo/
 # OS/editor
 .DS_Store
 .claude/launch.json
+
+# Playwright (verificação visual — #13)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
