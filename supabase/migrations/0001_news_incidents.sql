@@ -91,3 +91,7 @@ end;
 $$;
 
 revoke all on function public.upsert_news_incidents(jsonb) from public, anon, authenticated;
+-- REVOKE FROM PUBLIC tira o EXECUTE de TODOS os papeis, inclusive service_role.
+-- PostgREST chama a RPC como service_role (nao superuser), entao sem este grant
+-- explicito a chamada retorna 403 e o cron de ingestao falha. Concede so a ele.
+grant execute on function public.upsert_news_incidents(jsonb) to service_role;
