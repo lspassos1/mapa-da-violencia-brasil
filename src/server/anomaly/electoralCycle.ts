@@ -8,6 +8,7 @@
 // investigar (pode ser operação policial real, mudança de notificação,
 // subnotificação/manipulação ou coincidência) — nunca acusação. Ver §literatura
 // no issue #85 (o ciclo só costuma aparecer onde há crime organizado).
+import "server-only"; // o asset JSON (~51KB) nunca deve ir para o bundle do cliente
 import monthly from "@/data/monthlySeries.json";
 
 // Eleições gerais/municipais (out). A janela pré-eleitoral é ago–out do ano do pleito.
@@ -96,6 +97,7 @@ export function computeUfAnomaly(uf: string, serie: MonthlySeries): UfElectoralA
 // (é o agregado nacional — referência, não unidade de análise).
 export function getElectoralAnomalies(): UfElectoralAnomaly[] {
   const series = (monthly as { series: SeriesByUf }).series;
+  if (!series) throw new Error("monthlySeries.json: estrutura inválida (faltou 'series')");
   return Object.keys(series)
     .filter((uf) => uf !== "BR")
     .map((uf) => computeUfAnomaly(uf, series[uf]))

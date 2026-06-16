@@ -12,7 +12,12 @@ function loadEnv(path) {
     const t = line.trim();
     if (!t || t.startsWith("#") || !t.includes("=")) continue;
     const i = t.indexOf("=");
-    env[t.slice(0, i).trim()] = t.slice(i + 1).trim();
+    let v = t.slice(i + 1).trim();
+    // remove aspas envolventes (ex.: KEY="valor") p/ não autenticar com aspas
+    if (v.length >= 2 && ((v[0] === '"' && v.at(-1) === '"') || (v[0] === "'" && v.at(-1) === "'"))) {
+      v = v.slice(1, -1);
+    }
+    env[t.slice(0, i).trim()] = v;
   }
   return env;
 }
