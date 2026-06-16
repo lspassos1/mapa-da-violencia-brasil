@@ -27,6 +27,13 @@ export function AppHeader() {
           Tendencias
         </Link>
         <Link
+          className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+          href="/radar"
+          title="Radar de anomalia sobre o dado oficial (ciclo eleitoral)"
+        >
+          Radar
+        </Link>
+        <Link
           className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-medium text-amber-100 hover:border-amber-300/60 hover:text-amber-50"
           href="/noticias"
           title="Indícios de notícias (OSINT) — não-oficial"
