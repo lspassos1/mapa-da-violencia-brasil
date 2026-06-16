@@ -24,7 +24,9 @@ import urllib.request
 UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR",
        "PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]
 FTP = "ftp://ftp.datasus.gov.br/dissemin/publicos/SIM/CID10/DORES/DO{uf}{ano}.dbc"
-OUT = os.path.join("src", "data", "hiddenHomicides.json")
+# Path absoluto a partir da raiz do repo (etl/ -> ..), não depende do CWD.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = os.path.join(ROOT, "src", "data", "hiddenHomicides.json")
 
 
 def classifica(causabas: str) -> str | None:
@@ -45,9 +47,15 @@ def conta_uf_ano(uf: str, ano: int, cache: str) -> dict | None:
 
     dbc = os.path.join(cache, f"DO{uf}{ano}.dbc")
     if not os.path.exists(dbc):
+        # baixa p/ .part e só renomeia se completar — evita cache corrompido
+        # (download parcial) sendo reusado numa reexecução.
+        part = dbc + ".part"
         try:
-            urllib.request.urlretrieve(FTP.format(uf=uf, ano=ano), dbc)
-        except Exception as e:  # ano/UF inexistente etc.
+            urllib.request.urlretrieve(FTP.format(uf=uf, ano=ano), part)
+            os.replace(part, dbc)
+        except Exception as e:  # ano/UF inexistente, rede etc.
+            if os.path.exists(part):
+                os.remove(part)
             print(f"  ! {uf} {ano}: download falhou ({e})")
             return None
     dbf = dbc[:-4] + ".dbf"
@@ -70,7 +78,8 @@ def main():
     ap.add_argument("--ufs", default=",".join(UFS), help="lista de UFs separada por vírgula")
     ap.add_argument("--cache", default=tempfile.gettempdir())
     args = ap.parse_args()
-    a, b = (int(x) for x in args.anos.split("-"))
+    parts = args.anos.split("-")
+    a, b = int(parts[0]), int(parts[-1]) # aceita "2022" (único) ou "2015-2024"
     anos = range(a, b + 1)
     ufs = [u.strip().upper() for u in args.ufs.split(",") if u.strip()]
 
@@ -83,6 +92,7 @@ def main():
                 asset[uf][str(ano)] = r
                 print(f"  {uf} {ano}: hom={r['homicidios']} mvci={r['mvci']} razão={r['razaoMvci']}")
     payload = {"fonte": "SIM/DATASUS (DO)", "cids": {"homicidio": "X85-Y09", "mvci": "Y10-Y34"}, "series": asset}
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False)
     print(f"OK -> {OUT} ({len(ufs)} UFs, anos {a}-{b})")
