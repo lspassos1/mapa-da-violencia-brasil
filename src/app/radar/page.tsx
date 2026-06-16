@@ -3,6 +3,21 @@ import Link from "next/link";
 import { AlertTriangle, Info } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { getElectoralAnomalies, ELECTION_YEARS, INDICADOR } from "@/server/anomaly/electoralCycle";
+import { getRjCriminalGovernance, ANO_REF, type Classificacao } from "@/server/anomaly/criminalGovernance";
+
+const CLASS_LABEL: Record<Classificacao, string> = {
+  controle: "possível controle",
+  disputa: "disputa ativa",
+  misto: "misto",
+};
+const CLASS_STYLE: Record<Classificacao, string> = {
+  controle: "bg-amber-300/15 text-amber-200",
+  disputa: "bg-red-400/15 text-red-200",
+  misto: "text-slate-500",
+};
+function n(v: number | null): string {
+  return v === null ? "—" : String(v);
+}
 
 export const metadata: Metadata = {
   title: "Radar de anomalia — ciclo eleitoral",
@@ -22,6 +37,8 @@ function ehIndicio(efeito: number | null, robusto: boolean): boolean {
 export default function RadarPage() {
   const ufs = getElectoralAnomalies();
   const indicios = ufs.filter((u) => ehIndicio(u.efeito, u.robusto)).length;
+  const rj = getRjCriminalGovernance();
+  const controles = rj.filter((r) => r.classificacao === "controle").length;
 
   return (
     <main className="flex min-h-screen flex-col text-slate-100">
@@ -107,9 +124,60 @@ export default function RadarPage() {
           </table>
         </div>
 
+        {/* LENTE 2 — governança criminal (RJ) */}
+        <div className="mt-6 border-t border-white/10 pt-5">
+          <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Lente 2 · governança criminal</p>
+          <h3 className="text-xl font-semibold">Controle territorial × disputa (RJ, {ANO_REF})</h3>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            <strong>Indício, não acusação — cobertura RJ.</strong> Onde há violência armada mas quase <strong>nenhuma
+            &quot;disputa&quot;</strong> entre grupos e <strong>economia de extorsão ativa</strong>, o sinal é de um grupo
+            que <strong>monopoliza e suprime o confronto</strong> (milícia/facção) — <em>não</em> de lugar seguro (a LSE
+            registra ~3% dos confrontos policiais em área de milícia). Muita &quot;disputa&quot; + alta letalidade = guerra
+            entre facções. Cruza Fogo Cruzado (tiroteios por contexto) + ISP-RJ (extorsão/tráfico/letalidade). {controles} município(s)
+            com indício de controle.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-white/10">
+          <table className="w-full border-collapse text-sm">
+            <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+              <tr>
+                <th className="px-3 py-2">Município</th>
+                <th className="px-3 py-2">Sinal</th>
+                <th className="px-3 py-2" title="tiroteios (Fogo Cruzado)">Tiroteios</th>
+                <th className="px-3 py-2" title="% dos tiroteios por disputa entre grupos">% disputa</th>
+                <th className="px-3 py-2" title="extorsão registrada (ISP-RJ) — assinatura de milícia">Extorsão</th>
+                <th className="px-3 py-2">Letalidade</th>
+                <th className="px-3 py-2">Desapar.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rj.map((r) => (
+                <tr key={r.municipio} className={`border-t border-white/5 ${r.classificacao === "controle" ? "bg-amber-300/5" : ""} ${!r.robusto ? "text-slate-500" : ""}`}>
+                  <td className="px-3 py-2 font-semibold text-slate-100">{r.municipio}</td>
+                  <td className="px-3 py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${CLASS_STYLE[r.classificacao]}`}>
+                      {CLASS_LABEL[r.classificacao]}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-slate-300">{r.tiroteios}</td>
+                  <td className="px-3 py-2 font-mono text-slate-300">{(r.disputaShare * 100).toFixed(1)}%</td>
+                  <td className="px-3 py-2 text-amber-200/90">{n(r.extorsao)}</td>
+                  <td className="px-3 py-2 text-slate-400">{n(r.letalidade)}</td>
+                  <td className="px-3 py-2 text-slate-400">{n(r.desaparecidos)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         <p className="text-xs text-slate-500">
-          Próximas lentes do radar: (2) governança criminal — homicídio implausivelmente baixo para o perfil (facção/milícia),
-          com corroboração OSINT; (3) homicídios ocultos (morte indeterminada ↑ enquanto homicídio ↓). Ver issue do projeto.
+          Fontes: Fogo Cruzado (tiroteios georreferenciados) + ISP-RJ/ISPdados (criminalidade municipal). Próxima lente: (3)
+          homicídios ocultos — morte indeterminada ↑ enquanto homicídio ↓ (ETL DATASUS pronto, asset pendente de geração).
         </p>
       </div>
     </main>
