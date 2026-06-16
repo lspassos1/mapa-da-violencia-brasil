@@ -12,16 +12,20 @@ interface ApiResponse {
   meta: {
     disclaimer: string;
     official: boolean;
+    // Stats ao-vivo trazem contagens de ingestao; as persistidas, so o conjunto.
     stats?: {
-      artigos: number;
-      extraidos: number;
-      descartados: number;
-      deduplicados: number;
-      fontesTotais: number;
-      incidentesMultiFonte: number;
-      porProvedor: Record<string, number>;
-      provedores: number;
+      artigos?: number;
+      extraidos?: number;
+      descartados?: number;
+      deduplicados?: number;
+      fontesTotais?: number;
+      incidentesMultiFonte?: number;
+      porProvedor?: Record<string, number>;
+      provedores?: number;
+      total?: number;
     };
+    fonte?: string; // "ao-vivo" | "persistido"
+    janelaDias?: number;
     geradoEm?: string;
   };
 }
@@ -167,12 +171,16 @@ export function NewsDashboard() {
           </button>
         </div>
 
-        {data?.meta.stats ? (
+        {data?.meta ? (
           <p className="text-xs text-slate-500">
             {filtrados.length} de {incidents.length} indícios ·{" "}
             {incidents.filter((i) => i.idIbge).length} geolocalizados ·{" "}
-            {data.meta.stats.incidentesMultiFonte} com múltiplas fontes · {data.meta.stats.provedores} provedor(es) de IA ·
-            de {data.meta.stats.artigos} notícias ({data.meta.stats.descartados} descartadas como não-crime)
+            {incidents.filter((i) => i.corroboracao > 1).length} com múltiplas fontes
+            {data.meta.stats?.provedores ? ` · ${data.meta.stats.provedores} provedor(es) de IA` : ""}
+            {typeof data.meta.stats?.artigos === "number"
+              ? ` · de ${data.meta.stats.artigos} notícias (${data.meta.stats.descartados ?? 0} descartadas como não-crime)`
+              : ""}
+            {data.meta.fonte === "persistido" ? ` · acumulado (janela ${data.meta.janelaDias}d)` : ""}
           </p>
         ) : null}
 
