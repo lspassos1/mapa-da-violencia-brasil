@@ -15,6 +15,11 @@ export const CONTEXTO_LABEL: Record<ShootingOccurrence["contexto"], string> = {
   outro: "Outro",
 };
 
+// Escapa strings da API antes de injetar no popup (setHTML usa innerHTML → XSS).
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // Mapa leve de tiroteios (marcadores DOM por contexto). Distinto das camadas
 // oficial/OSINT. Degrade gracioso: se o mapa falhar, a lista continua.
 export function ShootingsMap({ ocorrencias }: { ocorrencias: ShootingOccurrence[] }) {
@@ -53,8 +58,8 @@ export function ShootingsMap({ ocorrencias }: { ocorrencias: ShootingOccurrence[
           const popup = new maplibregl.Popup({ offset: 10, closeButton: false }).setHTML(
             `<div style="font:12px system-ui;max-width:230px;color:#0b1120">
                <strong>${CONTEXTO_LABEL[o.contexto]}</strong><br/>
-               ${o.bairro ? o.bairro + " — " : ""}${o.municipio}/${o.estado}<br/>
-               <span style="color:#475569">${o.data.slice(0, 10)} · ${o.mortos} morto(s), ${o.feridos} ferido(s)</span>
+               ${o.bairro ? esc(o.bairro) + " — " : ""}${esc(o.municipio)}/${esc(o.estado)}<br/>
+               <span style="color:#475569">${esc(o.data.slice(0, 10))} · ${o.mortos} morto(s), ${o.feridos} ferido(s)</span>
              </div>`,
           );
           markers.push(new maplibregl.Marker({ element: el }).setLngLat([o.lng as number, o.lat as number]).setPopup(popup).addTo(map));

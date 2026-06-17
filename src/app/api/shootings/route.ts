@@ -18,6 +18,8 @@ interface Payload {
 
 let cache: { at: number; payload: Payload } | null = null;
 let inflight: Promise<Payload> | null = null;
+let lastErrorAt = 0;
+const ERROR_BACKOFF_MS = 60 * 1000; // em falha, não martela a API externa
 
 async function build(): Promise<Payload> {
   const ocorrencias = await fetchRecentShootings(DIAS);
@@ -49,8 +51,15 @@ export async function GET() {
       meta: { fonte: "Fogo Cruzado", aviso: "Radar desativado: credenciais FOGO_CRUZADO_* ausentes.", disclaimer: DISCLAIMER, dias: DIAS },
     });
   }
-  if (cache && Date.now() - cache.at < TTL_MS) {
+  const now = Date.now();
+  if (cache && now - cache.at < TTL_MS) {
     return NextResponse.json(cache.payload);
+  }
+  // Backoff: após uma falha, não refaz a chamada externa por ERROR_BACKOFF_MS —
+  // serve cache stale se houver, senão 503. (single-flight só cobre concorrentes.)
+  if (now - lastErrorAt < ERROR_BACKOFF_MS) {
+    if (cache) return NextResponse.json(cache.payload);
+    return NextResponse.json(indisponivel(), { status: 503 });
   }
   if (!inflight) {
     inflight = build()
@@ -58,9 +67,22 @@ export async function GET() {
         cache = { at: Date.now(), payload };
         return payload;
       })
+      .catch((e) => {
+        lastErrorAt = Date.now();
+        throw e;
+      })
       .finally(() => {
         inflight = null;
       });
   }
-  return NextResponse.json(await inflight);
+  try {
+    return NextResponse.json(await inflight);
+  } catch {
+    if (cache) return NextResponse.json(cache.payload); // fallback stale
+    return NextResponse.json(indisponivel(), { status: 503 });
+  }
+}
+
+function indisponivel(): Payload {
+  return { ocorrencias: [], meta: { fonte: "Fogo Cruzado", disclaimer: DISCLAIMER, dias: DIAS, aviso: "Fonte temporariamente indisponível — tente em instantes." } };
 }

@@ -95,6 +95,7 @@ export async function fetchRecentShootings(dias = 7): Promise<ShootingOccurrence
   const headers = { Authorization: `Bearer ${token}` };
 
   const statesRes = await fetch(`${API}/states`, { headers, signal: AbortSignal.timeout(20000) });
+  if (!statesRes.ok) throw new Error(`Fogo Cruzado states HTTP ${statesRes.status}`);
   const states = (((await statesRes.json())?.data ?? []) as Record<string, unknown>[]).filter((s) => s.id);
 
   const hoje = new Date();
