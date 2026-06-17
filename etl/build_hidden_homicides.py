@@ -59,14 +59,25 @@ def conta_uf_ano(uf: str, ano: int, cache: str) -> dict | None:
             print(f"  ! {uf} {ano}: download falhou ({e})")
             return None
     dbf = dbc[:-4] + ".dbf"
-    datasus_dbc.decompress(dbc, dbf)
     out = {"homicidios": 0, "mvci": 0, "total": 0}
-    for r in DBF(dbf, encoding="latin-1", load=False):
-        out["total"] += 1
-        k = classifica(r.get("CAUSABAS"))
-        if k:
-            out[k] += 1
-    os.remove(dbf)  # DBF descomprimido é grande; descarta
+    try:
+        # DBC vazio/corrompido (FTP instável p/ arquivos grandes) não pode
+        # derrubar o run inteiro — descarta o arquivo ruim e segue (re-baixa depois).
+        datasus_dbc.decompress(dbc, dbf)
+        for r in DBF(dbf, encoding="latin-1", load=False):
+            out["total"] += 1
+            k = classifica(r.get("CAUSABAS"))
+            if k:
+                out[k] += 1
+    except Exception as e:
+        for p in (dbc, dbf):
+            if os.path.exists(p):
+                os.remove(p)
+        print(f"  ! {uf} {ano}: dbc inválido, pulado ({e})")
+        return None
+    finally:
+        if os.path.exists(dbf):
+            os.remove(dbf)  # DBF descomprimido é grande; descarta
     den = out["homicidios"] + out["mvci"]
     out["razaoMvci"] = round(out["mvci"] / den, 4) if den else None
     return out
