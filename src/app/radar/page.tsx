@@ -44,9 +44,17 @@ export default function RadarPage() {
     <main className="flex min-h-screen flex-col text-slate-100">
       <AppHeader />
       <div className="mx-auto flex w-full max-w-[1100px] flex-1 flex-col gap-4 p-4">
-        <div>
-          <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Radar de anomalia</p>
-          <h2 className="text-2xl font-semibold">Ciclo eleitoral × homicídio (dado oficial)</h2>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Radar de anomalia</p>
+            <h2 className="text-2xl font-semibold">Ciclo eleitoral × homicídio (dado oficial)</h2>
+          </div>
+          <Link
+            href="/radar/tiroteios"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/30 px-3 py-2 text-sm font-medium text-red-100 hover:border-red-400/60 hover:text-red-50"
+          >
+            🎯 Radar de tiroteios (tempo quase real)
+          </Link>
         </div>
 
         {/* Aviso inegociável: indício, não prova */}
