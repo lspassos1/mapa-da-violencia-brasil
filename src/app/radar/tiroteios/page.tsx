@@ -82,7 +82,9 @@ export default function TiroteiosPage() {
             <a className="underline hover:text-amber-50" href="https://fogocruzado.org.br" target="_blank" rel="noopener noreferrer">
               Fogo Cruzado
             </a>{" "}
-            (últimos {data?.meta.dias ?? 7} dias). Cobertura: {data?.meta.cobertura ?? "RJ, Recife, Bahia, Pará"}. Atualiza periodicamente.
+            (últimos {data?.meta.dias ?? 7} dias). <strong>Cobertura limitada</strong>:{" "}
+            {data?.meta.cobertura ?? "regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém"} — o Fogo Cruzado
+            não cobre o Brasil todo. Atualiza periodicamente.
           </p>
         </div>
 

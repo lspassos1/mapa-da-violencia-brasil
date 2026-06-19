@@ -33,7 +33,7 @@ async function build(): Promise<Payload> {
     ocorrencias,
     meta: {
       fonte: "Fogo Cruzado (API v2)",
-      cobertura: "RJ, Recife, Bahia, Pará",
+      cobertura: "Regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém (57 municípios — onde o Fogo Cruzado atua; não é nacional)",
       dias: DIAS,
       disclaimer: DISCLAIMER,
       total: ocorrencias.length,
