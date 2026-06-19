@@ -15,10 +15,27 @@ interface ApiResponse {
     disclaimer: string;
     total?: number;
     porContexto?: Record<Contexto, number>;
+    porMunicipio?: MunicipioResumo[];
     mortos?: number;
     aviso?: string;
   };
 }
+
+interface MunicipioResumo {
+  municipio: string;
+  estado: string;
+  total: number;
+  disputa: number;
+  mortos: number;
+  disputaShare: number;
+  lente2: "controle" | "disputa" | "misto" | null;
+}
+
+const LENTE2_BADGE: Record<"controle" | "disputa" | "misto", { label: string; cls: string }> = {
+  controle: { label: "possível controle", cls: "bg-amber-300/15 text-amber-200" },
+  disputa: { label: "disputa ativa", cls: "bg-red-400/15 text-red-200" },
+  misto: { label: "misto", cls: "text-slate-500" },
+};
 
 export default function TiroteiosPage() {
   const [data, setData] = useState<ApiResponse | null>(null);
@@ -164,6 +181,54 @@ export default function TiroteiosPage() {
             ))}
           </ul>
         </div>
+
+        {/* Análise por município (+ overlay da lente 2 no RJ) */}
+        {data?.meta.porMunicipio?.length ? (
+          <div className="mt-2">
+            <h3 className="mb-2 text-sm font-semibold text-slate-200">
+              Por município <span className="font-normal text-slate-500">— tiroteios na janela; no RJ, com a leitura estrutural (lente 2)</span>
+            </h3>
+            <div className="overflow-x-auto rounded-xl border border-white/10">
+              <table className="w-full border-collapse text-sm">
+                <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+                  <tr>
+                    <th className="px-3 py-2">Município</th>
+                    <th className="px-3 py-2">Tiroteios</th>
+                    <th className="px-3 py-2" title="% dos tiroteios por disputa entre grupos">% disputa</th>
+                    <th className="px-3 py-2">Mortos</th>
+                    <th className="px-3 py-2">Estrutura (RJ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.meta.porMunicipio.slice(0, 25).map((m) => (
+                    <tr key={`${m.municipio}|${m.estado}`} className="border-t border-white/5">
+                      <td className="px-3 py-2 font-medium text-slate-100">
+                        {m.municipio}
+                        <span className="text-slate-500"> / {m.estado}</span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-300">{m.total}</td>
+                      <td className="px-3 py-2 font-mono text-slate-300">{(m.disputaShare * 100).toFixed(0)}%</td>
+                      <td className="px-3 py-2 text-slate-400">{m.mortos}</td>
+                      <td className="px-3 py-2">
+                        {m.lente2 ? (
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${LENTE2_BADGE[m.lente2].cls}`}>
+                            {LENTE2_BADGE[m.lente2].label}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-600">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              &quot;Estrutura&quot; cruza o tempo-real com a <Link className="underline hover:text-cyan-200" href="/radar">lente 2</Link>{" "}
+              (controle×disputa) — só municípios do RJ têm essa leitura. Indício, não acusação.
+            </p>
+          </div>
+        ) : null}
       </div>
     </main>
   );

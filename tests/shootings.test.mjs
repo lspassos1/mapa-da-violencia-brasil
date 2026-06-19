@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classifyContexto, mapOccurrence } from "../src/server/shootings/fogocruzado.ts";
+import { classifyContexto, mapOccurrence, aggregateByMunicipio } from "../src/server/shootings/fogocruzado.ts";
 
 test("classifyContexto: disputa / polícia / outro", () => {
   assert.equal(classifyContexto("Disputa", false), "disputa");
@@ -47,4 +47,23 @@ test("mapOccurrence: lat/lng inválidos viram null", () => {
   assert.equal(o.lat, null);
   assert.equal(o.lng, null);
   assert.equal(o.mortos, 0);
+});
+
+test("aggregateByMunicipio: soma por município, ordena por total, calcula share", () => {
+  const occ = [
+    { municipio: "Rio de Janeiro", estado: "Rio de Janeiro", contexto: "disputa", mortos: 1, feridos: 0 },
+    { municipio: "Rio de Janeiro", estado: "Rio de Janeiro", contexto: "policia", mortos: 0, feridos: 2 },
+    { municipio: "Rio de Janeiro", estado: "Rio de Janeiro", contexto: "outro", mortos: 1, feridos: 0 },
+    { municipio: "Salvador", estado: "Bahia", contexto: "disputa", mortos: 2, feridos: 1 },
+  ];
+  const rows = aggregateByMunicipio(occ);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].municipio, "Rio de Janeiro"); // maior total primeiro
+  assert.equal(rows[0].total, 3);
+  assert.equal(rows[0].disputa, 1);
+  assert.equal(rows[0].policia, 1);
+  assert.equal(rows[0].mortos, 2);
+  assert.equal(rows[0].disputaShare, 0.333); // arredondado a 3 casas
+  assert.equal(rows[1].municipio, "Salvador");
+  assert.equal(rows[1].mortos, 2);
 });
