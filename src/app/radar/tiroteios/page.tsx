@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Crosshair, RefreshCw } from "lucide-react";
 import { ShootingsMap, CONTEXTO_COR, CONTEXTO_LABEL } from "@/components/radar/ShootingsMap";
-import type { Contexto, ShootingOccurrence } from "@/server/shootings/fogocruzado";
+import type { Contexto, MunicipioResumoLente2, ShootingOccurrence } from "@/server/shootings/fogocruzado";
 
 interface ApiResponse {
   ocorrencias: ShootingOccurrence[];
@@ -15,20 +15,10 @@ interface ApiResponse {
     disclaimer: string;
     total?: number;
     porContexto?: Record<Contexto, number>;
-    porMunicipio?: MunicipioResumo[];
+    porMunicipio?: MunicipioResumoLente2[];
     mortos?: number;
     aviso?: string;
   };
-}
-
-interface MunicipioResumo {
-  municipio: string;
-  estado: string;
-  total: number;
-  disputa: number;
-  mortos: number;
-  disputaShare: number;
-  lente2: "controle" | "disputa" | "misto" | null;
 }
 
 const LENTE2_BADGE: Record<"controle" | "disputa" | "misto", { label: string; cls: string }> = {
@@ -211,8 +201,10 @@ export default function TiroteiosPage() {
                       <td className="px-3 py-2 text-slate-400">{m.mortos}</td>
                       <td className="px-3 py-2">
                         {m.lente2 ? (
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${LENTE2_BADGE[m.lente2].cls}`}>
-                            {LENTE2_BADGE[m.lente2].label}
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${(LENTE2_BADGE[m.lente2] ?? LENTE2_BADGE.misto).cls}`}
+                          >
+                            {(LENTE2_BADGE[m.lente2] ?? LENTE2_BADGE.misto).label}
                           </span>
                         ) : (
                           <span className="text-[11px] text-slate-600">—</span>

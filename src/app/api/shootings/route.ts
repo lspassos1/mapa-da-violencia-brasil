@@ -2,7 +2,7 @@
 // Cruzado com cache em memória + single-flight: a API externa é chamada no máx.
 // 1×/TTL, compartilhada por todos os usuários (respeita o limite). Server-only.
 import { NextResponse } from "next/server";
-import { aggregateByMunicipio, fetchRecentShootings, isFogoCruzadoConfigured, type ShootingOccurrence } from "@/server/shootings/fogocruzado";
+import { aggregateByMunicipio, fetchRecentShootings, isFogoCruzadoConfigured, type MunicipioResumoLente2, type ShootingOccurrence } from "@/server/shootings/fogocruzado";
 import { getRjCriminalGovernance } from "@/server/anomaly/criminalGovernance";
 import { normalizeName } from "@/server/osint/geocode";
 
@@ -33,11 +33,11 @@ async function build(): Promise<Payload> {
   }
 
   // Overlay da lente 2 (controle×disputa) nos municípios do RJ que a têm.
-  const lente2 = new Map<string, string>();
+  const lente2 = new Map<string, "controle" | "disputa" | "misto">();
   for (const g of getRjCriminalGovernance()) lente2.set(normalizeName(g.municipio), g.classificacao);
-  const porMunicipio = aggregateByMunicipio(ocorrencias).map((m) => ({
+  const porMunicipio: MunicipioResumoLente2[] = aggregateByMunicipio(ocorrencias).map((m) => ({
     ...m,
-    lente2: m.estado === "Rio de Janeiro" ? lente2.get(normalizeName(m.municipio)) ?? null : null,
+    lente2: normalizeName(m.estado) === "rio de janeiro" ? lente2.get(normalizeName(m.municipio)) ?? null : null,
   }));
 
   return {

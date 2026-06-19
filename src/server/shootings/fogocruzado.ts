@@ -127,6 +127,12 @@ export interface MunicipioResumo {
   disputaShare: number; // 0..1
 }
 
+// Resumo + a classe da lente 2 (controle×disputa) quando disponível (só RJ).
+// Tipo único e autoritativo, compartilhado entre a rota e a página.
+export interface MunicipioResumoLente2 extends MunicipioResumo {
+  lente2: "controle" | "disputa" | "misto" | null;
+}
+
 // Agrega as ocorrências por município (puro/testável). Ordena por total desc.
 export function aggregateByMunicipio(ocorrencias: ShootingOccurrence[]): MunicipioResumo[] {
   const map = new Map<string, MunicipioResumo>();
