@@ -115,3 +115,40 @@ export async function fetchRecentShootings(dias = 7): Promise<ShootingOccurrence
   }
   return out;
 }
+
+export interface MunicipioResumo {
+  municipio: string;
+  estado: string;
+  total: number;
+  disputa: number;
+  policia: number;
+  mortos: number;
+  feridos: number;
+  disputaShare: number; // 0..1
+}
+
+// Resumo + a classe da lente 2 (controle×disputa) quando disponível (só RJ).
+// Tipo único e autoritativo, compartilhado entre a rota e a página.
+export interface MunicipioResumoLente2 extends MunicipioResumo {
+  lente2: "controle" | "disputa" | "misto" | null;
+}
+
+// Agrega as ocorrências por município (puro/testável). Ordena por total desc.
+export function aggregateByMunicipio(ocorrencias: ShootingOccurrence[]): MunicipioResumo[] {
+  const map = new Map<string, MunicipioResumo>();
+  for (const o of ocorrencias) {
+    const key = `${o.municipio}|${o.estado}`;
+    const r =
+      map.get(key) ??
+      { municipio: o.municipio, estado: o.estado, total: 0, disputa: 0, policia: 0, mortos: 0, feridos: 0, disputaShare: 0 };
+    r.total++;
+    if (o.contexto === "disputa") r.disputa++;
+    if (o.contexto === "policia") r.policia++;
+    r.mortos += o.mortos;
+    r.feridos += o.feridos;
+    map.set(key, r);
+  }
+  const rows = [...map.values()];
+  for (const r of rows) r.disputaShare = r.total ? Math.round((r.disputa / r.total) * 1000) / 1000 : 0;
+  return rows.sort((a, b) => b.total - a.total);
+}
