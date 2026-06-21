@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classifyContexto, mapOccurrence, aggregateByMunicipio } from "../src/server/shootings/fogocruzado.ts";
+import { classifyContexto, mapOccurrence, aggregateByMunicipio, aggregateDaily } from "../src/server/shootings/fogocruzado.ts";
 
 test("classifyContexto: disputa / polícia / outro", () => {
   assert.equal(classifyContexto("Disputa", false), "disputa");
@@ -66,4 +66,20 @@ test("aggregateByMunicipio: soma por município, ordena por total, calcula share
   assert.equal(rows[0].disputaShare, 0.333); // arredondado a 3 casas
   assert.equal(rows[1].municipio, "Salvador");
   assert.equal(rows[1].mortos, 2);
+});
+
+test("aggregateDaily: agrupa por dia, soma mortos, ordena crescente, ignora sem data", () => {
+  const occ = [
+    { data: "2025-09-02T10:00:00Z", mortos: 1 },
+    { data: "2025-09-01T23:00:00Z", mortos: 0 },
+    { data: "2025-09-02T22:00:00Z", mortos: 2 },
+    { data: "", mortos: 5 }, // ignorado (sem data)
+  ];
+  const dias = aggregateDaily(occ);
+  assert.equal(dias.length, 2);
+  assert.equal(dias[0].dia, "2025-09-01"); // ordenado crescente
+  assert.equal(dias[0].total, 1);
+  assert.equal(dias[1].dia, "2025-09-02");
+  assert.equal(dias[1].total, 2);
+  assert.equal(dias[1].mortos, 3);
 });

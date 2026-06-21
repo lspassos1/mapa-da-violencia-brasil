@@ -4,6 +4,10 @@
     {
       "path": "/api/news-incidents/ingest",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/shootings/ingest",
+      "schedule": "0 5 * * *"
     }
   ]
 }
