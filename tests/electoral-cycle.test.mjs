@@ -84,7 +84,8 @@ test("classifyPorte: cortes por volume mensal", () => {
 
 test("withPeerBaselines: efeitoRelativo = efeito − mediana dos pares de mesmo porte (DiD)", () => {
   // 3 UFs grandes robustas: efeitos -0.30, -0.10, -0.10. Para A, pares=[-0.10,-0.10]
-  // -> mediana -0.10 -> relativo = -0.30 - (-0.10) = -0.20. B/C: pares medianam -0.10/-0.30.
+  // -> mediana -0.10 -> relativo = -0.30 - (-0.10) = -0.20. (B e C teriam pares
+  // [-0.30,-0.10] -> mediana -0.20 -> relativo +0.10.)
   const mk = (uf, efeito) => ({
     uf, idxEleicao: null, idxNormal: null, efeito, mediaMensal: 300,
     porte: "grande", efeitoBaseline: null, efeitoRelativo: null,
