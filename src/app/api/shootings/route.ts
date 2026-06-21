@@ -1,82 +1,163 @@
-// GET /api/shootings — radar de tiroteios (#97). Lê a janela recente do Fogo
-// Cruzado com cache em memória + single-flight: a API externa é chamada no máx.
-// 1×/TTL, compartilhada por todos os usuários (respeita o limite). Server-only.
-import { NextResponse } from "next/server";
-import { aggregateByMunicipio, fetchRecentShootings, isFogoCruzadoConfigured, type MunicipioResumoLente2, type ShootingOccurrence } from "@/server/shootings/fogocruzado";
+// GET /api/shootings — radar de tiroteios (#97).
+//
+// Arquitetura store-first (spec): le as ocorrencias persistidas em Supabase
+// (acumuladas pelo cron /api/shootings/ingest -> historico/tendencia + cache
+// compartilhado entre instancias). Quando o store fica DEFASADO (> REFRESH_TTL),
+// a primeira requisicao refaz da Fogo Cruzado via single-flight e faz upsert —
+// assim a API externa e chamada no maximo ~1×/REFRESH_TTL, respeitando o limite,
+// e o radar segue near-real-time mesmo com o cron diario do plano Hobby.
+//
+// DEGRADACAO GRACIOSA: sem Supabase, cai no modo AO VIVO (cache em memoria +
+// single-flight, comportamento original). Sem FC nem store, responde desativado.
+import { NextResponse, after } from "next/server";
+import {
+  aggregateByMunicipio,
+  aggregateDaily,
+  fetchRecentShootings,
+  isFogoCruzadoConfigured,
+  type DiaResumo,
+  type MunicipioResumoLente2,
+  type ShootingOccurrence,
+} from "@/server/shootings/fogocruzado";
+import {
+  isShootingStoreConfigured,
+  listStoredShootings,
+  newestIngestAt,
+  upsertShootings,
+} from "@/server/shootings/store";
 import { getRjCriminalGovernance } from "@/server/anomaly/criminalGovernance";
 import { normalizeName } from "@/server/osint/geocode";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // o refresh sob demanda pode paginar a FC (~30-50s)
 
-const DIAS = 7;
-const TTL_MS = 15 * 60 * 1000; // janela de atualização (protege o limite da API)
+const DIAS = 7; // janela do mapa/lista
+const HIST_DIAS = 30; // janela da tendencia historica
+const REFRESH_TTL_MS = 30 * 60 * 1000; // store mais velho que isto -> refaz da FC
+const LIVE_TTL_MS = 15 * 60 * 1000; // cache do modo ao vivo (sem store)
+const STORE_CACHE_MS = 60 * 1000; // cache em memoria do payload montado do store
+const ERROR_BACKOFF_MS = 60 * 1000; // em falha, nao martela a API externa
 const DISCLAIMER =
   "Registros de tiroteios/disparos por arma de fogo (fonte: Fogo Cruzado). NÃO é alerta de emergência nem estatística oficial — use 190 em urgências.";
+const COBERTURA =
+  "Regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém (57 municípios — onde o Fogo Cruzado atua; não é nacional)";
 
 interface Payload {
   ocorrencias: ShootingOccurrence[];
   meta: Record<string, unknown>;
 }
 
-let cache: { at: number; payload: Payload } | null = null;
-let inflight: Promise<Payload> | null = null;
-let lastErrorAt = 0;
-const ERROR_BACKOFF_MS = 60 * 1000; // em falha, não martela a API externa
-
-async function build(): Promise<Payload> {
-  const ocorrencias = await fetchRecentShootings(DIAS);
+// Monta o payload (puro): contexto, mortos, por-municipio com overlay da lente 2
+// (controle×disputa, so RJ) e a serie diaria historica.
+function assemble(ocorrencias: ShootingOccurrence[], fonte: string, historico: DiaResumo[]): Payload {
   const porContexto = { disputa: 0, policia: 0, outro: 0 };
   let mortos = 0;
   for (const o of ocorrencias) {
     porContexto[o.contexto]++;
     mortos += o.mortos;
   }
-
-  // Overlay da lente 2 (controle×disputa) nos municípios do RJ que a têm.
   const lente2 = new Map<string, "controle" | "disputa" | "misto">();
   for (const g of getRjCriminalGovernance()) lente2.set(normalizeName(g.municipio), g.classificacao);
   const porMunicipio: MunicipioResumoLente2[] = aggregateByMunicipio(ocorrencias).map((m) => ({
     ...m,
     lente2: normalizeName(m.estado) === "rio de janeiro" ? lente2.get(normalizeName(m.municipio)) ?? null : null,
   }));
-
   return {
     ocorrencias,
     meta: {
-      fonte: "Fogo Cruzado (API v2)",
-      cobertura: "Regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém (57 municípios — onde o Fogo Cruzado atua; não é nacional)",
+      fonte,
+      cobertura: COBERTURA,
       dias: DIAS,
       disclaimer: DISCLAIMER,
       total: ocorrencias.length,
       porContexto,
       porMunicipio,
       mortos,
+      historico,
       geradoEm: new Date().toISOString(),
     },
   };
 }
 
-export async function GET() {
-  if (!isFogoCruzadoConfigured()) {
-    return NextResponse.json({
-      ocorrencias: [],
-      meta: { fonte: "Fogo Cruzado", aviso: "Radar desativado: credenciais FOGO_CRUZADO_* ausentes.", disclaimer: DISCLAIMER, dias: DIAS },
+function withinDays(dataIso: string, dias: number): boolean {
+  const t = Date.parse(dataIso);
+  return Number.isFinite(t) && t >= Date.now() - dias * 86_400_000;
+}
+
+let lastErrorAt = 0;
+
+// ---- Modo STORE (preferido) ------------------------------------------------
+let storeCache: { at: number; payload: Payload } | null = null;
+let refreshing: Promise<void> | null = null;
+
+// Refaz a janela da FC e faz upsert (single-flight: 1 chamada externa concorrente).
+function refreshFromFC(): Promise<void> {
+  if (!refreshing) {
+    refreshing = (async () => {
+      const occ = await fetchRecentShootings(DIAS);
+      await upsertShootings(occ);
+    })().finally(() => {
+      refreshing = null;
     });
   }
+  return refreshing;
+}
+
+async function servedFromStore(fcOn: boolean): Promise<Payload> {
   const now = Date.now();
-  if (cache && now - cache.at < TTL_MS) {
-    return NextResponse.json(cache.payload);
+  if (storeCache && now - storeCache.at < STORE_CACHE_MS) return storeCache.payload;
+
+  const newest = await newestIngestAt();
+  const stale = newest === null || now - newest > REFRESH_TTL_MS;
+  let fonte = "Supabase (persistido)";
+  if (stale && fcOn && now - lastErrorAt >= ERROR_BACKOFF_MS) {
+    if (newest === null) {
+      // Store vazio (1º deploy/cold start): bloqueia uma vez p/ ter o que servir.
+      try {
+        await refreshFromFC();
+        fonte = "Supabase (atualizado near-real-time)";
+      } catch {
+        lastErrorAt = Date.now();
+        fonte = "Supabase (sem dados — fonte instável)";
+      }
+    } else {
+      // Store tem dados porém defasados: refaz em BACKGROUND (after) e serve o que
+      // há agora — não trava a resposta. Single-flight garante 1 chamada externa;
+      // after() mantém a função viva até o upsert terminar (conta no maxDuration).
+      after(refreshFromFC().catch(() => { lastErrorAt = Date.now(); }));
+      fonte = "Supabase (defasado — atualizando)";
+    }
+  } else if (stale) {
+    fonte = "Supabase (defasado)";
   }
-  // Backoff: após uma falha, não refaz a chamada externa por ERROR_BACKOFF_MS —
-  // serve cache stale se houver, senão 503. (single-flight só cobre concorrentes.)
+
+  const janela = await listStoredShootings(HIST_DIAS);
+  const recentes = janela.filter((o) => withinDays(o.data, DIAS));
+  const payload = assemble(recentes, fonte, aggregateDaily(janela));
+  storeCache = { at: Date.now(), payload };
+  return payload;
+}
+
+// ---- Modo AO VIVO (sem store) ---------------------------------------------
+let liveCache: { at: number; payload: Payload } | null = null;
+let liveInflight: Promise<Payload> | null = null;
+
+async function buildLive(): Promise<Payload> {
+  const occ = await fetchRecentShootings(DIAS);
+  return assemble(occ, "Fogo Cruzado (ao vivo)", aggregateDaily(occ));
+}
+
+async function servedLive(): Promise<Payload> {
+  const now = Date.now();
+  if (liveCache && now - liveCache.at < LIVE_TTL_MS) return liveCache.payload;
   if (now - lastErrorAt < ERROR_BACKOFF_MS) {
-    if (cache) return NextResponse.json(cache.payload);
-    return NextResponse.json(indisponivel(), { status: 503 });
+    if (liveCache) return liveCache.payload;
+    throw new Error("backoff");
   }
-  if (!inflight) {
-    inflight = build()
+  if (!liveInflight) {
+    liveInflight = buildLive()
       .then((payload) => {
-        cache = { at: Date.now(), payload };
+        liveCache = { at: Date.now(), payload };
         return payload;
       })
       .catch((e) => {
@@ -84,15 +165,37 @@ export async function GET() {
         throw e;
       })
       .finally(() => {
-        inflight = null;
+        liveInflight = null;
       });
   }
-  try {
-    return NextResponse.json(await inflight);
-  } catch {
-    if (cache) return NextResponse.json(cache.payload); // fallback stale
-    return NextResponse.json(indisponivel(), { status: 503 });
+  return liveInflight;
+}
+
+export async function GET() {
+  const fcOn = isFogoCruzadoConfigured();
+  const storeOn = isShootingStoreConfigured();
+  if (!fcOn && !storeOn) {
+    return NextResponse.json({
+      ocorrencias: [],
+      meta: { fonte: "Fogo Cruzado", aviso: "Radar desativado: credenciais FOGO_CRUZADO_* / Supabase ausentes.", disclaimer: DISCLAIMER, dias: DIAS },
+    });
   }
+
+  if (storeOn) {
+    try {
+      return NextResponse.json(await servedFromStore(fcOn));
+    } catch {
+      // store indisponivel -> tenta ao vivo (se FC), senao 503
+    }
+  }
+  if (fcOn) {
+    try {
+      return NextResponse.json(await servedLive());
+    } catch {
+      if (liveCache) return NextResponse.json(liveCache.payload); // fallback stale
+    }
+  }
+  return NextResponse.json(indisponivel(), { status: 503 });
 }
 
 function indisponivel(): Payload {

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Crosshair, RefreshCw } from "lucide-react";
 import { ShootingsMap, CONTEXTO_COR, CONTEXTO_LABEL } from "@/components/radar/ShootingsMap";
-import type { Contexto, MunicipioResumoLente2, ShootingOccurrence } from "@/server/shootings/fogocruzado";
+import type { Contexto, DiaResumo, MunicipioResumoLente2, ShootingOccurrence } from "@/server/shootings/fogocruzado";
 
 interface ApiResponse {
   ocorrencias: ShootingOccurrence[];
@@ -16,6 +16,7 @@ interface ApiResponse {
     total?: number;
     porContexto?: Record<Contexto, number>;
     porMunicipio?: MunicipioResumoLente2[];
+    historico?: DiaResumo[];
     mortos?: number;
     aviso?: string;
   };
@@ -131,6 +132,7 @@ export default function TiroteiosPage() {
           <p className="text-xs text-slate-500">
             {filtradas.length} de {todas.length} ocorrências · {data.meta.mortos ?? 0} morto(s) na janela ·{" "}
             {todas.filter((o) => typeof o.lat === "number").length} no mapa
+            {data.meta.fonte ? ` · fonte: ${data.meta.fonte}` : ""}
             {data.meta.aviso ? ` · ${data.meta.aviso}` : ""}
           </p>
         ) : null}
@@ -171,6 +173,11 @@ export default function TiroteiosPage() {
             ))}
           </ul>
         </div>
+
+        {/* Tendência histórica acumulada (cron → Supabase) */}
+        {data?.meta.historico && data.meta.historico.length > 1 ? (
+          <TrendStrip dados={data.meta.historico} />
+        ) : null}
 
         {/* Análise por município (+ overlay da lente 2 no RJ) */}
         {data?.meta.porMunicipio?.length ? (
@@ -223,5 +230,41 @@ export default function TiroteiosPage() {
         ) : null}
       </div>
     </main>
+  );
+}
+
+// Tira de barras diárias (tendência acumulada no banco). Altura ∝ tiroteios/dia;
+// barras com morto(s) recebem topo âmbar. Cresce de ~7 dias (janela viva) até 30.
+function TrendStrip({ dados }: { dados: DiaResumo[] }) {
+  const max = Math.max(1, ...dados.map((d) => d.total));
+  const totalJanela = dados.reduce((s, d) => s + d.total, 0);
+  const mortosJanela = dados.reduce((s, d) => s + d.mortos, 0);
+  return (
+    <div className="mt-2">
+      <h3 className="mb-2 text-sm font-semibold text-slate-200">
+        Tendência <span className="font-normal text-slate-500">— tiroteios/dia acumulados ({dados.length} dia(s) · {totalJanela} tiroteios · {mortosJanela} mortos)</span>
+      </h3>
+      <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+        <div className="flex h-24 items-end gap-0.5">
+          {dados.map((d) => (
+            <div
+              key={d.dia}
+              className="flex-1 rounded-t-sm bg-cyan-500/40"
+              style={{ height: `${Math.max(4, (d.total / max) * 100)}%` }}
+              title={`${d.dia}: ${d.total} tiroteio(s) · ${d.mortos} morto(s)`}
+            >
+              {d.mortos > 0 ? <div className="h-1 rounded-t-sm bg-amber-300/80" /> : null}
+            </div>
+          ))}
+        </div>
+        <div className="mt-1 flex justify-between text-[11px] text-slate-500">
+          <span>{dados[0]?.dia}</span>
+          <span>{dados[dados.length - 1]?.dia}</span>
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-slate-500">
+        Histórico persistido a cada ingestão (cron diário + refresh sob demanda). A janela cresce com o tempo.
+      </p>
+    </div>
   );
 }

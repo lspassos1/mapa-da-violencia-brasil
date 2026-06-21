@@ -152,3 +152,25 @@ export function aggregateByMunicipio(ocorrencias: ShootingOccurrence[]): Municip
   for (const r of rows) r.disputaShare = r.total ? Math.round((r.disputa / r.total) * 1000) / 1000 : 0;
   return rows.sort((a, b) => b.total - a.total);
 }
+
+export interface DiaResumo {
+  dia: string; // YYYY-MM-DD
+  total: number;
+  mortos: number;
+}
+
+// Série diária (puro/testável) para a tendência histórica acumulada no banco.
+// Agrupa por dia (dos 10 primeiros chars do ISO), soma ocorrências e mortos.
+// Ignora registros sem data. Ordena por dia crescente.
+export function aggregateDaily(ocorrencias: ShootingOccurrence[]): DiaResumo[] {
+  const map = new Map<string, DiaResumo>();
+  for (const o of ocorrencias) {
+    const dia = (o.data ?? "").slice(0, 10);
+    if (dia.length !== 10) continue;
+    const r = map.get(dia) ?? { dia, total: 0, mortos: 0 };
+    r.total++;
+    r.mortos += o.mortos;
+    map.set(dia, r);
+  }
+  return [...map.values()].sort((a, b) => (a.dia < b.dia ? -1 : 1));
+}
