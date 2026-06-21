@@ -4,6 +4,7 @@ import { AlertTriangle, Info } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { getElectoralAnomalies, ELECTION_YEARS, INDICADOR, type Porte } from "@/server/anomaly/electoralCycle";
 import { getRjCriminalGovernance, ANO_REF, type Classificacao } from "@/server/anomaly/criminalGovernance";
+import { WeeklyDigest } from "@/components/radar/WeeklyDigest";
 
 const PORTE_LABEL: Record<Porte, string> = {
   grande: "grande",
@@ -197,6 +198,8 @@ export default function RadarPage() {
           Fontes: Fogo Cruzado (tiroteios georreferenciados) + ISP-RJ/ISPdados (criminalidade municipal). Próxima lente: (3)
           homicídios ocultos — morte indeterminada ↑ enquanto homicídio ↓ (ETL DATASUS pronto, asset pendente de geração).
         </p>
+
+        <WeeklyDigest />
       </div>
     </main>
   );
