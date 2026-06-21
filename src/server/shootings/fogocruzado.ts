@@ -133,6 +133,23 @@ export interface MunicipioResumoLente2 extends MunicipioResumo {
   lente2: "controle" | "disputa" | "misto" | null;
 }
 
+// Referência a uma notícia OSINT (indício, não fato) que corrobora atividade no
+// município — cross-ref tiroteio↔imprensa (#97). Espelha a fonte primária.
+export interface NoticiaRef {
+  titulo: string;
+  veiculo: string;
+  url: string;
+  data: string | null;
+  tipo: string;
+}
+
+// Resumo por município com lente 2 + notícias OSINT relacionadas (forma final
+// exposta no payload do radar). `noticias` pode ser vazio (acervo OSINT é nacional
+// e jovem; cresce com o cron — cobertura tende a aumentar com o tempo).
+export interface MunicipioResumoFull extends MunicipioResumoLente2 {
+  noticias: NoticiaRef[];
+}
+
 // Agrega as ocorrências por município (puro/testável). Ordena por total desc.
 export function aggregateByMunicipio(ocorrencias: ShootingOccurrence[]): MunicipioResumo[] {
   const map = new Map<string, MunicipioResumo>();
