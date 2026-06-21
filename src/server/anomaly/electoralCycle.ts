@@ -22,12 +22,30 @@ const ROBUST_MIN_MONTHLY = 30;
 export type MonthlySeries = Record<string, number>; // "YYYY-MM" -> valor
 type SeriesByUf = Record<string, MonthlySeries>;
 
+// Porte da UF por volume mensal de homicídios — para comparar SÓ pares parecidos
+// (estado grande com grande), nunca um ranking cru entre UFs heterogêneas (IPEA).
+// Cortes derivados da distribuição real (grande≈7, médio≈5, pequeno≈11 UFs).
+export type Porte = "grande" | "medio" | "pequeno" | "micro";
+
+export function classifyPorte(mediaMensal: number): Porte {
+  if (mediaMensal >= 200) return "grande";
+  if (mediaMensal >= 100) return "medio";
+  if (mediaMensal >= ROBUST_MIN_MONTHLY) return "pequeno"; // 30..99
+  return "micro"; // < 30 -> ruidoso, não-robusto
+}
+
 export interface UfElectoralAnomaly {
   uf: string;
   idxEleicao: number | null; // média do índice sazonal (ago-out / média do ano) em anos de eleição
   idxNormal: number | null; // idem em anos normais
   efeito: number | null; // idxEleicao - idxNormal; NEGATIVO = queda pré-eleitoral atípica
   mediaMensal: number; // contagem média mensal (robustez)
+  porte: Porte;
+  // DiD vs pares: tira do `efeito` da UF o padrão pré-eleitoral COMUM aos pares de
+  // mesmo porte (mediana). efeitoRelativo NEGATIVO = cai MAIS que os pares — é o
+  // sinal de anomalia de verdade (não a queda sazonal que todos têm).
+  efeitoBaseline: number | null; // mediana do efeito dos pares (robustos, mesmo porte)
+  efeitoRelativo: number | null; // efeito - efeitoBaseline
   anosEleicao: number;
   anosNormais: number;
   robusto: boolean;
@@ -35,6 +53,12 @@ export interface UfElectoralAnomaly {
 
 function mean(xs: number[]): number {
   return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+}
+function median(xs: number[]): number | null {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
@@ -87,22 +111,47 @@ export function computeUfAnomaly(uf: string, serie: MonthlySeries): UfElectoralA
     idxNormal: inr === null ? null : round3(inr),
     efeito: efeito === null ? null : round3(efeito),
     mediaMensal: Math.round(mediaMensal),
+    porte: classifyPorte(mediaMensal),
+    efeitoBaseline: null, // preenchido por withPeerBaselines (precisa de toda a população)
+    efeitoRelativo: null,
     anosEleicao: idxEleicao.length,
     anosNormais: idxNormal.length,
     robusto: mediaMensal >= ROBUST_MIN_MONTHLY,
   };
 }
 
-// Ranking das UFs por queda pré-eleitoral (mais negativo primeiro). BR fica fora
-// (é o agregado nacional — referência, não unidade de análise).
+// Preenche efeitoBaseline/efeitoRelativo (DiD vs pares) — PURO/testável. Para cada
+// UF, baseline = mediana do `efeito` dos PARES de mesmo porte (só robustos, exclui
+// a própria por UF); com menos de 2 pares, recai na mediana nacional dos robustos
+// (controle nacional). efeitoRelativo = efeito - baseline.
+export function withPeerBaselines(anomalias: UfElectoralAnomaly[]): UfElectoralAnomaly[] {
+  const robusts = anomalias.filter((a) => a.robusto && a.efeito !== null);
+  const allMedian = median(robusts.map((a) => a.efeito as number));
+  return anomalias.map((a) => {
+    if (a.efeito === null) return { ...a, efeitoBaseline: null, efeitoRelativo: null };
+    const peers = robusts.filter((p) => p.porte === a.porte && p.uf !== a.uf).map((p) => p.efeito as number);
+    const base = peers.length >= 2 ? median(peers) : allMedian; // poucos pares -> controle nacional
+    return {
+      ...a,
+      efeitoBaseline: base === null ? null : round3(base),
+      efeitoRelativo: base === null ? null : round3(a.efeito - base),
+    };
+  });
+}
+
+// UFs ordenadas pela queda pré-eleitoral RELATIVA AOS PARES (efeitoRelativo, mais
+// negativo primeiro) — DiD vs pares de mesmo porte, não ranking cru do efeito bruto.
+// BR fica fora (é o agregado nacional — referência, não unidade de análise).
 export function getElectoralAnomalies(): UfElectoralAnomaly[] {
   const series = (monthly as { series: SeriesByUf }).series;
   if (!series) throw new Error("monthlySeries.json: estrutura inválida (faltou 'series')");
-  return Object.keys(series)
+  const anomalias = Object.keys(series)
     .filter((uf) => uf !== "BR")
     .map((uf) => computeUfAnomaly(uf, series[uf]))
-    .filter((a) => a.efeito !== null)
-    .sort((a, b) => (a.efeito as number) - (b.efeito as number));
+    .filter((a) => a.efeito !== null);
+  return withPeerBaselines(anomalias).sort(
+    (a, b) => (a.efeitoRelativo ?? 0) - (b.efeitoRelativo ?? 0),
+  );
 }
 
 export const INDICADOR = (monthly as { indicador: string }).indicador;

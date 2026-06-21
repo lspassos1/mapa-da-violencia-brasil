@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Info } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { getElectoralAnomalies, ELECTION_YEARS, INDICADOR } from "@/server/anomaly/electoralCycle";
+import { getElectoralAnomalies, ELECTION_YEARS, INDICADOR, type Porte } from "@/server/anomaly/electoralCycle";
 import { getRjCriminalGovernance, ANO_REF, type Classificacao } from "@/server/anomaly/criminalGovernance";
+
+const PORTE_LABEL: Record<Porte, string> = {
+  grande: "grande",
+  medio: "médio",
+  pequeno: "pequeno",
+  micro: "micro",
+};
 
 const CLASS_LABEL: Record<Classificacao, string> = {
   controle: "possível controle",
@@ -29,14 +36,15 @@ function fmt(n: number | null): string {
   return n === null ? "—" : n.toFixed(3);
 }
 
-// É indício a destacar: estado robusto com queda pré-eleitoral relevante.
-function ehIndicio(efeito: number | null, robusto: boolean): boolean {
-  return robusto && efeito !== null && efeito <= -0.05;
+// É indício a destacar: estado robusto que cai na janela pré-eleitoral MAIS que os
+// pares de mesmo porte (efeito relativo ≤ −0,05), não só a queda sazonal comum.
+function ehIndicio(efeitoRelativo: number | null, robusto: boolean): boolean {
+  return robusto && efeitoRelativo !== null && efeitoRelativo <= -0.05;
 }
 
 export default function RadarPage() {
   const ufs = getElectoralAnomalies();
-  const indicios = ufs.filter((u) => ehIndicio(u.efeito, u.robusto)).length;
+  const indicios = ufs.filter((u) => ehIndicio(u.efeitoRelativo, u.robusto)).length;
   const rj = getRjCriminalGovernance();
   const controles = rj.filter((r) => r.classificacao === "controle").length;
 
@@ -74,9 +82,11 @@ export default function RadarPage() {
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
           <p>
             <strong>Como é medido:</strong> índice sazonal intra-UF (média ago–out ÷ média do ano), comparando anos de
-            eleição ({ELECTION_YEARS.join(", ")}) com anos normais (2015–2025). Cada UF é comparada <em>consigo mesma</em>
-            {" "}— evita a heterogeneidade de definição entre estados; <strong>não é ranking cru</strong>. Indicador:{" "}
-            {INDICADOR}. Fonte: SINESP/VDE. {indicios} UF(s) robusta(s) com queda relevante (≤ −0,05).{" "}
+            eleição ({ELECTION_YEARS.join(", ")}) com anos normais (2015–2025) — esse é o <em>efeito</em>. Depois um{" "}
+            <strong>diff-in-diff vs pares</strong>: subtrai-se a mediana do efeito das UFs de <em>mesmo porte</em>, isolando
+            quem cai <em>mais que os pares</em> (o <strong>efeito vs pares</strong>) e não a queda sazonal comum a todos.{" "}
+            <strong>Nunca ranking cru</strong> entre UFs heterogêneas (IPEA). Indicador: {INDICADOR}. Fonte: SINESP/VDE.{" "}
+            {indicios} UF(s) robusta(s) caindo mais que os pares (≤ −0,05).{" "}
             <Link className="underline hover:text-cyan-200" href="/metodologia">
               Metodologia
             </Link>
@@ -91,16 +101,16 @@ export default function RadarPage() {
               <tr>
                 <th className="px-3 py-2">#</th>
                 <th className="px-3 py-2">UF</th>
-                <th className="px-3 py-2" title="idxEleicao − idxNormal; negativo = queda pré-eleitoral">Efeito</th>
-                <th className="px-3 py-2">Índice eleição</th>
-                <th className="px-3 py-2">Índice normal</th>
+                <th className="px-3 py-2" title="porte por volume mensal de homicídios">Porte</th>
+                <th className="px-3 py-2" title="idxEleicao − idxNormal; negativo = queda pré-eleitoral (bruto)">Efeito</th>
+                <th className="px-3 py-2" title="efeito − mediana dos pares de mesmo porte (DiD); negativo = cai mais que os pares">Efeito vs pares</th>
                 <th className="px-3 py-2">Média/mês</th>
                 <th className="px-3 py-2">Sinal</th>
               </tr>
             </thead>
             <tbody>
               {ufs.map((u, i) => {
-                const flag = ehIndicio(u.efeito, u.robusto);
+                const flag = ehIndicio(u.efeitoRelativo, u.robusto);
                 return (
                   <tr
                     key={u.uf}
@@ -108,11 +118,11 @@ export default function RadarPage() {
                   >
                     <td className="px-3 py-2 text-slate-500">{i + 1}</td>
                     <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
-                    <td className={`px-3 py-2 font-mono ${u.efeito !== null && u.efeito < 0 ? "text-amber-300" : "text-slate-300"}`}>
-                      {fmt(u.efeito)}
+                    <td className="px-3 py-2 text-slate-400">{PORTE_LABEL[u.porte]}</td>
+                    <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.efeito)}</td>
+                    <td className={`px-3 py-2 font-mono ${u.efeitoRelativo !== null && u.efeitoRelativo < 0 ? "text-amber-300" : "text-slate-300"}`}>
+                      {fmt(u.efeitoRelativo)}
                     </td>
-                    <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.idxEleicao)}</td>
-                    <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.idxNormal)}</td>
                     <td className="px-3 py-2 text-slate-400">{u.mediaMensal}</td>
                     <td className="px-3 py-2">
                       {!u.robusto ? (
