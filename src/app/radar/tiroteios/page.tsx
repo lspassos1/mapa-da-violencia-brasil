@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Crosshair, RefreshCw } from "lucide-react";
 import { ShootingsMap, CONTEXTO_COR, CONTEXTO_LABEL } from "@/components/radar/ShootingsMap";
-import type { Contexto, DiaResumo, MunicipioResumoLente2, ShootingOccurrence } from "@/server/shootings/fogocruzado";
+import type { Contexto, DiaResumo, MunicipioResumoFull, ShootingOccurrence } from "@/server/shootings/fogocruzado";
 
 interface ApiResponse {
   ocorrencias: ShootingOccurrence[];
@@ -15,7 +15,7 @@ interface ApiResponse {
     disclaimer: string;
     total?: number;
     porContexto?: Record<Contexto, number>;
-    porMunicipio?: MunicipioResumoLente2[];
+    porMunicipio?: MunicipioResumoFull[];
     historico?: DiaResumo[];
     mortos?: number;
     aviso?: string;
@@ -194,6 +194,7 @@ export default function TiroteiosPage() {
                     <th className="px-3 py-2" title="% dos tiroteios por disputa entre grupos">% disputa</th>
                     <th className="px-3 py-2">Mortos</th>
                     <th className="px-3 py-2">Estrutura (RJ)</th>
+                    <th className="px-3 py-2" title="Notícias OSINT no município (indício, não fato)">Imprensa</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -217,6 +218,34 @@ export default function TiroteiosPage() {
                           <span className="text-[11px] text-slate-600">—</span>
                         )}
                       </td>
+                      <td className="px-3 py-2">
+                        {m.noticias.length ? (
+                          <details className="group">
+                            <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[11px] text-cyan-300 hover:text-cyan-200">
+                              📰 {m.noticias.length} <span className="text-slate-500 group-open:hidden">▸</span>
+                            </summary>
+                            <ul className="mt-1 space-y-1">
+                              {m.noticias.map((n, i) => (
+                                <li key={`${n.url}|${i}`} className="text-[11px] leading-tight">
+                                  {n.url ? (
+                                    <a className="text-slate-300 underline hover:text-cyan-200" href={n.url} target="_blank" rel="noopener noreferrer">
+                                      {n.titulo}
+                                    </a>
+                                  ) : (
+                                    <span className="text-slate-300">{n.titulo}</span>
+                                  )}
+                                  <span className="text-slate-500">
+                                    {n.veiculo ? ` · ${n.veiculo}` : ""}
+                                    {n.data ? ` · ${n.data}` : ""}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        ) : (
+                          <span className="text-[11px] text-slate-600">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -224,7 +253,8 @@ export default function TiroteiosPage() {
             </div>
             <p className="mt-1 text-xs text-slate-500">
               &quot;Estrutura&quot; cruza o tempo-real com a <Link className="underline hover:text-cyan-200" href="/radar">lente 2</Link>{" "}
-              (controle×disputa) — só municípios do RJ têm essa leitura. Indício, não acusação.
+              (controle×disputa) — só municípios do RJ têm essa leitura. &quot;Imprensa&quot; liga ao acervo de{" "}
+              <Link className="underline hover:text-cyan-200" href="/noticias">notícias OSINT</Link> do município (cobertura cresce com o tempo). Indício, não acusação.
             </p>
           </div>
         ) : null}

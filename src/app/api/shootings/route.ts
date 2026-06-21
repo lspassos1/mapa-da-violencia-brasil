@@ -16,7 +16,8 @@ import {
   fetchRecentShootings,
   isFogoCruzadoConfigured,
   type DiaResumo,
-  type MunicipioResumoLente2,
+  type MunicipioResumoFull,
+  type NoticiaRef,
   type ShootingOccurrence,
 } from "@/server/shootings/fogocruzado";
 import {
@@ -25,6 +26,7 @@ import {
   newestIngestAt,
   upsertShootings,
 } from "@/server/shootings/store";
+import { noticiasPorMunicipio } from "@/server/shootings/crossref";
 import { getRjCriminalGovernance } from "@/server/anomaly/criminalGovernance";
 import { normalizeName } from "@/server/osint/geocode";
 
@@ -48,8 +50,13 @@ interface Payload {
 }
 
 // Monta o payload (puro): contexto, mortos, por-municipio com overlay da lente 2
-// (controle×disputa, so RJ) e a serie diaria historica.
-function assemble(ocorrencias: ShootingOccurrence[], fonte: string, historico: DiaResumo[]): Payload {
+// (controle×disputa, so RJ), cross-ref de noticias OSINT e a serie diaria historica.
+function assemble(
+  ocorrencias: ShootingOccurrence[],
+  fonte: string,
+  historico: DiaResumo[],
+  noticias: Map<string, NoticiaRef[]>,
+): Payload {
   const porContexto = { disputa: 0, policia: 0, outro: 0 };
   let mortos = 0;
   for (const o of ocorrencias) {
@@ -58,9 +65,10 @@ function assemble(ocorrencias: ShootingOccurrence[], fonte: string, historico: D
   }
   const lente2 = new Map<string, "controle" | "disputa" | "misto">();
   for (const g of getRjCriminalGovernance()) lente2.set(normalizeName(g.municipio), g.classificacao);
-  const porMunicipio: MunicipioResumoLente2[] = aggregateByMunicipio(ocorrencias).map((m) => ({
+  const porMunicipio: MunicipioResumoFull[] = aggregateByMunicipio(ocorrencias).map((m) => ({
     ...m,
     lente2: normalizeName(m.estado) === "rio de janeiro" ? lente2.get(normalizeName(m.municipio)) ?? null : null,
+    noticias: noticias.get(normalizeName(m.municipio)) ?? [],
   }));
   return {
     ocorrencias,
@@ -131,9 +139,14 @@ async function servedFromStore(fcOn: boolean): Promise<Payload> {
     fonte = "Supabase (defasado)";
   }
 
-  const janela = await listStoredShootings(HIST_DIAS);
+  // Le a janela persistida + o cross-ref OSINT em paralelo. O cross-ref degrada
+  // p/ vazio em qualquer falha — nunca derruba o radar.
+  const [janela, noticias] = await Promise.all([
+    listStoredShootings(HIST_DIAS),
+    noticiasPorMunicipio(HIST_DIAS).catch(() => new Map<string, NoticiaRef[]>()),
+  ]);
   const recentes = janela.filter((o) => withinDays(o.data, DIAS));
-  const payload = assemble(recentes, fonte, aggregateDaily(janela));
+  const payload = assemble(recentes, fonte, aggregateDaily(janela), noticias);
   storeCache = { at: Date.now(), payload };
   return payload;
 }
@@ -144,7 +157,8 @@ let liveInflight: Promise<Payload> | null = null;
 
 async function buildLive(): Promise<Payload> {
   const occ = await fetchRecentShootings(DIAS);
-  return assemble(occ, "Fogo Cruzado (ao vivo)", aggregateDaily(occ));
+  // Sem store -> sem acervo OSINT persistido p/ cruzar; cross-ref vazio.
+  return assemble(occ, "Fogo Cruzado (ao vivo)", aggregateDaily(occ), new Map());
 }
 
 async function servedLive(): Promise<Payload> {
