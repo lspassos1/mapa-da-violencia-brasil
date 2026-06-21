@@ -15,6 +15,12 @@ updates:
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
+    ignore:
+      # eslint 10 está bloqueado upstream: eslint-plugin-react (via eslint-config-next)
+      # ainda chama getFilename() — removido no v10 — e tem peer eslint <=9.x. Ignoramos
+      # o major até o stack do Next suportar; remover este bloco quando suportar.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
     # Agrupa minor+patch num único PR p/ reduzir ruído; major fica isolado
     # (revisão manual). Separa produção de desenvolvimento.
     groups:
