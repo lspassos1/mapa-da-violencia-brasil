@@ -1,6 +1,8 @@
 // GET /api/anomaly-digest — digest semanal do radar de anomalia por IA (#85).
-// Gera no máx. 1× por semana ISO (cache em memória + single-flight): a IA grátis
-// é chamada raramente. Degrada graciosamente sem provedor de IA. Server-only.
+// Cache em memória POR INSTÂNCIA chaveado pela semana ISO + single-flight: dentro
+// de uma instância a IA é chamada ~1×/semana; instâncias serverless concorrentes /
+// cold starts podem regenerar algumas vezes na semana (inofensivo, IA é grátis).
+// Degrada graciosamente sem provedor de IA. Server-only.
 import { NextResponse } from "next/server";
 import { generateDigest } from "@/server/anomaly/digest";
 

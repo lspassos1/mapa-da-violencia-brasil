@@ -47,7 +47,7 @@ REGRAS INEGOCIÁVEIS:
     ? s.eleitorais.map((e) => `- ${e.uf} (porte ${e.porte}): cai ${(e.efeitoRelativo * 100).toFixed(1)}% mais que os pares na janela pré-eleitoral (efeito bruto ${(e.efeito * 100).toFixed(1)}%).`).join("\n")
     : "- (nenhum sinal eleitoral robusto acima do limiar nesta janela)";
   const linhasGov = s.governanca.length
-    ? s.governanca.map((g) => `- ${g.municipio}: tiroteios com apenas ${(g.disputaShare * 100).toFixed(1)}% de "disputa" entre grupos${g.extorsao ? `, extorsão registrada ${g.extorsao}` : ""} — indício de controle/monopólio territorial.`).join("\n")
+    ? s.governanca.map((g) => `- ${g.municipio}: tiroteios com apenas ${(g.disputaShare * 100).toFixed(1)}% de "disputa" entre grupos${g.extorsao != null ? `, extorsão registrada ${g.extorsao}` : ""} — indício de controle/monopólio territorial.`).join("\n")
     : "- (nenhum município com indício de controle nesta janela)";
   const user = `Indicador base: ${s.indicador}.
 
