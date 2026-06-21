@@ -227,9 +227,13 @@ export default function TiroteiosPage() {
                             <ul className="mt-1 space-y-1">
                               {m.noticias.map((n, i) => (
                                 <li key={`${n.url}|${i}`} className="text-[11px] leading-tight">
-                                  <a className="text-slate-300 underline hover:text-cyan-200" href={n.url} target="_blank" rel="noopener noreferrer">
-                                    {n.titulo}
-                                  </a>
+                                  {n.url ? (
+                                    <a className="text-slate-300 underline hover:text-cyan-200" href={n.url} target="_blank" rel="noopener noreferrer">
+                                      {n.titulo}
+                                    </a>
+                                  ) : (
+                                    <span className="text-slate-300">{n.titulo}</span>
+                                  )}
                                   <span className="text-slate-500">
                                     {n.veiculo ? ` · ${n.veiculo}` : ""}
                                     {n.data ? ` · ${n.data}` : ""}
