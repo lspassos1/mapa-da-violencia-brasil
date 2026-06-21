@@ -1,0 +1,43 @@
+# Dependabot — atualizações automáticas de dependências.
+# Cobre npm (package-lock.json na raiz) e os GitHub Actions usados no CI.
+# Não há manifest Python rastreável (etl/ sem requirements.txt) → pip fora.
+# Alertas + correções de segurança são ligados nas Settings do repo (não aqui).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    # Agrupa minor+patch num único PR p/ reduzir ruído; major fica isolado
+    # (revisão manual). Separa produção de desenvolvimento.
+    groups:
+      prod-minor-patch:
+        applies-to: version-updates
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      dev-minor-patch:
+        applies-to: version-updates
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions-all:
+        patterns:
+          - "*"
