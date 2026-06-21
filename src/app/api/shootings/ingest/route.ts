@@ -13,7 +13,9 @@ export const maxDuration = 60; // paginar 4 praças da FC pode levar ~30-50s
 const DIAS = 7;
 
 // Vercel Cron injeta `Authorization: Bearer <CRON_SECRET>` quando CRON_SECRET
-// esta definido. Sem o segredo, o endpoint fica fechado (nunca aberto ao publico).
+// esta definido. CRON_SECRET e OBRIGATORIO (nao opcional): sem ele o endpoint
+// fica permanentemente fechado (401, inclusive ao cron) e a ingestao para — por
+// design, p/ nunca expor a ingestao ao publico. Defina-o na Vercel + .env.local.
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;

@@ -9,7 +9,7 @@
 //
 // DEGRADACAO GRACIOSA: sem Supabase, cai no modo AO VIVO (cache em memoria +
 // single-flight, comportamento original). Sem FC nem store, responde desativado.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import {
   aggregateByMunicipio,
   aggregateDaily,
@@ -29,6 +29,7 @@ import { getRjCriminalGovernance } from "@/server/anomaly/criminalGovernance";
 import { normalizeName } from "@/server/osint/geocode";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // o refresh sob demanda pode paginar a FC (~30-50s)
 
 const DIAS = 7; // janela do mapa/lista
 const HIST_DIAS = 30; // janela da tendencia historica
@@ -110,12 +111,21 @@ async function servedFromStore(fcOn: boolean): Promise<Payload> {
   const stale = newest === null || now - newest > REFRESH_TTL_MS;
   let fonte = "Supabase (persistido)";
   if (stale && fcOn && now - lastErrorAt >= ERROR_BACKOFF_MS) {
-    try {
-      await refreshFromFC();
-      fonte = "Supabase (atualizado near-real-time)";
-    } catch {
-      lastErrorAt = Date.now();
-      fonte = newest ? "Supabase (defasado — fonte instável)" : fonte;
+    if (newest === null) {
+      // Store vazio (1º deploy/cold start): bloqueia uma vez p/ ter o que servir.
+      try {
+        await refreshFromFC();
+        fonte = "Supabase (atualizado near-real-time)";
+      } catch {
+        lastErrorAt = Date.now();
+        fonte = "Supabase (sem dados — fonte instável)";
+      }
+    } else {
+      // Store tem dados porém defasados: refaz em BACKGROUND (after) e serve o que
+      // há agora — não trava a resposta. Single-flight garante 1 chamada externa;
+      // after() mantém a função viva até o upsert terminar (conta no maxDuration).
+      after(refreshFromFC().catch(() => { lastErrorAt = Date.now(); }));
+      fonte = "Supabase (defasado — atualizando)";
     }
   } else if (stale) {
     fonte = "Supabase (defasado)";
