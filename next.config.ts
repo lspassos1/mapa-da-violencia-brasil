@@ -19,14 +19,20 @@ const SUPABASE_ORIGIN = (() => {
   }
 })();
 
+// Em DEV o React/Turbopack (RSC) usam eval() para ferramentas de depuracao, o que
+// dispara um erro de console quando a CSP nao permite 'unsafe-eval'. Em PRODUCAO o
+// React nunca usa eval(), entao liberamos 'unsafe-eval' SO em desenvolvimento e
+// mantemos a CSP estrita no build/prod.
+const isDev = process.env.NODE_ENV !== "production";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  // Next.js injeta scripts inline para hidratacao.
-  "script-src 'self' 'unsafe-inline'",
+  // Next.js injeta scripts inline para hidratacao; 'unsafe-eval' so em dev (ver acima).
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   // MapLibre injeta estilos inline para os controlos/canvas.
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: " + MAP_TILE_ORIGIN,
