@@ -230,7 +230,10 @@ export default function RadarPage() {
             <strong>Indício de subnotificação, não acusação.</strong> Quando o homicídio registrado (CID X85–Y09){" "}
             <strong>cai</strong> enquanto a morte por intenção indeterminada (MVCI, Y10–Y34) <strong>sobe</strong>, parte da
             queda pode ser <em>reclassificação</em>, não redução real (~43,6% das MVCI eram homicídios — SciELO 2025).
-            Complementa a lente 1: UF com queda pré-eleitoral <em>e</em> esta assinatura é o indício mais forte. Fonte: {oculto.fonte}.
+            Como essa alta da MVCI é uma <strong>tendência nacional</strong> no período, comparamos cada UF ao{" "}
+            <strong>baseline do país</strong>{oculto.baseline != null ? ` (mediana +${(oculto.baseline * 100).toFixed(1)} p.p.)` : ""}:
+            só vira indício quem sobe <em>muito acima</em> dessa tendência. Complementa a lente 1 (CE aparece nas duas).
+            Fonte: {oculto.fonte}.
           </p>
         </div>
 
@@ -245,7 +248,7 @@ export default function RadarPage() {
           </div>
         ) : (
           <>
-            <p className="text-xs text-slate-500">{ocultos} UF(s) com assinatura de ouro (homicídio caindo ≥5% e razão MVCI subindo).</p>
+            <p className="text-xs text-slate-500">{ocultos} UF(s) com indício: homicídio caindo E razão MVCI subindo bem acima da tendência nacional.</p>
             <div className="overflow-x-auto rounded-xl border border-white/10">
               <table className="w-full border-collapse text-sm">
                 <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
@@ -253,7 +256,8 @@ export default function RadarPage() {
                     <th className="px-3 py-2">UF</th>
                     <th className="px-3 py-2" title="variação dos homicídios (2ª metade vs 1ª)">Homicídio</th>
                     <th className="px-3 py-2" title="razão MVCI inicial → final">Razão MVCI</th>
-                    <th className="px-3 py-2" title="alta da razão MVCI (p.p.)">Δ MVCI</th>
+                    <th className="px-3 py-2" title="alta bruta da razão MVCI (p.p.)">Δ MVCI</th>
+                    <th className="px-3 py-2" title="Δ MVCI menos a mediana nacional (DiD); positivo = sobe mais que o país">Δ vs Brasil</th>
                     <th className="px-3 py-2">Sinal</th>
                   </tr>
                 </thead>
@@ -263,8 +267,11 @@ export default function RadarPage() {
                       <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
                       <td className={`px-3 py-2 font-mono ${u.homPct < 0 ? "text-amber-300" : "text-slate-300"}`}>{(u.homPct * 100).toFixed(1)}%</td>
                       <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.razaoInicial)} → {fmt(u.razaoFinal)}</td>
-                      <td className={`px-3 py-2 font-mono ${u.razaoDelta !== null && u.razaoDelta >= 0.005 ? "text-amber-300" : "text-slate-400"}`}>
-                        {u.razaoDelta === null ? "—" : (u.razaoDelta > 0 ? "+" : "") + (u.razaoDelta * 100).toFixed(2) + " p.p."}
+                      <td className="px-3 py-2 font-mono text-slate-400">
+                        {u.razaoDelta === null ? "—" : (u.razaoDelta > 0 ? "+" : "") + (u.razaoDelta * 100).toFixed(2)}
+                      </td>
+                      <td className={`px-3 py-2 font-mono ${u.razaoDeltaRelativo !== null && u.razaoDeltaRelativo >= 0.03 ? "text-amber-300" : "text-slate-400"}`}>
+                        {u.razaoDeltaRelativo === null ? "—" : (u.razaoDeltaRelativo > 0 ? "+" : "") + (u.razaoDeltaRelativo * 100).toFixed(2) + " p.p."}
                       </td>
                       <td className="px-3 py-2">
                         {!u.robusto ? (
