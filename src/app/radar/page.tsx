@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { getElectoralAnomalies, classifySinal, ELECTION_YEARS, INDICADOR, type Porte, type SinalEleitoral } from "@/server/anomaly/electoralCycle";
 import { getRjCriminalGovernance, ANO_REF, type Classificacao } from "@/server/anomaly/criminalGovernance";
 import { FACTION_SOURCE, type PresencaCrimeOrg } from "@/server/anomaly/factionPresence";
+import { getHiddenHomicides } from "@/server/anomaly/hiddenHomicides";
 import { WeeklyDigest } from "@/components/radar/WeeklyDigest";
 
 const PORTE_LABEL: Record<Porte, string> = {
@@ -73,6 +74,8 @@ export default function RadarPage() {
   const fortes = ufs.filter((u) => u.sinal === "forte").length;
   const rj = getRjCriminalGovernance();
   const controles = rj.filter((r) => r.classificacao === "controle").length;
+  const oculto = getHiddenHomicides();
+  const ocultos = oculto.ufs.filter((u) => u.sinal === "indicio_oculto").length;
 
   return (
     <main className="flex min-h-screen flex-col text-slate-100">
@@ -212,9 +215,73 @@ export default function RadarPage() {
         </div>
 
         <p className="text-xs text-slate-500">
-          Fontes: Fogo Cruzado (tiroteios georreferenciados) + ISP-RJ/ISPdados (criminalidade municipal). Próxima lente: (3)
-          homicídios ocultos — morte indeterminada ↑ enquanto homicídio ↓ (ETL DATASUS pronto, asset pendente de geração).
+          Fontes: Fogo Cruzado (tiroteios georreferenciados) + ISP-RJ/ISPdados (criminalidade municipal).
         </p>
+
+        {/* LENTE 3 — homicídios ocultos (MVCI) */}
+        <div className="mt-6 border-t border-white/10 pt-5">
+          <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Lente 3 · homicídios ocultos</p>
+          <h3 className="text-xl font-semibold">Assinatura de ouro — homicídio ↓ enquanto MVCI ↑</h3>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            <strong>Indício de subnotificação, não acusação.</strong> Quando o homicídio registrado (CID X85–Y09){" "}
+            <strong>cai</strong> enquanto a morte por intenção indeterminada (MVCI, Y10–Y34) <strong>sobe</strong>, parte da
+            queda pode ser <em>reclassificação</em>, não redução real (~43,6% das MVCI eram homicídios — SciELO 2025).
+            Complementa a lente 1: UF com queda pré-eleitoral <em>e</em> esta assinatura é o indício mais forte. Fonte: {oculto.fonte}.
+          </p>
+        </div>
+
+        {oculto.pendente ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-sm text-slate-400">
+            <p className="font-semibold text-slate-300">Dados pendentes de geração.</p>
+            <p className="mt-1">
+              A lib e a UI estão prontas; falta gerar o asset (run offline pesado do SIM/DATASUS, fora do CI):
+            </p>
+            <pre className="mt-2 overflow-x-auto rounded-md bg-slate-950/60 p-3 text-xs text-slate-300">python3 etl/build_hidden_homicides.py --anos 2015-2024</pre>
+            <p className="mt-2">Ao commitar o <code>src/data/hiddenHomicides.json</code> gerado, esta seção acende automaticamente.</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-xs text-slate-500">{ocultos} UF(s) com assinatura de ouro (homicídio caindo ≥5% e razão MVCI subindo).</p>
+            <div className="overflow-x-auto rounded-xl border border-white/10">
+              <table className="w-full border-collapse text-sm">
+                <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+                  <tr>
+                    <th className="px-3 py-2">UF</th>
+                    <th className="px-3 py-2" title="variação dos homicídios (2ª metade vs 1ª)">Homicídio</th>
+                    <th className="px-3 py-2" title="razão MVCI inicial → final">Razão MVCI</th>
+                    <th className="px-3 py-2" title="alta da razão MVCI (p.p.)">Δ MVCI</th>
+                    <th className="px-3 py-2">Sinal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {oculto.ufs.map((u) => (
+                    <tr key={u.uf} className={`border-t border-white/5 ${u.sinal === "indicio_oculto" ? "bg-amber-300/5" : ""} ${!u.robusto ? "text-slate-500" : ""}`}>
+                      <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
+                      <td className={`px-3 py-2 font-mono ${u.homPct < 0 ? "text-amber-300" : "text-slate-300"}`}>{(u.homPct * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.razaoInicial)} → {fmt(u.razaoFinal)}</td>
+                      <td className={`px-3 py-2 font-mono ${u.razaoDelta !== null && u.razaoDelta > 0 ? "text-amber-300" : "text-slate-400"}`}>
+                        {u.razaoDelta === null ? "—" : (u.razaoDelta > 0 ? "+" : "") + (u.razaoDelta * 100).toFixed(2) + " p.p."}
+                      </td>
+                      <td className="px-3 py-2">
+                        {!u.robusto ? (
+                          <span className="text-[11px] text-slate-500">baixa amostra</span>
+                        ) : u.sinal === "indicio_oculto" ? (
+                          <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[11px] font-semibold text-amber-200">indício oculto · investigar</span>
+                        ) : (
+                          <span className="text-[11px] text-slate-500">sem assinatura</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         <WeeklyDigest />
       </div>
