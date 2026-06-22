@@ -263,7 +263,7 @@ export default function RadarPage() {
                       <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
                       <td className={`px-3 py-2 font-mono ${u.homPct < 0 ? "text-amber-300" : "text-slate-300"}`}>{(u.homPct * 100).toFixed(1)}%</td>
                       <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.razaoInicial)} → {fmt(u.razaoFinal)}</td>
-                      <td className={`px-3 py-2 font-mono ${u.razaoDelta !== null && u.razaoDelta > 0 ? "text-amber-300" : "text-slate-400"}`}>
+                      <td className={`px-3 py-2 font-mono ${u.razaoDelta !== null && u.razaoDelta >= 0.005 ? "text-amber-300" : "text-slate-400"}`}>
                         {u.razaoDelta === null ? "—" : (u.razaoDelta > 0 ? "+" : "") + (u.razaoDelta * 100).toFixed(2) + " p.p."}
                       </td>
                       <td className="px-3 py-2">

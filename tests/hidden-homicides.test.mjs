@@ -48,9 +48,14 @@ test("computeHiddenSignal: baixo volume -> não robusto mesmo com padrão", () =
   assert.equal(r.sinal, "neutro");
 });
 
-test("getHiddenHomicides: asset vazio (placeholder) -> pendente", () => {
+// Resiliente ao asset estar VAZIO (placeholder) ou CHEIO (após o ETL) — não
+// quebra o CI quando o hiddenHomicides.json real for commitado.
+test("getHiddenHomicides: forma consistente independente do estado do asset", () => {
   const out = getHiddenHomicides();
-  assert.equal(out.pendente, true); // série vazia até o ETL rodar
-  assert.equal(out.ufs.length, 0);
+  assert.equal(out.pendente, out.ufs.length === 0); // pendente sse não há UFs
   assert.ok(out.fonte.includes("DATASUS"));
+  for (const u of out.ufs) {
+    assert.equal(typeof u.uf, "string");
+    assert.ok(["indicio_oculto", "neutro"].includes(u.sinal));
+  }
 });
