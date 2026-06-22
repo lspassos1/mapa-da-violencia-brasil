@@ -87,7 +87,7 @@ export default function RadarPage() {
             <h2 className="text-2xl font-semibold">Ciclo eleitoral × homicídio (dado oficial)</h2>
           </div>
           <Link
-            href="/radar/tiroteios"
+            href="/"
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/30 px-3 py-2 text-sm font-medium text-red-100 hover:border-red-400/60 hover:text-red-50"
           >
             🎯 Radar de tiroteios (tempo quase real)

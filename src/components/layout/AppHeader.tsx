@@ -13,6 +13,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
+  { href: "/mapa", label: "Mapa oficial", title: "Mapa oficial agregado (SINESP/MJSP)" },
   { href: "/comparar", label: "Comparar" },
   { href: "/tendencias", label: "Tendências" },
   { href: "/radar", label: "Radar", title: "Radar de anomalia sobre o dado oficial" },
@@ -20,7 +21,7 @@ const NAV: NavItem[] = [
   { href: "/metodologia", label: "Metodologia" },
 ];
 
-const LIVE_HREF = "/radar/tiroteios";
+const LIVE_HREF = "/"; // a home agora é o radar de tiroteios ao vivo
 const REPO = "https://github.com/lspassos1/mapa-da-violencia-brasil";
 const ALL_HREFS = [...NAV.map((n) => n.href), LIVE_HREF];
 

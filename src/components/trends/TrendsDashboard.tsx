@@ -171,7 +171,7 @@ function TrendsView({ data }: { data: TrendsData }) {
           <LineChart className="h-5 w-5 text-cyan-300" />
           <h2 className="text-lg font-semibold">Tendencias</h2>
         </div>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-cyan-200">
+        <Link href="/mapa" className="inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-cyan-200">
           <ArrowLeft className="h-4 w-4" /> Voltar ao mapa
         </Link>
       </div>

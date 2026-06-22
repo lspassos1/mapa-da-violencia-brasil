@@ -110,7 +110,7 @@ export function NewsDashboard() {
             <strong>Indícios extraídos de notícias por IA</strong> — não verificados e{" "}
             <strong>não são estatística oficial</strong>. Cada item traz a fonte, o link original e um nível de
             confiança. Para os dados oficiais consolidados, use o{" "}
-            <Link className="underline hover:text-amber-50" href="/">
+            <Link className="underline hover:text-amber-50" href="/mapa">
               mapa principal
             </Link>
             .

@@ -5,8 +5,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: `${siteConfig.url}/`,
-      changeFrequency: "weekly",
+      changeFrequency: "hourly",
       priority: 1,
+    },
+    {
+      url: `${siteConfig.url}/mapa`,
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${siteConfig.url}/metodologia`,
