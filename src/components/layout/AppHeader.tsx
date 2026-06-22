@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Github, MapPinned, Menu, Radar, X } from "lucide-react";
+import { Code2, MapPinned, Menu, Radar, X } from "lucide-react";
 
 interface NavItem {
   href: string;
@@ -94,7 +94,7 @@ export function AppHeader() {
             title="Código-fonte (GitHub)"
             className="ml-0.5 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
           >
-            <Github className="h-4 w-4" />
+            <Code2 className="h-4 w-4" />
           </a>
         </nav>
 
@@ -132,7 +132,7 @@ export function AppHeader() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
           >
-            <Github className="h-4 w-4" /> Código-fonte
+            <Code2 className="h-4 w-4" /> Código-fonte
           </a>
         </nav>
       ) : null}
