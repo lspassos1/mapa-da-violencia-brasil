@@ -13,7 +13,7 @@ test("buildDigestPrompt: system carrega a moldura inegociável", () => {
 test("buildDigestPrompt: inclui os sinais e as fontes no user", () => {
   const { user } = buildDigestPrompt({
     indicador: "homicídio doloso",
-    eleitorais: [{ uf: "PR", porte: "medio", efeito: -0.081, efeitoRelativo: -0.13 }],
+    eleitorais: [{ uf: "PR", porte: "medio", efeito: -0.081, efeitoRelativo: -0.13, presenca: "alta" }],
     governanca: [{ municipio: "São Gonçalo", disputaShare: 0.02, extorsao: 120 }],
   });
   assert.match(user, /PR/);
@@ -24,6 +24,6 @@ test("buildDigestPrompt: inclui os sinais e as fontes no user", () => {
 
 test("buildDigestPrompt: sem sinais usa placeholders (não inventa)", () => {
   const { user } = buildDigestPrompt({ indicador: "x", eleitorais: [], governanca: [] });
-  assert.match(user, /nenhum sinal eleitoral robusto/i);
+  assert.match(user, /nenhum sinal eleitoral forte/i);
   assert.match(user, /nenhum munic[ií]pio com ind[ií]cio de controle/i);
 });
