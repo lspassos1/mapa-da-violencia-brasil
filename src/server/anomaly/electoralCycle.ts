@@ -10,6 +10,7 @@
 // no issue #85 (o ciclo só costuma aparecer onde há crime organizado).
 import "server-only"; // o asset JSON (~51KB) nunca deve ir para o bundle do cliente
 import monthly from "@/data/monthlySeries.json";
+import { presencaCrimeOrg, type PresencaCrimeOrg } from "@/server/anomaly/factionPresence";
 
 // Eleições gerais/municipais (out). A janela pré-eleitoral é ago–out do ano do pleito.
 export const ELECTION_YEARS = [2016, 2018, 2020, 2022, 2024] as const;
@@ -155,3 +156,26 @@ export function getElectoralAnomalies(): UfElectoralAnomaly[] {
 }
 
 export const INDICADOR = (monthly as { indicador: string }).indicador;
+
+// Limiar de queda relativa aos pares para um sinal ser considerado relevante.
+export const EFEITO_RELATIVO_LIMIAR = -0.05;
+
+// Sinal final da lente eleitoral, CRUZADO com presença de facção (#85, princípio
+// central). A queda relativa só vira "forte" quando há crime organizado na UF
+// (≥1 facção nacional); sem presença documentada, fica "isolado" (não promovido —
+// mais provável causa benigna). Abaixo do limiar: "sem desvio"; sem robustez:
+// "baixa amostra".
+export type SinalEleitoral = "baixa_amostra" | "sem_desvio" | "forte" | "isolado";
+
+export function classifySinal(
+  uf: string,
+  efeitoRelativo: number | null,
+  robusto: boolean,
+): { sinal: SinalEleitoral; presenca: PresencaCrimeOrg } {
+  const presenca = presencaCrimeOrg(uf);
+  if (!robusto) return { sinal: "baixa_amostra", presenca };
+  if (efeitoRelativo === null || efeitoRelativo > EFEITO_RELATIVO_LIMIAR) {
+    return { sinal: "sem_desvio", presenca };
+  }
+  return { sinal: presenca === "baixa" ? "isolado" : "forte", presenca };
+}

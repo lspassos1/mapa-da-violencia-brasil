@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Info } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { getElectoralAnomalies, ELECTION_YEARS, INDICADOR, type Porte } from "@/server/anomaly/electoralCycle";
+import { getElectoralAnomalies, classifySinal, ELECTION_YEARS, INDICADOR, type Porte, type SinalEleitoral } from "@/server/anomaly/electoralCycle";
 import { getRjCriminalGovernance, ANO_REF, type Classificacao } from "@/server/anomaly/criminalGovernance";
+import { FACTION_SOURCE, type PresencaCrimeOrg } from "@/server/anomaly/factionPresence";
 import { WeeklyDigest } from "@/components/radar/WeeklyDigest";
 
 const PORTE_LABEL: Record<Porte, string> = {
@@ -11,6 +12,17 @@ const PORTE_LABEL: Record<Porte, string> = {
   medio: "médio",
   pequeno: "pequeno",
   micro: "micro",
+};
+
+const PRESENCA_LABEL: Record<PresencaCrimeOrg, string> = {
+  alta: "alta (PCC+CV)",
+  media: "média (1 facção)",
+  baixa: "sem facção doc.",
+};
+const PRESENCA_STYLE: Record<PresencaCrimeOrg, string> = {
+  alta: "text-red-200",
+  media: "text-amber-200",
+  baixa: "text-slate-500",
 };
 
 const CLASS_LABEL: Record<Classificacao, string> = {
@@ -37,15 +49,28 @@ function fmt(n: number | null): string {
   return n === null ? "—" : n.toFixed(3);
 }
 
-// É indício a destacar: estado robusto que cai na janela pré-eleitoral MAIS que os
-// pares de mesmo porte (efeito relativo ≤ −0,05), não só a queda sazonal comum.
-function ehIndicio(efeitoRelativo: number | null, robusto: boolean): boolean {
-  return robusto && efeitoRelativo !== null && efeitoRelativo <= -0.05;
+function sinalBadge(sinal: SinalEleitoral) {
+  switch (sinal) {
+    case "forte":
+      return (
+        <span className="rounded-full bg-red-400/15 px-2 py-0.5 text-[11px] font-semibold text-red-200">
+          indício forte · investigar
+        </span>
+      );
+    case "isolado":
+      return (
+        <span className="rounded-full bg-amber-300/10 px-2 py-0.5 text-[11px] text-amber-200/80" title="cai mais que os pares, mas sem facção documentada na UF — não promovido">
+          isolado (sem facção)
+        </span>
+      );
+    default:
+      return <span className="text-[11px] text-slate-500">{sinal === "baixa_amostra" ? "baixa amostra" : "sem desvio relevante"}</span>;
+  }
 }
 
 export default function RadarPage() {
-  const ufs = getElectoralAnomalies();
-  const indicios = ufs.filter((u) => ehIndicio(u.efeitoRelativo, u.robusto)).length;
+  const ufs = getElectoralAnomalies().map((u) => ({ ...u, ...classifySinal(u.uf, u.efeitoRelativo, u.robusto) }));
+  const fortes = ufs.filter((u) => u.sinal === "forte").length;
   const rj = getRjCriminalGovernance();
   const controles = rj.filter((r) => r.classificacao === "controle").length;
 
@@ -86,8 +111,11 @@ export default function RadarPage() {
             eleição ({ELECTION_YEARS.join(", ")}) com anos normais (2015–2025) — esse é o <em>efeito</em>. Depois um{" "}
             <strong>diff-in-diff vs pares</strong>: subtrai-se a mediana do efeito das UFs de <em>mesmo porte</em>, isolando
             quem cai <em>mais que os pares</em> (o <strong>efeito vs pares</strong>) e não a queda sazonal comum a todos.{" "}
-            <strong>Nunca ranking cru</strong> entre UFs heterogêneas (IPEA). Indicador: {INDICADOR}. Fonte: SINESP/VDE.{" "}
-            {indicios} UF(s) robusta(s) caindo mais que os pares (≤ −0,05).{" "}
+            <strong>Nunca ranking cru</strong> entre UFs heterogêneas (IPEA). Por fim, o sinal só é{" "}
+            <strong>&quot;forte&quot;</strong> quando <strong>cruzado com presença de facção</strong> na UF — a literatura
+            (RES 86(2)) indica que o ciclo só aparece onde há crime organizado; sem facção documentada, fica{" "}
+            <strong>&quot;isolado&quot;</strong> (não promovido). Indicador: {INDICADOR}. Fontes: SINESP/VDE +{" "}
+            {FACTION_SOURCE}. {fortes} UF(s) com indício forte (cai mais que os pares E com facção).{" "}
             <Link className="underline hover:text-cyan-200" href="/metodologia">
               Metodologia
             </Link>
@@ -106,39 +134,28 @@ export default function RadarPage() {
                 <th className="px-3 py-2" title="idxEleicao − idxNormal; negativo = queda pré-eleitoral (bruto)">Efeito</th>
                 <th className="px-3 py-2" title="efeito − mediana dos pares de mesmo porte (DiD); negativo = cai mais que os pares">Efeito vs pares</th>
                 <th className="px-3 py-2">Média/mês</th>
+                <th className="px-3 py-2" title="facções nacionais que atuam na UF (Mapa das Orcrim 2024/MJ)">Crime org.</th>
                 <th className="px-3 py-2">Sinal</th>
               </tr>
             </thead>
             <tbody>
-              {ufs.map((u, i) => {
-                const flag = ehIndicio(u.efeitoRelativo, u.robusto);
-                return (
-                  <tr
-                    key={u.uf}
-                    className={`border-t border-white/5 ${flag ? "bg-amber-300/5" : ""} ${!u.robusto ? "text-slate-500" : ""}`}
-                  >
-                    <td className="px-3 py-2 text-slate-500">{i + 1}</td>
-                    <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
-                    <td className="px-3 py-2 text-slate-400">{PORTE_LABEL[u.porte]}</td>
-                    <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.efeito)}</td>
-                    <td className={`px-3 py-2 font-mono ${u.efeitoRelativo !== null && u.efeitoRelativo < 0 ? "text-amber-300" : "text-slate-300"}`}>
-                      {fmt(u.efeitoRelativo)}
-                    </td>
-                    <td className="px-3 py-2 text-slate-400">{u.mediaMensal}</td>
-                    <td className="px-3 py-2">
-                      {!u.robusto ? (
-                        <span className="text-[11px] text-slate-500">baixa amostra</span>
-                      ) : flag ? (
-                        <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
-                          indício · investigar
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-slate-500">sem desvio relevante</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {ufs.map((u, i) => (
+                <tr
+                  key={u.uf}
+                  className={`border-t border-white/5 ${u.sinal === "forte" ? "bg-amber-300/5" : ""} ${!u.robusto ? "text-slate-500" : ""}`}
+                >
+                  <td className="px-3 py-2 text-slate-500">{i + 1}</td>
+                  <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
+                  <td className="px-3 py-2 text-slate-400">{PORTE_LABEL[u.porte]}</td>
+                  <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.efeito)}</td>
+                  <td className={`px-3 py-2 font-mono ${u.efeitoRelativo !== null && u.efeitoRelativo < 0 ? "text-amber-300" : "text-slate-300"}`}>
+                    {fmt(u.efeitoRelativo)}
+                  </td>
+                  <td className="px-3 py-2 text-slate-400">{u.mediaMensal}</td>
+                  <td className={`px-3 py-2 text-[11px] ${PRESENCA_STYLE[u.presenca]}`}>{PRESENCA_LABEL[u.presenca]}</td>
+                  <td className="px-3 py-2">{sinalBadge(u.sinal)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
