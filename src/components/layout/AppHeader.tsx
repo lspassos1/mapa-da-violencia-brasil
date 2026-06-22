@@ -3,14 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MapPinned, Menu, Radar, X } from "lucide-react";
+import { Github, MapPinned, Menu, Radar, X } from "lucide-react";
 
 interface NavItem {
   href: string;
   label: string;
   title?: string;
   tone?: "default" | "warn";
-  external?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -21,20 +20,33 @@ const NAV: NavItem[] = [
   { href: "/metodologia", label: "Metodologia" },
 ];
 
-function isActive(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(href + "/");
+const LIVE_HREF = "/radar/tiroteios";
+const REPO = "https://github.com/lspassos1/mapa-da-violencia-brasil";
+const ALL_HREFS = [...NAV.map((n) => n.href), LIVE_HREF];
+
+// Rota ativa = o href MAIS ESPECÍFICO que casa (evita /radar acender junto de
+// /radar/tiroteios).
+function bestMatch(pathname: string): string | null {
+  let best: string | null = null;
+  for (const h of ALL_HREFS) {
+    if (pathname === h || pathname.startsWith(h + "/")) {
+      if (!best || h.length > best.length) best = h;
+    }
+  }
+  return best;
 }
 
 export function AppHeader() {
   const pathname = usePathname() ?? "/";
+  const active = bestMatch(pathname);
   const [open, setOpen] = useState(false);
 
   const linkCls = (item: NavItem) => {
-    const active = isActive(pathname, item.href);
+    const isActive = active === item.href;
     const warn = item.tone === "warn";
     return [
       "rounded-lg border px-3 py-2 text-sm font-medium transition",
-      active
+      isActive
         ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-100"
         : warn
           ? "border-amber-300/25 text-amber-100/90 hover:border-amber-300/50 hover:text-amber-50"
@@ -63,9 +75,9 @@ export function AppHeader() {
             </Link>
           ))}
           <Link
-            href="/radar/tiroteios"
+            href={LIVE_HREF}
             className={`ml-1 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-              isActive(pathname, "/radar/tiroteios")
+              active === LIVE_HREF
                 ? "bg-red-400 text-slate-950"
                 : "bg-red-500/15 text-red-100 ring-1 ring-inset ring-red-400/40 hover:bg-red-500/25 hover:text-red-50"
             }`}
@@ -74,6 +86,16 @@ export function AppHeader() {
             <Radar className="h-4 w-4" />
             Radar ao vivo
           </Link>
+          <a
+            href={REPO}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Ver o código-fonte no GitHub (licença AGPL-3.0)"
+            title="Código-fonte (GitHub)"
+            className="ml-0.5 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
+          >
+            <Github className="h-4 w-4" />
+          </a>
         </nav>
 
         {/* Mobile toggle */}
@@ -83,6 +105,7 @@ export function AppHeader() {
           className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-slate-200 hover:border-cyan-300/40 hover:text-cyan-100 lg:hidden"
           aria-label={open ? "Fechar menu" : "Abrir menu"}
           aria-expanded={open}
+          aria-controls="mobile-nav"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -90,9 +113,9 @@ export function AppHeader() {
 
       {/* Mobile panel */}
       {open ? (
-        <nav className="grid gap-1.5 border-t border-white/10 bg-slate-950/95 px-4 py-3 lg:hidden">
+        <nav id="mobile-nav" className="grid gap-1.5 border-t border-white/10 bg-slate-950/95 px-4 py-3 lg:hidden">
           <Link
-            href="/radar/tiroteios"
+            href={LIVE_HREF}
             onClick={() => setOpen(false)}
             className="inline-flex items-center gap-2 rounded-lg bg-red-500/15 px-3 py-2.5 text-sm font-semibold text-red-100 ring-1 ring-inset ring-red-400/40"
           >
@@ -104,12 +127,12 @@ export function AppHeader() {
             </Link>
           ))}
           <a
-            href="https://github.com/lspassos1/mapa-da-violencia-brasil"
+            href={REPO}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
+            className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
           >
-            Código-fonte
+            <Github className="h-4 w-4" /> Código-fonte
           </a>
         </nav>
       ) : null}

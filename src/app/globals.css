@@ -34,7 +34,7 @@ body {
     radial-gradient(1100px circle at 12% -10%, rgba(34, 211, 238, 0.1), transparent 50%),
     radial-gradient(900px circle at 100% 0%, rgba(56, 189, 248, 0.06), transparent 45%),
     linear-gradient(180deg, #060911 0%, #0a1020 55%, #070d18 100%);
-  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
