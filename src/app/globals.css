@@ -1,29 +1,105 @@
 @import "tailwindcss";
 
+/* Inter (via next/font) vira a fonte sans padrão do Tailwind. */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
 :root {
   color-scheme: dark;
-  --background: #05070d;
-  --foreground: #f8fafc;
+  --background: #060911;
+  --foreground: #f1f5f9;
+  /* tokens semânticos — usar no lugar de cores ad-hoc espalhadas */
+  --surface: rgba(255, 255, 255, 0.025);
+  --surface-raised: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --accent: #22d3ee;
+  --accent-soft: rgba(34, 211, 238, 0.12);
 }
 
 * {
   box-sizing: border-box;
 }
 
-html,
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  min-height: 100%;
+  min-height: 100dvh;
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 32rem),
-    linear-gradient(135deg, #05070d 0%, #111827 48%, #07111f 100%);
+    radial-gradient(1100px circle at 12% -10%, rgba(34, 211, 238, 0.1), transparent 50%),
+    radial-gradient(900px circle at 100% 0%, rgba(56, 189, 248, 0.06), transparent 45%),
+    linear-gradient(180deg, #060911 0%, #0a1020 55%, #070d18 100%);
+  background-repeat: no-repeat;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button,
-select {
+select,
+a {
   font: inherit;
+}
+
+/* Foco acessível e consistente em tudo que é interativo. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Micro-interações sutis (respeitando quem prefere menos movimento). */
+a,
+button,
+select,
+summary,
+[role="button"] {
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.32);
+  color: #fff;
+}
+
+/* Scrollbar moderna e discreta. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.13);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .maplibregl-popup-content {
@@ -36,4 +112,3 @@ select {
   background: rgba(15, 23, 42, 0.8) !important;
   color: #cbd5e1 !important;
 }
-
