@@ -14,7 +14,7 @@ export default function MethodologyPage() {
     <main className="flex min-h-screen flex-col text-slate-100">
       <AppHeader />
       <div className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-4 py-8 sm:px-6 sm:py-10">
-        <BackLink href="/">Voltar para o mapa</BackLink>
+        <BackLink href="/mapa">Voltar para o mapa</BackLink>
 
         <header className="space-y-3">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan-300">Metodologia</p>
