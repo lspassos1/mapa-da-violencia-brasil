@@ -9,6 +9,7 @@ import "server-only";
 import { getElectoralAnomalies, classifySinal } from "@/server/anomaly/electoralCycle";
 import { getRjCriminalGovernance } from "@/server/anomaly/criminalGovernance";
 import { completeText, hasChatProvider } from "@/server/ai/chat";
+import { FACTION_SOURCE } from "@/server/anomaly/factionPresence";
 
 export interface DigestSignals {
   indicador: string;
@@ -20,6 +21,7 @@ export const FONTES = [
   "SINESP/VDE (homicídios por UF)",
   "Fogo Cruzado (tiroteios georreferenciados)",
   "ISP-RJ/ISPdados (criminalidade municipal)",
+  FACTION_SOURCE, // presença de facção por UF (cross-gating da lente 1)
 ];
 
 // Coleta os sinais que merecem destaque: indícios eleitorais FORTES (caem mais que
