@@ -73,10 +73,15 @@ export function ShootingsMap({ ocorrencias, osint = [] }: { ocorrencias: Shootin
         }
 
         // Camada OSINT (losango âmbar vazado — precisão municipal, indício).
+        // O maplibre controla o transform do ELEMENTO do marcador (posição), então
+        // a rotação do losango vai num filho interno p/ não ser sobrescrita.
         for (const p of osint) {
           const el = document.createElement("div");
-          el.style.cssText =
-            "width:11px;height:11px;transform:rotate(45deg);background:rgba(245,158,11,.18);border:1.5px solid #f59e0b;box-shadow:0 0 0 1px rgba(0,0,0,.3)";
+          el.style.cssText = "width:13px;height:13px";
+          const shape = document.createElement("div");
+          shape.style.cssText =
+            "width:11px;height:11px;margin:1px;transform:rotate(45deg);background:rgba(245,158,11,.18);border:1.5px solid #f59e0b;box-shadow:0 0 0 1px rgba(0,0,0,.3)";
+          el.appendChild(shape);
           const popup = new maplibregl.Popup({ offset: 10, closeButton: false }).setHTML(
             `<div style="font:12px system-ui;max-width:240px;color:#0b1120">
                <strong>📰 Indício de notícia</strong> · ${esc(p.tipo)}<br/>
