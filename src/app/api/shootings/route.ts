@@ -26,7 +26,7 @@ import {
   newestIngestAt,
   upsertShootings,
 } from "@/server/shootings/store";
-import { noticiasPorMunicipio } from "@/server/shootings/crossref";
+import { loadOsint, type OsintPoint } from "@/server/shootings/crossref";
 import { getRjCriminalGovernance } from "@/server/anomaly/criminalGovernance";
 import { normalizeName } from "@/server/osint/geocode";
 
@@ -55,7 +55,7 @@ function assemble(
   ocorrencias: ShootingOccurrence[],
   fonte: string,
   historico: DiaResumo[],
-  noticias: Map<string, NoticiaRef[]>,
+  osint: { porMunicipio: Map<string, NoticiaRef[]>; points: OsintPoint[] },
 ): Payload {
   const porContexto = { disputa: 0, policia: 0, outro: 0 };
   let mortos = 0;
@@ -68,7 +68,7 @@ function assemble(
   const porMunicipio: MunicipioResumoFull[] = aggregateByMunicipio(ocorrencias).map((m) => ({
     ...m,
     lente2: normalizeName(m.estado) === "rio de janeiro" ? lente2.get(normalizeName(m.municipio)) ?? null : null,
-    noticias: noticias.get(normalizeName(m.municipio)) ?? [],
+    noticias: osint.porMunicipio.get(normalizeName(m.municipio)) ?? [],
   }));
   return {
     ocorrencias,
@@ -82,6 +82,8 @@ function assemble(
       porMunicipio,
       mortos,
       historico,
+      osint: osint.points, // camada nacional de notícias (indício, precisão municipal)
+      osintUfs: new Set(osint.points.map((p) => p.uf)).size,
       geradoEm: new Date().toISOString(),
     },
   };
@@ -139,14 +141,14 @@ async function servedFromStore(fcOn: boolean): Promise<Payload> {
     fonte = "Supabase (defasado)";
   }
 
-  // Le a janela persistida + o cross-ref OSINT em paralelo. O cross-ref degrada
-  // p/ vazio em qualquer falha — nunca derruba o radar.
-  const [janela, noticias] = await Promise.all([
+  // Le a janela persistida + o OSINT (cross-ref + pontos nacionais) em paralelo.
+  // O OSINT degrada p/ vazio em qualquer falha — nunca derruba o radar.
+  const [janela, osint] = await Promise.all([
     listStoredShootings(HIST_DIAS),
-    noticiasPorMunicipio(HIST_DIAS).catch(() => new Map<string, NoticiaRef[]>()),
+    loadOsint(HIST_DIAS).catch(() => ({ porMunicipio: new Map<string, NoticiaRef[]>(), points: [] as OsintPoint[] })),
   ]);
   const recentes = janela.filter((o) => withinDays(o.data, DIAS));
-  const payload = assemble(recentes, fonte, aggregateDaily(janela), noticias);
+  const payload = assemble(recentes, fonte, aggregateDaily(janela), osint);
   storeCache = { at: Date.now(), payload };
   return payload;
 }
@@ -157,8 +159,8 @@ let liveInflight: Promise<Payload> | null = null;
 
 async function buildLive(): Promise<Payload> {
   const occ = await fetchRecentShootings(DIAS);
-  // Sem store -> sem acervo OSINT persistido p/ cruzar; cross-ref vazio.
-  return assemble(occ, "Fogo Cruzado (ao vivo)", aggregateDaily(occ), new Map());
+  // Sem store -> sem acervo OSINT persistido; camada nacional vazia.
+  return assemble(occ, "Fogo Cruzado (ao vivo)", aggregateDaily(occ), { porMunicipio: new Map(), points: [] });
 }
 
 async function servedLive(): Promise<Payload> {

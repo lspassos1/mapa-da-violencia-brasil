@@ -42,9 +42,50 @@ export function groupNoticiasByMunicipio(
   return map;
 }
 
-// Le os incidentes OSINT persistidos da janela e agrupa por municipio. Vazio
-// (Map vazio) quando a persistencia OSINT nao esta configurada — degrada gracioso.
-export async function noticiasPorMunicipio(dias: number): Promise<Map<string, NoticiaRef[]>> {
+// Ponto OSINT mapeável (notícia de violência armada com geo). Precisão MUNICIPAL
+// (centroide IBGE), não exata como a do Fogo Cruzado — sempre rotular como indício.
+export interface OsintPoint {
+  id: string;
+  lat: number;
+  lng: number;
+  municipio: string;
+  uf: string;
+  tipo: string;
+  titulo: string;
+  url: string;
+  data: string | null;
+  veiculo: string;
+}
+
+// Heurística leve "keyword-first" (estilo worldmonitor): é indício de violência
+// ARMADA quando o tipo é letal OU o texto menciona arma de fogo. Barato e sem LLM.
+const ARMA_FOGO = /arma de fogo|balead|a tiros|\btiros?\b|disparo|fuzil|pistola|rev[oó]lver|tiroteio|met(ralhad|ralha)/i;
+function ehViolenciaArmada(inc: NewsIncident): boolean {
+  if (["homicidio", "latrocinio", "feminicidio"].includes(inc.tipo)) return true;
+  return ARMA_FOGO.test(inc.resumo) || ARMA_FOGO.test(inc.fontes[0]?.titulo ?? "");
+}
+
+function toPoint(inc: NewsIncident): OsintPoint {
+  return {
+    id: inc.id,
+    lat: inc.lat as number,
+    lng: inc.lng as number,
+    municipio: inc.municipio,
+    uf: inc.uf,
+    tipo: inc.tipo,
+    titulo: inc.fontes[0]?.titulo || inc.resumo || "(sem título)",
+    url: inc.fonteUrl || inc.fontes[0]?.fonteUrl || "",
+    data: inc.dataOcorrencia,
+    veiculo: inc.veiculo || inc.fontes[0]?.veiculo || "",
+  };
+}
+
+// Carrega o OSINT da janela UMA vez e deriva os dois usos no radar: o agrupamento
+// por município (coluna "Imprensa") e os PONTOS NACIONAIS mapeáveis (geo + arma de
+// fogo). Vazio quando a persistência OSINT não está configurada — degrada gracioso.
+export async function loadOsint(dias: number): Promise<{ porMunicipio: Map<string, NoticiaRef[]>; points: OsintPoint[] }> {
   const incidents = await listIncidents({ dias });
-  return groupNoticiasByMunicipio(incidents);
+  const porMunicipio = groupNoticiasByMunicipio(incidents);
+  const points = incidents.filter((i) => i.lat != null && i.lng != null && ehViolenciaArmada(i)).map(toPoint);
+  return { porMunicipio, points };
 }
