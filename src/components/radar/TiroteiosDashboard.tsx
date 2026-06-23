@@ -6,6 +6,7 @@ import { AlertTriangle, Crosshair, RefreshCw } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ShootingsMap, CONTEXTO_COR, CONTEXTO_LABEL } from "@/components/radar/ShootingsMap";
 import type { Contexto, DiaResumo, MunicipioResumoFull, ShootingOccurrence } from "@/server/shootings/fogocruzado";
+import type { OsintPoint } from "@/server/shootings/crossref";
 
 interface ApiResponse {
   ocorrencias: ShootingOccurrence[];
@@ -18,6 +19,8 @@ interface ApiResponse {
     porContexto?: Record<Contexto, number>;
     porMunicipio?: MunicipioResumoFull[];
     historico?: DiaResumo[];
+    osint?: OsintPoint[];
+    osintUfs?: number;
     mortos?: number;
     aviso?: string;
   };
@@ -92,9 +95,10 @@ export function TiroteiosDashboard() {
             <a className="underline hover:text-amber-50" href="https://fogocruzado.org.br" target="_blank" rel="noopener noreferrer">
               Fogo Cruzado
             </a>{" "}
-            (últimos {data?.meta.dias ?? 7} dias). <strong>Cobertura limitada</strong>:{" "}
-            {data?.meta.cobertura ?? "regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém"} — o Fogo Cruzado
-            não cobre o Brasil todo. Atualiza periodicamente.
+            (últimos {data?.meta.dias ?? 7} dias). <strong>Cobertura ao vivo</strong>:{" "}
+            {data?.meta.cobertura ?? "regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém"}. Fora delas, o mapa
+            mostra <strong>◆ indícios de notícias (OSINT)</strong> no Brasil todo
+            {data?.meta.osintUfs ? ` (${data.meta.osintUfs} UF[s] no momento)` : ""} — precisão municipal, indício, não registro.
           </p>
         </div>
 
@@ -113,13 +117,17 @@ export function TiroteiosDashboard() {
               <option value="outro">{CONTEXTO_LABEL.outro}</option>
             </select>
           </label>
-          <div className="flex items-center gap-3 text-xs text-slate-400">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
             {(["disputa", "policia", "outro"] as Contexto[]).map((c) => (
               <span key={c} className="inline-flex items-center gap-1">
                 <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: CONTEXTO_COR[c] }} />
                 {CONTEXTO_LABEL[c]}: {data?.meta.porContexto?.[c] ?? 0}
               </span>
             ))}
+            <span className="inline-flex items-center gap-1" title="Indícios de violência armada extraídos de notícias (OSINT), nacional, precisão municipal">
+              <span className="inline-block h-2.5 w-2.5 rotate-45 border border-amber-500 bg-amber-500/20" />
+              Notícia (OSINT): {data?.meta.osint?.length ?? 0}
+            </span>
           </div>
           <button
             type="button"
@@ -144,7 +152,7 @@ export function TiroteiosDashboard() {
             {loading ? (
               <div className="flex h-full items-center justify-center text-sm text-slate-400">A carregar…</div>
             ) : (
-              <ShootingsMap ocorrencias={filtradas} />
+              <ShootingsMap ocorrencias={filtradas} osint={contexto === "todos" ? (data?.meta.osint ?? []) : []} />
             )}
           </div>
 

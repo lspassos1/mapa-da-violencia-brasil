@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { mapTileAttribution, mapTileUrls } from "@/lib/mapConfig";
 import type { ShootingOccurrence } from "@/server/shootings/fogocruzado";
+import type { OsintPoint } from "@/server/shootings/crossref";
 
 export const CONTEXTO_COR: Record<ShootingOccurrence["contexto"], string> = {
   disputa: "#ef4444", // guerra entre grupos
@@ -20,12 +21,14 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Mapa leve de tiroteios (marcadores DOM por contexto). Distinto das camadas
-// oficial/OSINT. Degrade gracioso: se o mapa falhar, a lista continua.
-export function ShootingsMap({ ocorrencias }: { ocorrencias: ShootingOccurrence[] }) {
+// Mapa leve de tiroteios. Duas camadas DISTINTAS:
+//  - Fogo Cruzado (círculos sólidos, geo exata, por contexto)
+//  - OSINT (losangos âmbar vazados, precisão MUNICIPAL, indício de notícia)
+// Degrade gracioso: se o mapa falhar, a lista continua.
+export function ShootingsMap({ ocorrencias, osint = [] }: { ocorrencias: ShootingOccurrence[]; osint?: OsintPoint[] }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const geo = ocorrencias.filter((o) => typeof o.lat === "number" && typeof o.lng === "number");
-  const pointsKey = geo.map((o) => o.id).join(",");
+  const pointsKey = geo.map((o) => o.id).join(",") + "|" + osint.map((p) => p.id).join(",");
 
   useEffect(() => {
     let map: import("maplibre-gl").Map | null = null;
@@ -39,7 +42,7 @@ export function ShootingsMap({ ocorrencias }: { ocorrencias: ShootingOccurrence[
         if (cancelled || !containerRef.current) return;
         map = new maplibregl.Map({
           container: containerRef.current,
-          center: [-43.2, -22.9], // RJ (praça principal do Fogo Cruzado)
+          center: [-43.2, -22.9], // fallback: RJ (praça principal do Fogo Cruzado)
           zoom: 8,
           attributionControl: false,
           style: {
@@ -51,9 +54,12 @@ export function ShootingsMap({ ocorrencias }: { ocorrencias: ShootingOccurrence[
         map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-right");
         map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
 
+        const bounds = new maplibregl.LngLatBounds();
+
+        // Camada Fogo Cruzado (círculos sólidos por contexto; tamanho ∝ mortos).
         for (const o of geo) {
           const el = document.createElement("div");
-          const tamanho = 9 + Math.min(o.mortos * 3, 12); // mortos = marcador maior
+          const tamanho = 9 + Math.min(o.mortos * 3, 12);
           el.style.cssText = `width:${tamanho}px;height:${tamanho}px;border-radius:9999px;border:2px solid #0b1120;background:${CONTEXTO_COR[o.contexto]};box-shadow:0 0 0 1px rgba(255,255,255,.25)`;
           const popup = new maplibregl.Popup({ offset: 10, closeButton: false }).setHTML(
             `<div style="font:12px system-ui;max-width:230px;color:#0b1120">
@@ -63,7 +69,34 @@ export function ShootingsMap({ ocorrencias }: { ocorrencias: ShootingOccurrence[
              </div>`,
           );
           markers.push(new maplibregl.Marker({ element: el }).setLngLat([o.lng as number, o.lat as number]).setPopup(popup).addTo(map));
+          bounds.extend([o.lng as number, o.lat as number]);
         }
+
+        // Camada OSINT (losango âmbar vazado — precisão municipal, indício).
+        // O maplibre controla o transform do ELEMENTO do marcador (posição), então
+        // a rotação do losango vai num filho interno p/ não ser sobrescrita.
+        for (const p of osint) {
+          const el = document.createElement("div");
+          el.style.cssText = "width:13px;height:13px";
+          const shape = document.createElement("div");
+          shape.style.cssText =
+            "width:11px;height:11px;margin:1px;transform:rotate(45deg);background:rgba(245,158,11,.18);border:1.5px solid #f59e0b;box-shadow:0 0 0 1px rgba(0,0,0,.3)";
+          el.appendChild(shape);
+          const popup = new maplibregl.Popup({ offset: 10, closeButton: false }).setHTML(
+            `<div style="font:12px system-ui;max-width:240px;color:#0b1120">
+               <strong>📰 Indício de notícia</strong> · ${esc(p.tipo)}<br/>
+               ${esc(p.municipio)}/${esc(p.uf)} <span style="color:#b45309">· precisão municipal</span><br/>
+               <span style="color:#334155">${esc(p.titulo).slice(0, 110)}</span><br/>
+               <span style="color:#64748b">${p.veiculo ? esc(p.veiculo) + " · " : ""}${p.data ? esc(p.data) : ""}</span>
+             </div>`,
+          );
+          markers.push(new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(map));
+          bounds.extend([p.lng, p.lat]);
+        }
+
+        // Enquadra todos os pontos (FC + OSINT). maxZoom evita zoom excessivo com
+        // poucos pontos; só ajusta se houver algo.
+        if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 48, maxZoom: 9, duration: 0 });
       } catch {
         // sem mapa: a lista continua (degrade gracioso)
       }
