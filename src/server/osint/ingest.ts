@@ -4,6 +4,7 @@
 import { fetchRss } from "@/server/osint/rss";
 import { runPipeline, type PipelineResult } from "@/server/osint/pipeline";
 import { DEFAULT_FEEDS } from "@/server/osint/feeds";
+import { rankByRelevance } from "@/server/osint/keywords";
 import type { RawArticle } from "@/types/news";
 
 // Teto de artigos por execucao (custo de IA no free tier). Override por env;
@@ -22,11 +23,13 @@ export async function ingestOnce(): Promise<PipelineResult> {
       // ignora feed indisponivel
     }
   }
-  // Dedup grosseiro por URL antes da IA + corte para o limite.
+  // Dedup grosseiro por URL antes da IA.
   const seen = new Set<string>();
-  const unique = articles
-    .filter((a) => (seen.has(a.url) ? false : (seen.add(a.url), true)))
-    .slice(0, MAX_ARTICLES);
+  const unique = articles.filter((a) => (seen.has(a.url) ? false : (seen.add(a.url), true)));
 
-  return runPipeline(unique);
+  // KEYWORD-FIRST: descarta não-crime e ranqueia por relevância (sem LLM); só os
+  // melhores candidatos consomem o orçamento de LLM (corte para o limite).
+  const ranked = rankByRelevance(unique).slice(0, MAX_ARTICLES);
+
+  return runPipeline(ranked);
 }
