@@ -13,6 +13,9 @@ interface Rule {
   re: RegExp;
 }
 
+// Regras alinhadas aos tipos que os feeds (feeds.ts) de fato buscam. roubo/furto/
+// violencia_politica não são alvo dos feeds nem do radar (violência armada), então
+// não têm regra aqui; mesmo assim o LLM atribui o tipo FINAL de quem passa o filtro.
 // Ordem por especificidade: regras mais específicas (peso maior) vencem o empate.
 const RULES: Rule[] = [
   { tipo: "feminicidio", weight: 5, re: /feminic[ií]dio/i },
@@ -26,7 +29,8 @@ const FIREARM = /arma de fogo|balead|a tiros|\btiros?\b|disparo|fuzil|pistola|re
 // EVENTO de tiroteio (não só menção a arma): captura manchetes como "Tiroteio
 // deixa mortos" / "homem baleado" que não trazem a palavra "homicídio" mas são o
 // alvo do radar. Mais restrito que FIREARM (não pega "apreensão de pistola").
-const SHOOTING_EVENT = /tiroteio|troca de tiros|balead|a tiros|atingid[oa]s? a tiros|sob disparos|a bala/i;
+// (sem "a bala": pega gíria/figurado em contexto não-criminal -> falso positivo)
+const SHOOTING_EVENT = /tiroteio|troca de tiros|balead|a tiros|atingid[oa]s? a tiros|sob disparos|mortos? a tiros/i;
 
 export interface KeywordHit {
   tipo: NewsIncidentType;
