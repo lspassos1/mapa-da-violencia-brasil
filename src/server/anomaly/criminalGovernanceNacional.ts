@@ -79,11 +79,12 @@ export function getCriminalGovernanceNacional(): GovernanceNacional {
   const mediana = median(base.map((r) => r.intensidade));
   const ufs: UfGovernance[] = base
     .map((r) => {
-      const rel = mediana ? r.intensidade / mediana : 1;
+      // Arredonda ANTES de classificar p/ o badge bater com o número exibido.
+      const rel = round(mediana ? r.intensidade / mediana : 1, 2);
       return {
         uf: r.uf,
         intensidade: round(r.intensidade),
-        intensRelativa: round(rel, 2),
+        intensRelativa: rel,
         faccoes: r.faccoes,
         classificacao: classifyGovernance(rel, r.faccoes),
       };
