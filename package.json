@@ -2,6 +2,7 @@
   "name": "mapa-da-violencia-brasil",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "engines": {
     "node": "22.x",
     "npm": ">=10"
