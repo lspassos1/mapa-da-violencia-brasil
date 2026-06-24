@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Crosshair, RefreshCw } from "lucide-react";
+import { AlertTriangle, Crosshair, MapPin, RefreshCw } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ShootingsMap, CONTEXTO_COR, CONTEXTO_LABEL } from "@/components/radar/ShootingsMap";
 import type { Contexto, DiaResumo, MunicipioResumoFull, ShootingOccurrence } from "@/server/shootings/fogocruzado";
@@ -32,11 +32,38 @@ const LENTE2_BADGE: Record<"controle" | "disputa" | "misto", { label: string; cl
   misto: { label: "misto", cls: "text-slate-500" },
 };
 
+// Distância em km entre dois pontos (Haversine) — p/ "perto de mim".
+function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
 export function TiroteiosDashboard() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [contexto, setContexto] = useState<Contexto | "todos">("todos");
+  const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoMsg, setGeoMsg] = useState<string | null>(null);
+
+  function pertoDeMim() {
+    if (!("geolocation" in navigator)) {
+      setGeoMsg("Geolocalização indisponível neste navegador.");
+      return;
+    }
+    setGeoMsg("Localizando…");
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude });
+        setGeoMsg(null);
+      },
+      (err) => setGeoMsg(err.code === err.PERMISSION_DENIED ? "Permissão de localização negada." : "Não foi possível obter sua localização."),
+      { timeout: 10000, maximumAge: 300000 },
+    );
+  }
 
   async function carregar() {
     setLoading(true);
@@ -75,6 +102,21 @@ export function TiroteiosDashboard() {
         .sort((a, b) => (a.data < b.data ? 1 : -1)),
     [todas, contexto],
   );
+
+  // "Perto de mim": evento (FC ou OSINT) mais próximo da localização do usuário.
+  const maisProximo = useMemo(() => {
+    if (!userPos) return null;
+    const pontos: { lat: number; lng: number; rotulo: string }[] = [
+      ...todas.filter((o) => typeof o.lat === "number" && typeof o.lng === "number").map((o) => ({ lat: o.lat as number, lng: o.lng as number, rotulo: `${o.municipio}/${o.estado}` })),
+      ...(data?.meta.osint ?? []).map((p) => ({ lat: p.lat, lng: p.lng, rotulo: `${p.municipio}/${p.uf} (notícia)` })),
+    ];
+    let best: { rotulo: string; km: number } | null = null;
+    for (const pt of pontos) {
+      const km = haversineKm(userPos, pt);
+      if (!best || km < best.km) best = { rotulo: pt.rotulo, km };
+    }
+    return best;
+  }, [userPos, todas, data]);
 
   return (
     <main className="flex min-h-screen flex-col text-slate-100">
@@ -129,13 +171,22 @@ export function TiroteiosDashboard() {
               Notícia (OSINT): {data?.meta.osint?.length ?? 0}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={carregar}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Atualizar
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={pertoDeMim}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs ${userPos ? "border-blue-400/50 text-blue-200" : "border-white/10 text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"}`}
+            >
+              <MapPin className="h-3.5 w-3.5" /> Perto de mim
+            </button>
+            <button
+              type="button"
+              onClick={carregar}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Atualizar
+            </button>
+          </div>
         </div>
 
         {data?.meta ? (
@@ -147,12 +198,21 @@ export function TiroteiosDashboard() {
           </p>
         ) : null}
 
+        {geoMsg ? <p className="text-xs text-slate-400">{geoMsg}</p> : null}
+        {maisProximo ? (
+          <p className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-3 py-2 text-xs text-blue-100">
+            <MapPin className="mr-1 inline h-3.5 w-3.5" /> Registro mais próximo de você:{" "}
+            <strong>{maisProximo.rotulo}</strong> · ~{maisProximo.km < 1 ? "<1" : Math.round(maisProximo.km)} km. Indício/registro,
+            não alerta de emergência.
+          </p>
+        ) : null}
+
         <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_460px]">
           <div className="min-h-[360px] overflow-hidden rounded-xl border border-white/10 bg-slate-950/40">
             {loading ? (
               <div className="flex h-full items-center justify-center text-sm text-slate-400">A carregar…</div>
             ) : (
-              <ShootingsMap ocorrencias={filtradas} osint={contexto === "todos" ? (data?.meta.osint ?? []) : []} />
+              <ShootingsMap ocorrencias={filtradas} osint={contexto === "todos" ? (data?.meta.osint ?? []) : []} focus={userPos} />
             )}
           </div>
 

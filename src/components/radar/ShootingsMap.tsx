@@ -25,10 +25,19 @@ function esc(s: string): string {
 //  - Fogo Cruzado (círculos sólidos, geo exata, por contexto)
 //  - OSINT (losangos âmbar vazados, precisão MUNICIPAL, indício de notícia)
 // Degrade gracioso: se o mapa falhar, a lista continua.
-export function ShootingsMap({ ocorrencias, osint = [] }: { ocorrencias: ShootingOccurrence[]; osint?: OsintPoint[] }) {
+export function ShootingsMap({
+  ocorrencias,
+  osint = [],
+  focus = null,
+}: {
+  ocorrencias: ShootingOccurrence[];
+  osint?: OsintPoint[];
+  focus?: { lat: number; lng: number } | null; // "perto de mim": centra + marca o usuário
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const geo = ocorrencias.filter((o) => typeof o.lat === "number" && typeof o.lng === "number");
-  const pointsKey = geo.map((o) => o.id).join(",") + "|" + osint.map((p) => p.id).join(",");
+  const focusKey = focus ? `${focus.lat.toFixed(3)},${focus.lng.toFixed(3)}` : "";
+  const pointsKey = geo.map((o) => o.id).join(",") + "|" + osint.map((p) => p.id).join(",") + "|" + focusKey;
 
   useEffect(() => {
     let map: import("maplibre-gl").Map | null = null;
@@ -94,9 +103,17 @@ export function ShootingsMap({ ocorrencias, osint = [] }: { ocorrencias: Shootin
           bounds.extend([p.lng, p.lat]);
         }
 
-        // Enquadra todos os pontos (FC + OSINT). maxZoom evita zoom excessivo com
-        // poucos pontos; só ajusta se houver algo.
-        if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 48, maxZoom: 9, duration: 0 });
+        // "Perto de mim": marca o usuário (ponto azul pulsante) e centra nele;
+        // senão, enquadra todos os pontos (FC + OSINT).
+        if (focus) {
+          const el = document.createElement("div");
+          el.style.cssText =
+            "width:14px;height:14px;border-radius:9999px;background:#3b82f6;border:2px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.25)";
+          markers.push(new maplibregl.Marker({ element: el }).setLngLat([focus.lng, focus.lat]).addTo(map));
+          map.jumpTo({ center: [focus.lng, focus.lat], zoom: 10 });
+        } else if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, { padding: 48, maxZoom: 9, duration: 0 });
+        }
       } catch {
         // sem mapa: a lista continua (degrade gracioso)
       }
