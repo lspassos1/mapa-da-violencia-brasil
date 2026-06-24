@@ -60,7 +60,7 @@ export function TiroteiosDashboard() {
         setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude });
         setGeoMsg(null);
       },
-      () => setGeoMsg("Não foi possível obter sua localização (permissão negada)."),
+      (err) => setGeoMsg(err.code === err.PERMISSION_DENIED ? "Permissão de localização negada." : "Não foi possível obter sua localização."),
       { timeout: 10000, maximumAge: 300000 },
     );
   }
