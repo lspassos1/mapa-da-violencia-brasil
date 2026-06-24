@@ -4,7 +4,28 @@ import { AlertTriangle, Info } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { getElectoralAnomalies, classifySinal, ELECTION_YEARS, INDICADOR, type Porte, type SinalEleitoral } from "@/server/anomaly/electoralCycle";
 import { getRjCriminalGovernance, ANO_REF, type Classificacao } from "@/server/anomaly/criminalGovernance";
+import { getCriminalGovernanceNacional, type GovClass } from "@/server/anomaly/criminalGovernanceNacional";
 import { FACTION_SOURCE, type PresencaCrimeOrg } from "@/server/anomaly/factionPresence";
+
+const GOV_LABEL: Record<GovClass, string> = {
+  controle: "possível controle / pax",
+  disputa: "disputa ativa",
+  misto: "misto",
+  sem_faccao: "sem facção nacional",
+};
+const GOV_STYLE: Record<GovClass, string> = {
+  controle: "bg-amber-300/15 text-amber-200",
+  disputa: "bg-red-400/15 text-red-200",
+  misto: "text-slate-400",
+  sem_faccao: "text-slate-600",
+};
+const UF_NOME: Record<string, string> = {
+  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará",
+  DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso",
+  MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará", PB: "Paraíba", PR: "Paraná",
+  PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul",
+  RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
+};
 import { getHiddenHomicides } from "@/server/anomaly/hiddenHomicides";
 import { WeeklyDigest } from "@/components/radar/WeeklyDigest";
 
@@ -73,7 +94,9 @@ export default function RadarPage() {
   const ufs = getElectoralAnomalies().map((u) => ({ ...u, ...classifySinal(u.uf, u.efeitoRelativo, u.robusto) }));
   const fortes = ufs.filter((u) => u.sinal === "forte").length;
   const rj = getRjCriminalGovernance();
-  const controles = rj.filter((r) => r.classificacao === "controle").length;
+  const gov = getCriminalGovernanceNacional();
+  const govControle = gov.ufs.filter((u) => u.classificacao === "controle").length;
+  const govDisputa = gov.ufs.filter((u) => u.classificacao === "disputa").length;
   const oculto = getHiddenHomicides();
   const ocultos = oculto.ufs.filter((u) => u.sinal === "indicio_oculto").length;
 
@@ -163,21 +186,22 @@ export default function RadarPage() {
           </table>
         </div>
 
-        {/* LENTE 2 — governança criminal (RJ) */}
+        {/* LENTE 2 — governança criminal (NACIONAL, 27 UFs) */}
         <div className="mt-6 border-t border-white/10 pt-5">
           <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Lente 2 · governança criminal</p>
-          <h3 className="text-xl font-semibold">Controle territorial × disputa (RJ, {ANO_REF})</h3>
+          <h3 className="text-xl font-semibold">Controle (pax) × disputa — por UF, Brasil</h3>
         </div>
 
         <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            <strong>Indício, não acusação — cobertura RJ.</strong> Onde há violência armada mas quase <strong>nenhuma
-            &quot;disputa&quot;</strong> entre grupos e <strong>economia de extorsão ativa</strong>, o sinal é de um grupo
-            que <strong>monopoliza e suprime o confronto</strong> (milícia/facção) — <em>não</em> de lugar seguro (a LSE
-            registra ~3% dos confrontos policiais em área de milícia). Muita &quot;disputa&quot; + alta letalidade = guerra
-            entre facções. Cruza Fogo Cruzado (tiroteios por contexto) + ISP-RJ (extorsão/tráfico/letalidade). {controles} município(s)
-            com indício de controle.
+            <strong>Indício, não acusação.</strong> Onde há crime organizado, violência <strong>atipicamente baixa</strong> pode
+            indicar <strong>monopólio/&quot;pax&quot;</strong> (um grupo domina e suprime o confronto registrável) — <em>não</em>
+            lugar seguro; violência <strong>alta</strong> indica <strong>disputa</strong> (guerra entre grupos). Medimos a
+            <strong> intensidade de homicídio</strong> (homicídios ÷ óbitos totais, comparável entre UFs) relativa à mediana
+            nacional, cruzada com presença de facção. Caso canônico: <strong>SP</strong> (PCC) = menor intensidade do país →
+            pax monopolista; <strong>Norte</strong> = facção + intensidade alta → disputa. {govControle} UF(s) com indício de
+            controle, {govDisputa} com disputa.
           </p>
         </div>
 
@@ -185,37 +209,72 @@ export default function RadarPage() {
           <table className="w-full border-collapse text-sm">
             <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
               <tr>
-                <th className="px-3 py-2">Município</th>
+                <th className="px-3 py-2">UF</th>
                 <th className="px-3 py-2">Sinal</th>
-                <th className="px-3 py-2" title="tiroteios (Fogo Cruzado)">Tiroteios</th>
-                <th className="px-3 py-2" title="% dos tiroteios por disputa entre grupos">% disputa</th>
-                <th className="px-3 py-2" title="extorsão registrada (ISP-RJ) — assinatura de milícia">Extorsão</th>
-                <th className="px-3 py-2">Letalidade</th>
-                <th className="px-3 py-2">Desapar.</th>
+                <th className="px-3 py-2" title="homicídios ÷ óbitos totais (SIM/DATASUS, recente)">Intensidade</th>
+                <th className="px-3 py-2" title="intensidade ÷ mediana nacional">vs mediana</th>
+                <th className="px-3 py-2" title="facções nacionais (Mapa das Orcrim/MJ)">Facções</th>
               </tr>
             </thead>
             <tbody>
-              {rj.map((r) => (
-                <tr key={r.municipio} className={`border-t border-white/5 ${r.classificacao === "controle" ? "bg-amber-300/5" : ""} ${!r.robusto ? "text-slate-500" : ""}`}>
-                  <td className="px-3 py-2 font-semibold text-slate-100">{r.municipio}</td>
+              {gov.ufs.map((u) => (
+                <tr key={u.uf} className={`border-t border-white/5 ${u.classificacao === "controle" ? "bg-amber-300/5" : u.classificacao === "disputa" ? "bg-red-400/5" : ""}`}>
+                  <td className="px-3 py-2 font-semibold text-slate-100">
+                    {u.uf}
+                    <span className="text-slate-500"> · {UF_NOME[u.uf] ?? ""}</span>
+                  </td>
                   <td className="px-3 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${CLASS_STYLE[r.classificacao]}`}>
-                      {CLASS_LABEL[r.classificacao]}
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${GOV_STYLE[u.classificacao]}`}>
+                      {GOV_LABEL[u.classificacao]}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-slate-300">{r.tiroteios}</td>
-                  <td className="px-3 py-2 font-mono text-slate-300">{(r.disputaShare * 100).toFixed(1)}%</td>
-                  <td className="px-3 py-2 text-amber-200/90">{n(r.extorsao)}</td>
-                  <td className="px-3 py-2 text-slate-400">{n(r.letalidade)}</td>
-                  <td className="px-3 py-2 text-slate-400">{n(r.desaparecidos)}</td>
+                  <td className="px-3 py-2 font-mono text-slate-300">{(u.intensidade * 100).toFixed(2)}%</td>
+                  <td className={`px-3 py-2 font-mono ${u.intensRelativa < 0.7 ? "text-amber-300" : u.intensRelativa > 1.3 ? "text-red-300" : "text-slate-400"}`}>
+                    {u.intensRelativa.toFixed(2)}×
+                  </td>
+                  <td className="px-3 py-2 text-slate-400">{u.faccoes}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
+        <details className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
+          <summary className="cursor-pointer text-slate-300">Aprofundamento: detalhe municipal do RJ ({ANO_REF}) — onde há dado mais rico</summary>
+          <p className="mt-2 text-xs text-slate-400">
+            No RJ há dado municipal de tiroteios (Fogo Cruzado) + extorsão/tráfico (ISP-RJ), que permite a leitura por
+            município: tiroteios com ~0% de &quot;disputa&quot; + extorsão ativa = milícia/controle. {rj.filter((r) => r.classificacao === "controle").length} município(s) com indício de controle.
+          </p>
+          <div className="mt-2 overflow-x-auto rounded-lg border border-white/10">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+                <tr>
+                  <th className="px-3 py-2">Município</th>
+                  <th className="px-3 py-2">Sinal</th>
+                  <th className="px-3 py-2">Tiroteios</th>
+                  <th className="px-3 py-2">% disputa</th>
+                  <th className="px-3 py-2">Extorsão</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rj.map((r) => (
+                  <tr key={r.municipio} className={`border-t border-white/5 ${!r.robusto ? "text-slate-500" : ""}`}>
+                    <td className="px-3 py-2 font-medium text-slate-200">{r.municipio}</td>
+                    <td className="px-3 py-2">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${CLASS_STYLE[r.classificacao]}`}>{CLASS_LABEL[r.classificacao]}</span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-300">{r.tiroteios}</td>
+                    <td className="px-3 py-2 font-mono text-slate-300">{(r.disputaShare * 100).toFixed(1)}%</td>
+                    <td className="px-3 py-2 text-amber-200/90">{n(r.extorsao)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
         <p className="text-xs text-slate-500">
-          Fontes: Fogo Cruzado (tiroteios georreferenciados) + ISP-RJ/ISPdados (criminalidade municipal).
+          Fontes: {gov.fonte}. Detalhe RJ: Fogo Cruzado + ISP-RJ/ISPdados.
         </p>
 
         {/* LENTE 3 — homicídios ocultos (MVCI) */}
