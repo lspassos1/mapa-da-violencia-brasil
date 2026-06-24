@@ -4,9 +4,9 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { TrendsDashboard } from "@/components/trends/TrendsDashboard";
 
 export const metadata: Metadata = {
-  title: "Tendencias — Mapa da Violencia Brasil",
+  title: "Tendências",
   description:
-    "Sazonalidade e tendencia da violencia no Brasil e por estado: series mensais 2015-2026, variacao ano a ano like-for-like e totais anuais, com dados da Base VDE (SINESP/MJSP).",
+    "Sazonalidade e tendência da violência no Brasil e por estado: séries mensais 2015-2026, variação ano a ano (like-for-like) e totais anuais, com dados da Base VDE (SINESP/MJSP).",
 };
 
 // useSearchParams (deep-link dos filtros) exige uma fronteira de Suspense. O

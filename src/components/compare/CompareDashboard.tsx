@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, GitCompareArrows } from "lucide-react";
+import { GitCompareArrows } from "lucide-react";
+import { BackLink } from "@/components/layout/BackLink";
 import { riskColors } from "@/lib/colorScale";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 import { riskLevelLabels } from "@/lib/riskLevel";
@@ -142,9 +142,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
             <GitCompareArrows className="h-5 w-5 text-cyan-300" />
             <h2 className="text-lg font-semibold">Comparar estados</h2>
           </div>
-          <Link href="/mapa" className="inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-cyan-200">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao mapa
-          </Link>
+          <BackLink href="/mapa">Voltar ao mapa</BackLink>
         </div>
 
         {/* Selecao de estados (2-4) */}
