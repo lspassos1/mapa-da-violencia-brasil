@@ -75,38 +75,44 @@ const CAPITAIS: [string, string][] = [
 // "Antes destes, a capital nao e o lugar do fato" -> nao geocodifica.
 const CONTEXTO_NAO_LOCAL = /\b(interior|regiao|grande|estado|aeroporto)\b/;
 
-let capIndex: Map<string, GeoMatch> | null = null;
-let multiWordUnique: Map<string, GeoMatch> | null = null;
+// Entrada do dicionario com o regex JA COMPILADO (nomes sao normalizados ->
+// alfanumerico, sem chars especiais de regex). Compilado 1x no build, nao por
+// chamada (o pool de artigos pode ser grande).
+interface DictEntry {
+  re: RegExp;
+  geo: GeoMatch;
+}
+const MINLEN_UNICO = 8; // nome unico multi-palavra precisa ser longo (evita acaso)
+let capList: DictEntry[] | null = null;
+let multiList: DictEntry[] | null = null;
 
 function buildDict() {
   if (!byMunUf) build();
-  capIndex = new Map();
+  const word = (nm: string): RegExp => new RegExp(`(^|\\s)${nm}($|\\s)`);
+  capList = [];
   for (const [nome, uf] of CAPITAIS) {
     const m = byMunUf!.get(`${normalizeName(nome)}|${uf.toLowerCase()}`);
-    if (m) capIndex.set(normalizeName(nome), m);
+    if (m) capList.push({ re: word(normalizeName(nome)), geo: m });
   }
-  // Nomes unicos com >=2 palavras (ex.: "feira de santana", "santa luzia do parua").
-  multiWordUnique = new Map();
+  // Nomes unicos no Brasil, multi-palavra e longos (ex.: "feira de santana").
+  multiList = [];
   for (const [nm, m] of byMunOnly!.entries()) {
-    if (m && nm.includes(" ")) multiWordUnique.set(nm, m);
+    if (m && nm.includes(" ") && nm.length >= MINLEN_UNICO) multiList.push({ re: word(nm), geo: m });
   }
 }
 
-// Nome presente no texto como palavra(s) inteira(s) E nao precedido de contexto
-// "interior/regiao/grande/estado/aeroporto" (que indica que a capital nao e o
-// local do fato).
-function presentAsLocal(nm: string, norm: string): boolean {
-  const i = norm.search(new RegExp(`(^|\\s)${nm}($|\\s)`));
+// Casa o nome no texto E nao precedido de "interior/regiao/grande/estado/aeroporto"
+// (que indica que a capital nao e o local do fato).
+function matchLocal(e: DictEntry, norm: string): boolean {
+  const i = norm.search(e.re);
   if (i < 0) return false;
   return !CONTEXTO_NAO_LOCAL.test(norm.slice(0, i + 1));
 }
 
 export function geocodeFromText(text: string): GeoMatch | null {
-  if (!capIndex) buildDict();
+  if (!capList) buildDict();
   const norm = normalizeName(text);
-  // 1) Capital nao-ambigua presente no texto.
-  for (const [nm, m] of capIndex!.entries()) if (presentAsLocal(nm, norm)) return m;
-  // 2) Nome unico multi-palavra (muito improvavel aparecer por acaso).
-  for (const [nm, m] of multiWordUnique!.entries()) if (nm.length >= 8 && presentAsLocal(nm, norm)) return m;
+  for (const e of capList!) if (matchLocal(e, norm)) return e.geo; // 1) capital
+  for (const e of multiList!) if (matchLocal(e, norm)) return e.geo; // 2) único multi-palavra
   return null;
 }
