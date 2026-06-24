@@ -88,6 +88,8 @@ npm run test       # testes de contrato e de API (node:test)
 npm run build      # build de produção
 ```
 
+Fluxos completos — testes individuais, Playwright (visual), ETLs, deploy e estrutura do projeto — em **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**.
+
 > 🔒 **Segurança:** este repositório **não versiona segredos**. As variáveis de ambiente (Supabase, provedores de IA, Fogo Cruzado, etc.) ficam apenas no seu `.env.local` e nos secrets do deploy.
 
 ---
