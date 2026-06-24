@@ -1,156 +1,112 @@
-# Mapa da Violencia Brasil
+# 🎯 Mapa da Violência Brasil
 
-Aplicacao web experimental para visualizar indicadores de violencia no Brasil em um mapa dinamico. A versao atual valida a experiencia de produto com navegacao Brasil -> Estado -> Municipio e inicia a transicao para dados oficiais agregados.
+[![Ao vivo](https://img.shields.io/badge/▶_ao_vivo-radar_de_tiroteios-22d3ee?style=flat)](https://mapa-da-violencia-brasil.vercel.app)
+[![Licença](https://img.shields.io/github/license/lspassos1/mapa-da-violencia-brasil?style=flat&color=blue)](LICENSE)
+[![Último commit](https://img.shields.io/github/last-commit/lspassos1/mapa-da-violencia-brasil?style=flat)](https://github.com/lspassos1/mapa-da-violencia-brasil/commits)
+[![Stars](https://img.shields.io/github/stars/lspassos1/mapa-da-violencia-brasil?style=social)](https://github.com/lspassos1/mapa-da-violencia-brasil/stargazers)
 
-> A camada oficial atual usa uma amostra versionada do SINESP/MJSP para homicidio doloso municipal, medido em vitimas. A carga nacional completa ainda deve ser gerada localmente antes de publicacao ampla.
+[![Next.js](https://img.shields.io/badge/Next.js-000?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38BDF8?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![MapLibre](https://img.shields.io/badge/MapLibre_GL-396CB2?style=flat&logo=maplibre&logoColor=white)](https://maplibre.org)
+[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com)
+[![Vercel](https://img.shields.io/badge/Vercel-000?style=flat&logo=vercel&logoColor=white)](https://vercel.com)
 
-## Demo
+> Radar da violência no Brasil em uma só aplicação: **tiroteios em tempo quase real**, o **mapa oficial** dos homicídios e um **radar de anomalia** que aponta onde a estatística oficial pode não ser confiável — sempre separando **indício** de **estatística oficial**.
 
-Deploy Vercel: https://mapa-da-violencia-brasil.vercel.app
+**▶ Ao vivo:** <https://mapa-da-violencia-brasil.vercel.app>
 
-![Screenshot do MVP visual do Mapa da Violencia Brasil](docs/assets/mvp-screenshot.jpg)
+---
 
-## Funcionalidades atuais
+## ✦ O que é
 
-- Mapa dinamico com MapLibre GL JS.
-- Visao Brasil -> Estado -> Municipio.
-- Centroides municipais coloridos por score de 0 a 100.
-- Filtros por indicador de violencia disponivel na camada ativa.
-- Filtros por modo de visualizacao disponiveis na camada ativa.
-- Ranking de municipios mais criticos conforme o filtro atual.
-- Painel de detalhes por municipio.
-- Pagina de metodologia em `/metodologia`.
-- APIs para mapa, municipio, metadata, health e status de fontes.
-- Aviso visivel sobre amostra oficial ou dados demonstrativos conforme a camada ativa.
+Três camadas, com **fidelidades diferentes** e **nunca misturadas** (cada indício carrega fonte e ressalva):
 
-## Stack
+### 1. Radar de tiroteios — _a home_, tempo quase real
+- Tiroteios/disparos **georreferenciados** do **Fogo Cruzado** (regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém).
+- **Camada OSINT nacional:** indícios de violência armada extraídos de **notícias** por IA, cobrindo cidades **fora** das 4 metros (precisão municipal — indício, não registro).
+- **"📍 Perto de mim"**, classificação de contexto (disputa entre grupos × ação policial), tendência histórica acumulada.
+- ⚠️ **Não é alerta de emergência** — em urgências, ligue **190**.
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- MapLibre GL JS
-- ESLint
-- Dados oficiais agregados em modo offline/local e fallback demonstrativo
+### 2. Mapa oficial — dado agregado
+- Homicídio doloso por município (**SINESP/MJSP — Base VDE**): score 0–100, comparação entre estados e tendências/sazonalidade.
 
-## Como rodar localmente
+![Mapa oficial — Mapa da Violência Brasil](docs/assets/mvp-screenshot.jpg)
 
-Use Node.js 22.x e npm >= 10. O projeto versiona `.nvmrc` com a major esperada
-para alinhar maquina local, CI e Vercel:
+### 3. Radar de anomalia / credibilidade do dado oficial
+Detecta **onde a violência reportada pode estar suprimida** — fundamentado em literatura. Indício, **nunca acusação**.
+- **Lente 1 · ciclo eleitoral** — queda atípica do homicídio na janela pré-eleitoral, comparada **por pares** de mesmo porte (diff-in-diff, nunca ranking cru) e **cruzada com presença de facção**.
+- **Lente 2 · governança criminal (RJ)** — controle territorial × disputa (Fogo Cruzado + ISP-RJ).
+- **Lente 3 · homicídios ocultos** — homicídio caindo enquanto a "morte por causa indeterminada" (MVCI) sobe **acima da tendência nacional** (SIM/DATASUS).
+- **Digest semanal por IA** — boletim sóbrio, apartidário, com fontes e moldura de indício.
 
-```bash
-nvm use
-```
+> **Moldura inegociável:** indício para investigar, **nunca acusação**; **apartidário**; sempre com a fonte.
 
-Instale as dependencias:
+---
+
+## ✦ Stack
+
+| Camada | Tecnologias |
+|---|---|
+| **Frontend** | Next.js (App Router) · React · TypeScript · Tailwind CSS v4 · MapLibre GL JS · lucide-react |
+| **Backend / dados** | Next API Routes (`server-only`) · Supabase (Postgres + RPC) · assets JSON versionados |
+| **IA / OSINT** | Rodízio de provedores grátis (Gemini · Groq · Cloudflare · Mistral · OpenRouter · Together) · classificação **keyword-first** · **geocode por dicionário** (IBGE, sem LLM) · dedupe determinístico sem embeddings |
+| **Infra** | Vercel (deploy + cron) · GitHub Actions (cron de ingestão) · Supabase (sa-east-1) |
+| **Qualidade** | ESLint · `node:test` (contratos/API) · Playwright · Greptile · Snyk · Dependabot |
+
+---
+
+## ✦ Fontes de dados
+
+| Fonte | Uso |
+|---|---|
+| **Fogo Cruzado** (API v2) | Tiroteios georreferenciados (4 regiões metropolitanas) |
+| **SINESP/MJSP** (Base VDE) | Homicídio doloso oficial por município/UF |
+| **ISP-RJ / ISPdados** | Criminalidade municipal do Rio de Janeiro |
+| **SIM/DATASUS** | Mortalidade — homicídio (X85–Y09) × MVCI (Y10–Y34) |
+| **IBGE** | Municípios e centroides (geocoding) |
+| **Google Notícias** (RSS) | Matéria-prima da camada OSINT |
+| **Ministério da Justiça** (Mapa das Orcrim) | Presença de facção por UF (cross-gating) |
+
+---
+
+## ✦ Rodando localmente
+
+Requer **Node.js 22.x** e **npm ≥ 10** (a major fica em `.nvmrc`).
 
 ```bash
 npm install
+cp .env.example .env.local   # preencha as credenciais — nenhum segredo é versionado
+npm run dev                  # http://localhost:3000
 ```
 
-Inicie o servidor de desenvolvimento:
+Scripts úteis:
 
 ```bash
-npm run dev
+npm run validate   # lint + typecheck + testes + build (o que o CI roda)
+npm run test       # testes de contrato e de API (node:test)
+npm run build      # build de produção
 ```
 
-Acesse:
+> 🔒 **Segurança:** este repositório **não versiona segredos**. As variáveis de ambiente (Supabase, provedores de IA, Fogo Cruzado, etc.) ficam apenas no seu `.env.local` e nos secrets do deploy.
 
-```txt
-http://localhost:3000
-```
+---
 
-## Comandos uteis
+## ✦ Licença e direitos de uso
 
-```bash
-npm run lint
-npm run typecheck
-npm run test
-npm run test:etl
-npm run test:contracts
-npm run build
-```
+Distribuído sob **[GNU AGPL-3.0](LICENSE)**. Em resumo:
 
-Se `npm` nao estiver disponivel no `PATH` desta maquina, use o script local de
-validacao com fallback para um runtime Node local:
+| Uso | Permitido? | Observação |
+|---|:---:|---|
+| Pessoal · pesquisa · educação | ✅ | sob AGPL-3.0 |
+| Self-hosted (sua própria instância) | ✅ | sob AGPL-3.0 |
+| Fork e modificar | ✅ | publique o código modificado sob AGPL-3.0 |
+| Uso em rede / SaaS | ✅ | a AGPL exige **disponibilizar o código-fonte** aos usuários do serviço |
 
-```bash
-bash scripts/validate-local.sh
-```
+> A AGPL-3.0 é uma licença _copyleft_ de rede: se você roda uma versão modificada acessível por rede, precisa oferecer o código-fonte correspondente aos usuários.
 
-O smoke test de APIs espera um servidor local ja iniciado em
-`http://127.0.0.1:3000`:
+---
 
-```bash
-npm run smoke
-```
+## ✦ Aviso
 
-### Verificacao visual (Playwright)
-
-Checa que o dashboard renderiza de fato (mapa, ranking, paginas) em desktop e
-mobile, falhando em erro de JS, console error critico ou mapa vazio. A aba
-`/noticias` roda com a API mockada (sem custo de IA). Na primeira vez, instale o
-browser; depois e so buildar e rodar (o Playwright sobe o `next start` sozinho):
-
-```bash
-npx playwright install chromium   # uma vez
-npm run build && npm run test:visual
-```
-
-Para testar um deploy ja publicado em vez do servidor local, passe `BASE_URL`:
-
-```bash
-BASE_URL=https://mapa-da-violencia-brasil.vercel.app npm run test:visual
-```
-
-Relatorio em `playwright-report/` e capturas/trace em `test-results/` (ambos
-ignorados pelo git).
-
-Gerar JSON app-ready a partir do CSV SINESP municipal combinado com populacao:
-
-```bash
-python3 -m etl.official_data generate-app-ready --write-samples
-```
-
-## Deploy
-
-O projeto esta publicado na Vercel como aplicacao Next.js. Sem variavel de
-ambiente, o app permanece em mock/default. Para validar a amostra oficial em
-Preview, configure:
-
-```txt
-NEXT_PUBLIC_CRIME_DATA_MODE=official_sample
-```
-
-Apenas `NEXT_PUBLIC_CRIME_DATA_MODE` controla o app (`official_sample` ou
-`demo`); qualquer outro valor recai em `demo`. Veja
-[docs/DEPLOY.md](docs/DEPLOY.md) e
-[docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md](docs/VERCEL_OFFICIAL_SAMPLE_CHECKLIST.md).
-
-## Estrutura do projeto
-
-```txt
-src/app        Rotas Next.js, pagina principal, metodologia e APIs
-src/components Componentes visuais do dashboard, mapa, filtros e paineis
-src/data       Amostra oficial versionada, dados demonstrativos e placeholders geograficos
-src/lib        Utilitarios de calculo, formatacao, ranking, risco e navegacao
-src/services   Camada de leitura preparada para substituir mocks por API real
-src/types      Tipos compartilhados de crime, mapa e geografia
-docs           Documentacao tecnica, arquitetura, metodologia e proximas fases
-etl            Fundacao inicial para scripts e testes de ETL
-```
-
-## Roadmap resumido
-
-1. Camada real de UFs.
-2. Populacao IBGE.
-3. Base SINESP/VDE.
-4. Normalizacao dos indicadores.
-5. Banco Supabase/PostGIS.
-6. Poligonos municipais.
-7. Vector tiles ou PMTiles.
-8. Indice geral real.
-9. Atualizacao automatica.
-
-## Licenca
-
-Este projeto esta licenciado sob a GNU Affero General Public License v3.0. Veja [LICENSE](LICENSE).
+Esta aplicação **não é alerta de emergência** (em urgências, **190**) e **não mede risco individual em tempo real**. As camadas de notícias/anomalia são **indícios**, não estatística oficial nem prova; não devem ser usadas para vigilância, previsão de crime ou conclusões sobre eventos ou pessoas específicas. Dados oficiais podem ter subnotificação, revisões e diferenças metodológicas entre fontes.
