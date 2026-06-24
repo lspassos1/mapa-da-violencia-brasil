@@ -4,9 +4,9 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { CompareDashboard } from "@/components/compare/CompareDashboard";
 
 export const metadata: Metadata = {
-  title: "Comparar estados — Mapa da Violencia Brasil",
+  title: "Comparar estados",
   description:
-    "Compare 2 a 4 estados brasileiros lado a lado: indice 0-100, total de vitimas e taxa por 100 mil, com series historicas 2015-2026 da Base VDE (SINESP/MJSP).",
+    "Compare 2 a 4 estados brasileiros lado a lado: índice 0-100, total de vítimas e taxa por 100 mil, com séries históricas 2015-2026 da Base VDE (SINESP/MJSP).",
 };
 
 // useSearchParams (deep-link dos filtros) exige uma fronteira de Suspense. O

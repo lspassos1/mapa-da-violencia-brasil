@@ -3,7 +3,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { NewsDashboard } from "@/components/news/NewsDashboard";
 
 export const metadata: Metadata = {
-  title: "Notícias / OSINT — Mapa da Violência Brasil",
+  title: "Notícias / OSINT",
   description:
     "Indícios de violência extraídos de notícias por IA — não verificados, separados da estatística oficial. Cada item traz fonte, link e confiança.",
   robots: { index: false }, // camada de indícios; não-oficial, fora do índice

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, TrendingDown, TrendingUp, LineChart } from "lucide-react";
+import { TrendingDown, TrendingUp, LineChart } from "lucide-react";
+import { BackLink } from "@/components/layout/BackLink";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 import { loadTrendsData, type TrendsData } from "@/services/trendsService";
 
@@ -169,11 +169,9 @@ function TrendsView({ data }: { data: TrendsData }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <LineChart className="h-5 w-5 text-cyan-300" />
-          <h2 className="text-lg font-semibold">Tendencias</h2>
+          <h2 className="text-lg font-semibold">Tendências</h2>
         </div>
-        <Link href="/mapa" className="inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-cyan-200">
-          <ArrowLeft className="h-4 w-4" /> Voltar ao mapa
-        </Link>
+        <BackLink href="/mapa">Voltar ao mapa</BackLink>
       </div>
 
       {/* Filtros */}
