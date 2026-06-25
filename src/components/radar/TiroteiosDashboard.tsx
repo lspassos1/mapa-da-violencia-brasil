@@ -26,11 +26,6 @@ interface ApiResponse {
   };
 }
 
-const LENTE2_BADGE: Record<"controle" | "disputa" | "misto", { label: string; cls: string }> = {
-  controle: { label: "possível controle", cls: "bg-amber-300/15 text-amber-200" },
-  disputa: { label: "disputa ativa", cls: "bg-red-400/15 text-red-200" },
-  misto: { label: "misto", cls: "text-slate-500" },
-};
 
 // Distância em km entre dois pontos (Haversine) — p/ "perto de mim".
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
@@ -253,7 +248,7 @@ export function TiroteiosDashboard() {
         {data?.meta.porMunicipio?.length ? (
           <div className="mt-2">
             <h3 className="mb-2 text-sm font-semibold text-slate-200">
-              Por município <span className="font-normal text-slate-500">— tiroteios na janela; no RJ, com a leitura estrutural (lente 2)</span>
+              Por município <span className="font-normal text-slate-500">— tiroteios na janela + cobertura na imprensa (OSINT)</span>
             </h3>
             <div className="overflow-x-auto rounded-xl border border-white/10">
               <table className="w-full border-collapse text-sm">
@@ -263,7 +258,6 @@ export function TiroteiosDashboard() {
                     <th className="px-3 py-2">Tiroteios</th>
                     <th className="px-3 py-2" title="% dos tiroteios por disputa entre grupos">% disputa</th>
                     <th className="px-3 py-2">Mortos</th>
-                    <th className="px-3 py-2">Estrutura (RJ)</th>
                     <th className="px-3 py-2" title="Notícias OSINT no município (indício, não fato)">Imprensa</th>
                   </tr>
                 </thead>
@@ -277,17 +271,6 @@ export function TiroteiosDashboard() {
                       <td className="px-3 py-2 text-slate-300">{m.total}</td>
                       <td className="px-3 py-2 font-mono text-slate-300">{(m.disputaShare * 100).toFixed(0)}%</td>
                       <td className="px-3 py-2 text-slate-400">{m.mortos}</td>
-                      <td className="px-3 py-2">
-                        {m.lente2 ? (
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${(LENTE2_BADGE[m.lente2] ?? LENTE2_BADGE.misto).cls}`}
-                          >
-                            {(LENTE2_BADGE[m.lente2] ?? LENTE2_BADGE.misto).label}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-slate-600">—</span>
-                        )}
-                      </td>
                       <td className="px-3 py-2">
                         {m.noticias.length ? (
                           <details className="group">
@@ -322,9 +305,10 @@ export function TiroteiosDashboard() {
               </table>
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              &quot;Estrutura&quot; cruza o tempo-real com a <Link className="underline hover:text-cyan-200" href="/radar">lente 2</Link>{" "}
-              (controle×disputa) — só municípios do RJ têm essa leitura. &quot;Imprensa&quot; liga ao acervo de{" "}
-              <Link className="underline hover:text-cyan-200" href="/noticias">notícias OSINT</Link> do município (cobertura cresce com o tempo). Indício, não acusação.
+              &quot;Imprensa&quot; liga ao acervo de{" "}
+              <Link className="underline hover:text-cyan-200" href="/noticias">notícias OSINT</Link> do município (cobertura cresce com o tempo). A leitura
+              de governança (controle×disputa) <strong>por UF</strong> está no{" "}
+              <Link className="underline hover:text-cyan-200" href="/radar">radar de anomalia</Link>. Indício, não acusação.
             </p>
           </div>
         ) : null}
