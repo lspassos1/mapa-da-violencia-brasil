@@ -16,6 +16,8 @@
 
 **▶ Ao vivo:** <https://mapa-da-violencia-brasil.vercel.app>
 
+![Radar de tiroteios — Mapa da Violência Brasil](docs/assets/radar-screenshot.png)
+
 ---
 
 ## ✦ O que é
