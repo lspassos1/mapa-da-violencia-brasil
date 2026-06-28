@@ -44,6 +44,11 @@ test("geocodeFromText: 'cidade de'/'em' antes do nome continua resolvendo", () =
   assert.equal(geocodeFromText("Crime na cidade de Belo Horizonte")?.uf, "MG");
 });
 
+test("geocodeFromText: nome 2x (1ª bloqueada por logradouro, 2ª legítima) resolve", () => {
+  // varre todas as ocorrências, não só a primeira (Greptile #132).
+  assert.equal(geocodeFromText("Tiroteio no bairro Feira de Santana, em Feira de Santana")?.uf, "BA");
+});
+
 test("createHybridExtractor: não-crime descarta sem LLM", async () => {
   let llmCalls = 0;
   const ex = createHybridExtractor(5, async () => { llmCalls++; return null; });

@@ -58,14 +58,20 @@ export interface OsintPoint {
 }
 
 // Heurística leve "keyword-first" (estilo worldmonitor): é indício de violência
-// ARMADA quando o tipo é letal OU o texto menciona arma de fogo. Barato e sem LLM.
-// Evita termos ambíguos isolados ("tiro esportivo", "apreensão de pistola"):
-// exige a forma de disparo ("a tiro(s)", "tiroteio", "disparo") ou a arma como
-// fuzil/revólver/metralhadora, não "tiro"/"pistola" soltos.
-const ARMA_FOGO = /arma de fogo|balead|\ba tiros?\b|tiroteio|disparo|fuzil|rev[oó]lver|met(ralhad|ralha)/i;
+// ARMADA quando o tipo é letal OU o texto traz disparo/arma de fogo. Barato e sem
+// LLM. Dois cuidados p/ não confundir esporte/apreensão com violência:
+//  (1) "tiro" só conta como "a tiro(s)" — evita "tiro esportivo"/"treina tiro";
+//  (2) arma citada só em contexto de APREENSÃO/entrega (sem disparo) não é
+//      violência — evita "apreensão de pistola em blitz" (mas mantém "rendeu a
+//      vítima com pistola", que É roubo armado).
+const DISPARO = /balead|\ba tiros?\b|tiroteio|disparo/i;
+const ARMA_FOGO = /arma de fogo|fuzil|pistola|rev[oó]lver|met(ralhad|ralha)/i;
+const APREENSAO = /apreens|apreendid|recolhid|entreg/i;
 export function ehViolenciaArmada(inc: NewsIncident): boolean {
   if (["homicidio", "latrocinio", "feminicidio"].includes(inc.tipo)) return true;
-  return ARMA_FOGO.test(inc.resumo) || ARMA_FOGO.test(inc.fontes[0]?.titulo ?? "");
+  const txt = `${inc.resumo} ${inc.fontes[0]?.titulo ?? ""}`;
+  if (DISPARO.test(txt)) return true; // houve disparo -> violência armada
+  return ARMA_FOGO.test(txt) && !APREENSAO.test(txt); // arma citada, mas não só apreensão
 }
 
 function toPoint(inc: NewsIncident): OsintPoint {

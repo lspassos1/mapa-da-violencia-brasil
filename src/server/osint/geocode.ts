@@ -96,7 +96,8 @@ let multiList: DictEntry[] | null = null;
 
 function buildDict() {
   if (!byMunUf) build();
-  const word = (nm: string): RegExp => new RegExp(`(^|\\s)${nm}($|\\s)`);
+  // Global (/g): matchLocal varre TODAS as ocorrências do nome, não só a 1ª.
+  const word = (nm: string): RegExp => new RegExp(`(^|\\s)${nm}($|\\s)`, "g");
   capList = [];
   for (const [nome, uf] of CAPITAIS) {
     const m = byMunUf!.get(`${normalizeName(nome)}|${uf.toLowerCase()}`);
@@ -111,12 +112,18 @@ function buildDict() {
 
 // Casa o nome no texto, rejeitando quando o prefixo indica que NAO e o municipio
 // do fato: "interior/regiao/..." (a capital nao e o local) ou "bairro/rua/igreja..."
-// imediatamente antes (logradouro/bairro homonimo, nao o municipio).
+// imediatamente antes (logradouro/bairro homonimo, nao o municipio). Varre TODAS
+// as ocorrencias (re e global): se o nome aparece 2x — bloqueado apos "bairro" e
+// solto noutro ponto — aceita a ocorrencia legitima (Greptile #132).
 function matchLocal(e: DictEntry, norm: string): boolean {
-  const i = norm.search(e.re);
-  if (i < 0) return false;
-  const prefixo = norm.slice(0, i + 1);
-  return !CONTEXTO_NAO_LOCAL.test(prefixo) && !LUGAR_NAO_MUNICIPIO.test(prefixo);
+  e.re.lastIndex = 0;
+  for (let m = e.re.exec(norm); m !== null; m = e.re.exec(norm)) {
+    // m.index aponta para o (^|\s) inicial; +1 inclui esse char no prefixo.
+    const prefixo = norm.slice(0, m.index + 1);
+    if (!CONTEXTO_NAO_LOCAL.test(prefixo) && !LUGAR_NAO_MUNICIPIO.test(prefixo)) return true;
+    if (e.re.lastIndex === m.index) e.re.lastIndex++; // anti-loop em match vazio
+  }
+  return false;
 }
 
 export function geocodeFromText(text: string): GeoMatch | null {

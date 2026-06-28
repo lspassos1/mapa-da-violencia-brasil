@@ -65,8 +65,15 @@ test("ehViolenciaArmada: pega disparo/baleado/tiroteio no texto", () => {
   assert.equal(armado("outro", "neutro", "vítima atingida a tiro"), true); // título também conta
 });
 
+test("ehViolenciaArmada: arma usada em roubo (sem apreensão) é violência armada", () => {
+  // Greptile #132: não excluir roubo à mão armada só porque cita "pistola".
+  assert.equal(armado("roubo", "assaltante rendeu a vítima com pistola"), true);
+  assert.equal(armado("outro", "dupla armada de revólver invadiu a casa"), true);
+});
+
 test("ehViolenciaArmada: NÃO confunde esporte/apreensão (tiro/pistola soltos)", () => {
   assert.equal(armado("outro", "campeonato de tiro esportivo no clube"), false);
   assert.equal(armado("outro", "atleta treina tiro ao alvo"), false);
   assert.equal(armado("outro", "apreensão de pistola em blitz de trânsito"), false);
+  assert.equal(armado("outro", "PM recolhe revólver entregue por morador"), false);
 });
