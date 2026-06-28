@@ -98,17 +98,19 @@ export function TiroteiosDashboard() {
     [todas, contexto],
   );
 
-  // "Perto de mim": evento (FC ou OSINT) mais próximo da localização do usuário.
+  // "Perto de mim": evento mais próximo do usuário. Preserva a CLASSE da fonte
+  // (registro Fogo Cruzado × indício de notícia OSINT) — nunca rotular OSINT como
+  // "registro" oficial (moldura inegociável: indício ≠ registro).
   const maisProximo = useMemo(() => {
     if (!userPos) return null;
-    const pontos: { lat: number; lng: number; rotulo: string }[] = [
-      ...todas.filter((o) => typeof o.lat === "number" && typeof o.lng === "number").map((o) => ({ lat: o.lat as number, lng: o.lng as number, rotulo: `${o.municipio}/${o.estado}` })),
-      ...(data?.meta.osint ?? []).map((p) => ({ lat: p.lat, lng: p.lng, rotulo: `${p.municipio}/${p.uf} (notícia)` })),
+    const pontos: { lat: number; lng: number; rotulo: string; kind: "fc" | "osint" }[] = [
+      ...todas.filter((o) => typeof o.lat === "number" && typeof o.lng === "number").map((o) => ({ lat: o.lat as number, lng: o.lng as number, rotulo: `${o.municipio}/${o.estado}`, kind: "fc" as const })),
+      ...(data?.meta.osint ?? []).map((p) => ({ lat: p.lat, lng: p.lng, rotulo: `${p.municipio}/${p.uf}`, kind: "osint" as const })),
     ];
-    let best: { rotulo: string; km: number } | null = null;
+    let best: { rotulo: string; km: number; kind: "fc" | "osint" } | null = null;
     for (const pt of pontos) {
       const km = haversineKm(userPos, pt);
-      if (!best || km < best.km) best = { rotulo: pt.rotulo, km };
+      if (!best || km < best.km) best = { rotulo: pt.rotulo, km, kind: pt.kind };
     }
     return best;
   }, [userPos, todas, data]);
@@ -193,14 +195,26 @@ export function TiroteiosDashboard() {
           </p>
         ) : null}
 
-        {geoMsg ? <p className="text-xs text-slate-400">{geoMsg}</p> : null}
-        {maisProximo ? (
-          <p className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-3 py-2 text-xs text-blue-100">
-            <MapPin className="mr-1 inline h-3.5 w-3.5" /> Registro mais próximo de você:{" "}
-            <strong>{maisProximo.rotulo}</strong> · ~{maisProximo.km < 1 ? "<1" : Math.round(maisProximo.km)} km. Indício/registro,
-            não alerta de emergência.
-          </p>
-        ) : null}
+        {/* Região viva: status da geolocalização e resultado são anunciados a leitores de tela. */}
+        <div role="status" aria-live="polite" className="contents">
+          {geoMsg ? <p className="text-xs text-slate-400">{geoMsg}</p> : null}
+          {maisProximo ? (
+            <p className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-3 py-2 text-xs text-blue-100">
+              <MapPin className="mr-1 inline h-3.5 w-3.5" />{" "}
+              {maisProximo.kind === "fc"
+                ? "Registro mais próximo de você: "
+                : "Indício de notícia mais próximo de você: "}
+              <strong>{maisProximo.rotulo}</strong>
+              {maisProximo.kind === "osint" ? " (precisão municipal)" : ""} · ~
+              {maisProximo.km < 1 ? "<1" : Math.round(maisProximo.km)} km. Não é alerta de emergência.
+            </p>
+          ) : null}
+          {userPos && !maisProximo ? (
+            <p className="text-xs text-slate-400">
+              Localização obtida, mas nenhum registro/indício geolocalizado na janela atual.
+            </p>
+          ) : null}
+        </div>
 
         <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_460px]">
           <div className="min-h-[360px] overflow-hidden rounded-xl border border-white/10 bg-slate-950/40">
