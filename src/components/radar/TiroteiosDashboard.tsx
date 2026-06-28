@@ -195,8 +195,11 @@ export function TiroteiosDashboard() {
           </p>
         ) : null}
 
-        {/* Região viva: status da geolocalização e resultado são anunciados a leitores de tela. */}
-        <div role="status" aria-live="polite" className="contents">
+        {/* Região viva: status da geolocalização e resultado são anunciados a leitores de
+            tela. Caixa real (flex) — não `display:contents`, que pode sumir da árvore de
+            acessibilidade e silenciar o aria-live (Chromium+NVDA). `empty:hidden` evita
+            o gap extra quando não há mensagem. */}
+        <div role="status" aria-live="polite" className="flex flex-col gap-4 empty:hidden">
           {geoMsg ? <p className="text-xs text-slate-400">{geoMsg}</p> : null}
           {maisProximo ? (
             <p className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-3 py-2 text-xs text-blue-100">
