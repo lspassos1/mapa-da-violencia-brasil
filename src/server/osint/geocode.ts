@@ -75,6 +75,14 @@ const CAPITAIS: [string, string][] = [
 // "Antes destes, a capital nao e o lugar do fato" -> nao geocodifica.
 const CONTEXTO_NAO_LOCAL = /\b(interior|regiao|grande|estado|aeroporto)\b/;
 
+// Pista de logradouro/bairro/ponto de referencia IMEDIATAMENTE antes do nome:
+// indica que o nome casado e um BAIRRO/rua/igreja homonimo, NAO o municipio do
+// fato. Sem isto, nomes de municipio que tambem sao bairros/santos/ruas comuns
+// ("santo antonio", "sao jose", "bela vista", "nova esperanca") geocodificavam
+// para o estado errado (ex.: "no bairro Santo Antonio" -> Santo Antonio/RN).
+const LUGAR_NAO_MUNICIPIO =
+  /\b(?:bairro|comunidade|favela|vila|conjunto|loteamento|condominio|distrito|povoado|morro|rua|avenida|alameda|travessa|estrada|rodovia|praca|largo|igreja|paroquia|capela|catedral|santuario|hospital|presidio|penitenciaria)\s+$/;
+
 // Entrada do dicionario com o regex JA COMPILADO (nomes sao normalizados ->
 // alfanumerico, sem chars especiais de regex). Compilado 1x no build, nao por
 // chamada (o pool de artigos pode ser grande).
@@ -101,12 +109,14 @@ function buildDict() {
   }
 }
 
-// Casa o nome no texto E nao precedido de "interior/regiao/grande/estado/aeroporto"
-// (que indica que a capital nao e o local do fato).
+// Casa o nome no texto, rejeitando quando o prefixo indica que NAO e o municipio
+// do fato: "interior/regiao/..." (a capital nao e o local) ou "bairro/rua/igreja..."
+// imediatamente antes (logradouro/bairro homonimo, nao o municipio).
 function matchLocal(e: DictEntry, norm: string): boolean {
   const i = norm.search(e.re);
   if (i < 0) return false;
-  return !CONTEXTO_NAO_LOCAL.test(norm.slice(0, i + 1));
+  const prefixo = norm.slice(0, i + 1);
+  return !CONTEXTO_NAO_LOCAL.test(prefixo) && !LUGAR_NAO_MUNICIPIO.test(prefixo);
 }
 
 export function geocodeFromText(text: string): GeoMatch | null {

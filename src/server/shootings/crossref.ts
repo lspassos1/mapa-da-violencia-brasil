@@ -59,8 +59,11 @@ export interface OsintPoint {
 
 // Heurística leve "keyword-first" (estilo worldmonitor): é indício de violência
 // ARMADA quando o tipo é letal OU o texto menciona arma de fogo. Barato e sem LLM.
-const ARMA_FOGO = /arma de fogo|balead|a tiros|\btiros?\b|disparo|fuzil|pistola|rev[oó]lver|tiroteio|met(ralhad|ralha)/i;
-function ehViolenciaArmada(inc: NewsIncident): boolean {
+// Evita termos ambíguos isolados ("tiro esportivo", "apreensão de pistola"):
+// exige a forma de disparo ("a tiro(s)", "tiroteio", "disparo") ou a arma como
+// fuzil/revólver/metralhadora, não "tiro"/"pistola" soltos.
+const ARMA_FOGO = /arma de fogo|balead|\ba tiros?\b|tiroteio|disparo|fuzil|rev[oó]lver|met(ralhad|ralha)/i;
+export function ehViolenciaArmada(inc: NewsIncident): boolean {
   if (["homicidio", "latrocinio", "feminicidio"].includes(inc.tipo)) return true;
   return ARMA_FOGO.test(inc.resumo) || ARMA_FOGO.test(inc.fontes[0]?.titulo ?? "");
 }

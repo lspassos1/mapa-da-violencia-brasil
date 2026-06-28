@@ -28,6 +28,22 @@ test("geocodeFromText: nome único multi-palavra resolve; texto genérico não",
   assert.equal(geocodeFromText("Reunião ocorreu na prefeitura municipal"), null);
 });
 
+test("geocodeFromText: nome precedido de bairro/rua/favela/igreja NÃO geocodifica (logradouro homônimo)", () => {
+  // nomes de município que também são bairros/santos/ruas comuns: não devem
+  // virar indício no estado errado quando vêm logo após "bairro/rua/...".
+  assert.equal(geocodeFromText("Homem é executado a tiros no bairro Santo Antônio"), null);
+  assert.equal(geocodeFromText("Jovem morto a tiros na comunidade São José"), null);
+  assert.equal(geocodeFromText("Corpo é encontrado na rua Bela Vista"), null);
+  assert.equal(geocodeFromText("Tiroteio na favela Nova Esperança"), null);
+  assert.equal(geocodeFromText("Tiros próximo à igreja Santo Antônio"), null);
+});
+
+test("geocodeFromText: 'cidade de'/'em' antes do nome continua resolvendo", () => {
+  // a guarda só rejeita logradouros — o município legítimo ainda resolve.
+  assert.ok(geocodeFromText("Homicídio em Feira de Santana"));
+  assert.equal(geocodeFromText("Crime na cidade de Belo Horizonte")?.uf, "MG");
+});
+
 test("createHybridExtractor: não-crime descarta sem LLM", async () => {
   let llmCalls = 0;
   const ex = createHybridExtractor(5, async () => { llmCalls++; return null; });

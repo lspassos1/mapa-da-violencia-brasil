@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { groupNoticiasByMunicipio } from "../src/server/shootings/crossref.ts";
+import { ehViolenciaArmada, groupNoticiasByMunicipio } from "../src/server/shootings/crossref.ts";
 
 function inc(municipio, data, titulo, extra = {}) {
   return {
@@ -46,4 +46,27 @@ test("groupNoticiasByMunicipio: respeita o cap por município e ignora sem munic
   const map = groupNoticiasByMunicipio(items, 3);
   assert.equal(map.get("salvador").length, 3);
   assert.equal(map.has(""), false);
+});
+
+// tipo letal entra direto; o texto entra só com forma de disparo/arma de fogo.
+const armado = (tipo, resumo, titulo = "") => ehViolenciaArmada({ tipo, resumo, fontes: [{ titulo }] });
+
+test("ehViolenciaArmada: tipo letal é sempre violência armada", () => {
+  assert.equal(armado("homicidio", "sem detalhes"), true);
+  assert.equal(armado("latrocinio", ""), true);
+  assert.equal(armado("feminicidio", ""), true);
+});
+
+test("ehViolenciaArmada: pega disparo/baleado/tiroteio no texto", () => {
+  assert.equal(armado("roubo", "vítima foi baleada na perna"), true);
+  assert.equal(armado("outro", "morto a tiros em via pública"), true);
+  assert.equal(armado("outro", "houve tiroteio entre grupos"), true);
+  assert.equal(armado("outro", "policial fez disparos de fuzil"), true);
+  assert.equal(armado("outro", "neutro", "vítima atingida a tiro"), true); // título também conta
+});
+
+test("ehViolenciaArmada: NÃO confunde esporte/apreensão (tiro/pistola soltos)", () => {
+  assert.equal(armado("outro", "campeonato de tiro esportivo no clube"), false);
+  assert.equal(armado("outro", "atleta treina tiro ao alvo"), false);
+  assert.equal(armado("outro", "apreensão de pistola em blitz de trânsito"), false);
 });
