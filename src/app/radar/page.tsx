@@ -229,7 +229,9 @@ export default function RadarPage() {
                     </span>
                   </td>
                   <td className="px-3 py-2 font-mono text-slate-300">{(u.intensidade * 100).toFixed(2)}%</td>
-                  <td className={`px-3 py-2 font-mono ${u.intensRelativa < 0.7 ? "text-amber-300" : u.intensRelativa > 1.3 ? "text-red-300" : "text-slate-400"}`}>
+                  {/* Cor segue a CLASSIFICAÇÃO (não o número cru): UF sem facção
+                      fica neutra mesmo com intensidade baixa — alinha com o selo. */}
+                  <td className={`px-3 py-2 font-mono ${u.classificacao === "controle" ? "text-amber-300" : u.classificacao === "disputa" ? "text-red-300" : "text-slate-400"}`}>
                     {u.intensRelativa.toFixed(2)}×
                   </td>
                   <td className="px-3 py-2 text-slate-400">{u.faccoes}</td>
