@@ -8,7 +8,7 @@ import { getCriminalGovernanceNacional, type GovClass } from "@/server/anomaly/c
 import { FACTION_SOURCE, type PresencaCrimeOrg } from "@/server/anomaly/factionPresence";
 
 const GOV_LABEL: Record<GovClass, string> = {
-  controle: "possível controle / pax",
+  controle: "intensidade baixa · investigar",
   disputa: "disputa ativa",
   misto: "misto",
   sem_faccao: "sem facção nacional",
@@ -39,7 +39,7 @@ const PORTE_LABEL: Record<Porte, string> = {
 const PRESENCA_LABEL: Record<PresencaCrimeOrg, string> = {
   alta: "alta (PCC+CV)",
   media: "média (1 facção)",
-  baixa: "sem facção doc.",
+  baixa: "sem facção nac. doc.",
 };
 const PRESENCA_STYLE: Record<PresencaCrimeOrg, string> = {
   alta: "text-red-200",
@@ -136,13 +136,15 @@ export default function RadarPage() {
             <strong>Como é medido:</strong> índice sazonal intra-UF (média ago–out ÷ média do ano), comparando anos de
             eleição ({ELECTION_YEARS.join(", ")}) com anos normais (2015–2025) — esse é o <em>efeito</em>. Depois um{" "}
             <strong>diff-in-diff vs pares</strong>: subtrai-se a mediana do efeito das UFs de <em>mesmo porte</em>, isolando
-            quem cai <em>mais que os pares</em> (o <strong>efeito vs pares</strong>) e não a queda sazonal comum a todos.{" "}
+            quem cai <em>mais que os pares</em> (o <strong>efeito vs pares</strong>) e não o padrão pré-eleitoral comum aos
+            pares de mesmo porte (seja queda ou alta).{" "}
             <strong>Nunca ranking cru</strong> entre UFs heterogêneas (IPEA). Por fim, o sinal só é{" "}
             <strong>&quot;forte&quot;</strong> quando <strong>cruzado com presença de facção</strong> na UF — a literatura
-            (RES 86(2)) indica que o ciclo só aparece onde há crime organizado; sem facção documentada, fica{" "}
+            (<em>Review of Economic Studies</em> 86(2), 2018) indica que o ciclo eleitoral de homicídios só aparece onde há
+            crime organizado; sem facção nacional documentada, fica{" "}
             <strong>&quot;isolado&quot;</strong> (não promovido). Indicador: {INDICADOR}. Fontes: SINESP/VDE +{" "}
             {FACTION_SOURCE}. {fortes} UF(s) com indício forte (cai mais que os pares E com facção).{" "}
-            <Link className="underline hover:text-cyan-200" href="/metodologia">
+            <Link className="underline hover:text-cyan-200" href="/metodologia#radar">
               Metodologia
             </Link>
             .
@@ -195,13 +197,15 @@ export default function RadarPage() {
         <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            <strong>Indício, não acusação.</strong> Onde há crime organizado, violência <strong>atipicamente baixa</strong> pode
-            indicar <strong>monopólio/&quot;pax&quot;</strong> (um grupo domina e suprime o confronto registrável) — <em>não</em>
-            lugar seguro; violência <strong>alta</strong> indica <strong>disputa</strong> (guerra entre grupos). Medimos a
-            <strong> intensidade de homicídio</strong> (homicídios ÷ óbitos totais, comparável entre UFs) relativa à mediana
-            nacional, cruzada com presença de facção. Caso canônico: <strong>SP</strong> (PCC) = menor intensidade do país →
-            pax monopolista; <strong>Norte</strong> = facção + intensidade alta → disputa. {govControle} UF(s) com indício de
-            controle, {govDisputa} com disputa.
+            <strong>Indício, não acusação.</strong> Onde há crime organizado, violência <strong>atipicamente baixa</strong> com
+            facção presente <em>pode</em> indicar <strong>controle/&quot;pax&quot;</strong> (um grupo domina e suprime o confronto
+            registrável — <em>nunca</em> lugar seguro) — <strong>ou</strong>, sobretudo em UFs mais desenvolvidas, refletir
+            fatores <strong>estruturais</strong> (demografia, base de óbitos mais velha, menor violência histórica). É indício
+            para <em>investigar a hipótese</em>, não a leitura. Violência <strong>alta</strong> + facção indica{" "}
+            <strong>disputa</strong> (guerra entre grupos). Medimos a <strong>intensidade de homicídio</strong> (homicídios ÷
+            óbitos totais) relativa à mediana nacional, cruzada com presença de facção — o ratio também cai por fatores
+            estruturais, daí a cautela. Âncoras: <strong>SP</strong> (PCC), a menor intensidade do país; <strong>Norte</strong> =
+            facção + intensidade alta → disputa. {govControle} UF(s) com intensidade baixa, {govDisputa} com disputa.
           </p>
         </div>
 
