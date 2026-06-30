@@ -1,16 +1,19 @@
 // Presença das facções nacionais (PCC, Comando Vermelho) por UF — para CRUZAR
-// com o sinal eleitoral (#85). A literatura (RES 86(2)) indica que o ciclo
-// eleitoral de homicídios só costuma aparecer ONDE HÁ crime organizado capaz de
-// modular a violência estrategicamente — logo um sinal eleitoral só é promovido
-// a "forte" quando cruzado com presença de facção; isolado, é mais provável ter
-// causa benigna (operação, mudança de registro).
+// com o sinal eleitoral (#85). A literatura (Review of Economic Studies 86(2),
+// 2018 — Alesina, Piccolo & Pinotti) mostra que o ciclo eleitoral de homicídios
+// só aparece ONDE HÁ crime organizado capaz de modular a violência — logo um
+// sinal eleitoral só é promovido a "forte" quando cruzado com presença de facção;
+// isolado, é mais provável ter causa benigna (operação, mudança de registro).
 //
 // FONTE: Relatório "Mapa das Organizações Criminosas 2024", Ministério da Justiça
 // (PCC em 24 UFs, CV em 22). É PRESENÇA documentada (sistema prisional/atuação),
 // NÃO um índice de dominância territorial — por isso usamos só uma gradação coarse
 // (quantas das 2 facções nacionais atuam). RJ aparece aqui só com CV, mas tem
 // também milícias dominantes (vide lente 2); a gradação por isso SUBESTIMA o RJ.
-// INDÍCIO/contexto, nunca acusação.
+// DF/RS aparecem com 0: o relatório MJ 2024 (autodeclarado pelo sistema prisional)
+// registra que o DF deixou de listar PCC e CV em 2024 — "sem facção NACIONAL", o
+// que NÃO significa ausência de crime organizado (Brasília tem facção local, o CDC,
+// fora das duas nacionais que esta gradação enxerga). INDÍCIO/contexto, nunca acusação.
 
 export interface FactionPresence {
   pcc: boolean;

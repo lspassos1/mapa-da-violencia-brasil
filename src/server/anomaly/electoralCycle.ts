@@ -43,8 +43,9 @@ export interface UfElectoralAnomaly {
   mediaMensal: number; // contagem média mensal (robustez)
   porte: Porte;
   // DiD vs pares: tira do `efeito` da UF o padrão pré-eleitoral COMUM aos pares de
-  // mesmo porte (mediana). efeitoRelativo NEGATIVO = cai MAIS que os pares — é o
-  // sinal de anomalia de verdade (não a queda sazonal que todos têm).
+  // mesmo porte (mediana, de qualquer sinal — empiricamente é leve ALTA na maioria
+  // dos portes, não uma queda universal). efeitoRelativo NEGATIVO = cai MAIS que os
+  // pares — é o sinal de anomalia de verdade (não o movimento comum aos pares).
   efeitoBaseline: number | null; // mediana do efeito dos pares (robustos, mesmo porte)
   efeitoRelativo: number | null; // efeito - efeitoBaseline
   anosEleicao: number;
@@ -158,6 +159,9 @@ export function getElectoralAnomalies(): UfElectoralAnomaly[] {
 export const INDICADOR = (monthly as { indicador: string }).indicador;
 
 // Limiar de queda relativa aos pares para um sinal ser considerado relevante.
+// Calibrado como ~1 desvio robusto abaixo da mediana dos pares: empiricamente a
+// distribuição do efeitoRelativo tem mediana ~+0,005 e MAD ~0,030 (1,4826·MAD ≈
+// 0,044), então -0,05 funciona como um corte de outlier de ~1σ. Knob ajustável.
 export const EFEITO_RELATIVO_LIMIAR = -0.05;
 
 // Sinal final da lente eleitoral, CRUZADO com presença de facção (#85, princípio
