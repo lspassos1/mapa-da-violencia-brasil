@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Crosshair, MapPin, RefreshCw } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ShootingsMap, CONTEXTO_COR, CONTEXTO_LABEL } from "@/components/radar/ShootingsMap";
 import type { Contexto, DiaResumo, MunicipioResumoFull, ShootingOccurrence } from "@/server/shootings/fogocruzado";
@@ -26,6 +25,16 @@ interface ApiResponse {
   };
 }
 
+// Série nacional (SINESP/VDE) calculada no servidor e passada por props.
+export interface SerieNacional {
+  labels: string[]; // "2015-01" … "2026-04"
+  vals: number[];
+}
+
+type Filtro = Contexto | "todos" | "osint";
+
+const INDICIO = "#E2A33B";
+const MESES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 // Distância em km entre dois pontos (Haversine) — p/ "perto de mim".
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
@@ -36,29 +45,27 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-export function TiroteiosDashboard() {
+function tempoLabel(iso: string | null, now: number): string {
+  if (!iso) return "";
+  const h = Math.max(0, Math.floor((now - Date.parse(iso)) / 3600000));
+  if (h < 1) return "agora";
+  if (h < 24) return `há ${h} h`;
+  return `há ${Math.floor(h / 24)} d`;
+}
+
+const fmtInt = (n: number) => n.toLocaleString("pt-BR");
+
+export function TiroteiosDashboard({ nacional }: { nacional: SerieNacional }) {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [contexto, setContexto] = useState<Contexto | "todos">("todos");
+  const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  const [selId, setSelId] = useState<string | null>(null);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
-
-  function pertoDeMim() {
-    if (!("geolocation" in navigator)) {
-      setGeoMsg("Geolocalização indisponível neste navegador.");
-      return;
-    }
-    setGeoMsg("Localizando…");
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude });
-        setGeoMsg(null);
-      },
-      (err) => setGeoMsg(err.code === err.PERMISSION_DENIED ? "Permissão de localização negada." : "Não foi possível obter sua localização."),
-      { timeout: 10000, maximumAge: 300000 },
-    );
-  }
+  // instante da última carga — base dos rótulos "há N h" (nunca Date.now() em render)
+  const [agora, setAgora] = useState(0);
 
   async function carregar() {
     setLoading(true);
@@ -67,6 +74,7 @@ export function TiroteiosDashboard() {
       const res = await fetch("/api/shootings");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData((await res.json()) as ApiResponse);
+      setAgora(Date.now());
     } catch (e) {
       setErro(String(e));
     } finally {
@@ -81,7 +89,12 @@ export function TiroteiosDashboard() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((json) => active && setData(json as ApiResponse))
+      .then((json) => {
+        if (active) {
+          setData(json as ApiResponse);
+          setAgora(Date.now());
+        }
+      })
       .catch((e) => active && setErro(String(e)))
       .finally(() => active && setLoading(false));
     return () => {
@@ -90,282 +103,453 @@ export function TiroteiosDashboard() {
   }, []);
 
   const todas = useMemo(() => data?.ocorrencias ?? [], [data]);
-  const filtradas = useMemo(
-    () =>
-      [...todas]
-        .filter((o) => contexto === "todos" || o.contexto === contexto)
-        .sort((a, b) => (a.data < b.data ? 1 : -1)),
-    [todas, contexto],
-  );
+  const osint = useMemo(() => data?.meta.osint ?? [], [data]);
 
-  // "Perto de mim": evento mais próximo do usuário. Preserva a CLASSE da fonte
-  // (registro Fogo Cruzado × indício de notícia OSINT) — nunca rotular OSINT como
-  // "registro" oficial (moldura inegociável: indício ≠ registro).
-  const maisProximo = useMemo(() => {
-    if (!userPos) return null;
-    const pontos: { lat: number; lng: number; rotulo: string; kind: "fc" | "osint" }[] = [
-      ...todas.filter((o) => typeof o.lat === "number" && typeof o.lng === "number").map((o) => ({ lat: o.lat as number, lng: o.lng as number, rotulo: `${o.municipio}/${o.estado}`, kind: "fc" as const })),
-      ...(data?.meta.osint ?? []).map((p) => ({ lat: p.lat, lng: p.lng, rotulo: `${p.municipio}/${p.uf}`, kind: "osint" as const })),
+  const fcFiltradas = useMemo(
+    () =>
+      filtro === "osint"
+        ? []
+        : [...todas].filter((o) => filtro === "todos" || o.contexto === filtro).sort((a, b) => (a.data < b.data ? 1 : -1)),
+    [todas, filtro],
+  );
+  const osintVisiveis = useMemo(() => (filtro === "todos" || filtro === "osint" ? osint : []), [filtro, osint]);
+
+  // Feed: FC + OSINT juntos, mais recente primeiro (fidelidades sinalizadas item a item).
+  const feed = useMemo(() => {
+    const itens: ({ kind: "fc"; o: ShootingOccurrence } | { kind: "osint"; p: OsintPoint })[] = [
+      ...fcFiltradas.map((o) => ({ kind: "fc" as const, o })),
+      ...osintVisiveis.map((p) => ({ kind: "osint" as const, p })),
     ];
-    let best: { rotulo: string; km: number; kind: "fc" | "osint" } | null = null;
-    for (const pt of pontos) {
-      const km = haversineKm(userPos, pt);
-      if (!best || km < best.km) best = { rotulo: pt.rotulo, km, kind: pt.kind };
+    itens.sort((a, b) => {
+      const da = a.kind === "fc" ? a.o.data : (a.p.data ?? "");
+      const db = b.kind === "fc" ? b.o.data : (b.p.data ?? "");
+      return da < db ? 1 : -1;
+    });
+    return itens.slice(0, 140);
+  }, [fcFiltradas, osintVisiveis]);
+
+  // "Perto de mim": geolocalização real → registro/indício mais próximo.
+  // Resultado escrito na live region (role="status") — acessibilidade preservada.
+  function pertoDeMim() {
+    if (!("geolocation" in navigator)) {
+      setGeoMsg("Geolocalização indisponível neste navegador.");
+      return;
     }
-    return best;
-  }, [userPos, todas, data]);
+    setGeoMsg("Localizando…");
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        const me = { lat: p.coords.latitude, lng: p.coords.longitude };
+        let best: { km: number; rotulo: string; kind: "fc" | "osint"; id: string } | null = null;
+        for (const o of todas) {
+          if (typeof o.lat !== "number" || typeof o.lng !== "number") continue;
+          const km = haversineKm(me, { lat: o.lat, lng: o.lng });
+          if (!best || km < best.km) best = { km, rotulo: `${o.municipio}/${o.estado}`, kind: "fc", id: o.id };
+        }
+        for (const q of osint) {
+          const km = haversineKm(me, { lat: q.lat, lng: q.lng });
+          if (!best || km < best.km) best = { km, rotulo: `${q.municipio}/${q.uf}`, kind: "osint", id: q.id };
+        }
+        setUserPos(me);
+        if (!best) {
+          setGeoMsg("Localização obtida, mas nenhum registro/indício geolocalizado na janela atual.");
+          return;
+        }
+        const kmTx = best.km < 1 ? "<1" : String(Math.round(best.km));
+        setGeoMsg(
+          best.kind === "fc"
+            ? `Registro mais próximo: ${best.rotulo} · ~${kmTx} km. Não é alerta de emergência.`
+            : `Indício de notícia mais próximo: ${best.rotulo} · ~${kmTx} km (precisão municipal). Não é alerta de emergência.`,
+        );
+        setSelId(best.id);
+      },
+      (err) => setGeoMsg(err.code === err.PERMISSION_DENIED ? "Permissão de localização negada." : "Não foi possível obter sua localização."),
+      { timeout: 10000, maximumAge: 300000 },
+    );
+  }
+
+  const kpi = {
+    ocorr: data?.meta.total ?? todas.length,
+    mortos: data?.meta.mortos ?? 0,
+    policia: data?.meta.porContexto?.policia ?? 0,
+    disputa: data?.meta.porContexto?.disputa ?? 0,
+    outro: data?.meta.porContexto?.outro ?? 0,
+    osint: osint.length,
+    ufs: data?.meta.osintUfs ?? 0,
+  };
+
+  const filtros: { id: Filtro; label: string; n: number; cor?: string }[] = [
+    { id: "todos", label: "TODOS", n: todas.length + osint.length },
+    { id: "disputa", label: "DISPUTA", n: kpi.disputa, cor: CONTEXTO_COR.disputa },
+    { id: "policia", label: "AÇÃO POLICIAL", n: kpi.policia, cor: CONTEXTO_COR.policia },
+    { id: "outro", label: "OUTRO", n: kpi.outro, cor: CONTEXTO_COR.outro },
+    { id: "osint", label: "◆ INDÍCIOS", n: kpi.osint, cor: INDICIO },
+  ];
+
+  const destaque = hoverId ?? selId;
 
   return (
-    <main className="flex min-h-screen flex-col text-slate-100">
+    <main className="flex min-h-screen flex-col bg-bg0 text-ink">
       <AppHeader />
-      <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 p-4">
-        <div className="flex items-center gap-2 text-cyan-300">
-          <Crosshair className="h-5 w-5" />
-          <h2 className="text-lg font-semibold tracking-wide text-slate-100">Radar de tiroteios — tempo quase real</h2>
-          <Link href="/radar" className="ml-auto text-xs text-slate-400 underline hover:text-cyan-200">
-            ← radar de anomalia
-          </Link>
-        </div>
 
-        <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            <strong>Não é alerta de emergência</strong> — em urgências, ligue 190. Registros de tiroteios/disparos da{" "}
-            <a className="underline hover:text-amber-50" href="https://fogocruzado.org.br" target="_blank" rel="noopener noreferrer">
-              Fogo Cruzado
-            </a>{" "}
-            (últimos {data?.meta.dias ?? 7} dias). <strong>Cobertura ao vivo</strong>:{" "}
-            {data?.meta.cobertura ?? "regiões metropolitanas de Rio de Janeiro, Recife, Salvador e Belém"}. Fora delas, o mapa
-            mostra <strong>◆ indícios de notícias (OSINT)</strong> no Brasil todo
-            {data?.meta.osintUfs ? ` (${data.meta.osintUfs} UF[s] no momento)` : ""} — precisão municipal, indício, não registro.
-          </p>
-        </div>
+      <div className="grid grid-cols-1 border-b border-line lg:grid-cols-[minmax(0,1fr)_392px]">
+        {/* ===== PAINEL DO MAPA ===== */}
+        <div className="panel-grid relative min-h-[560px] overflow-hidden bg-maparea lg:h-[calc(100vh-224px)] lg:min-h-[660px]">
+          {loading ? (
+            <div className="flex h-full items-center justify-center font-mono text-[11px] tracking-[.18em] text-quat">
+              CARREGANDO JANELA…
+            </div>
+          ) : (
+            <ShootingsMap
+              ocorrencias={fcFiltradas}
+              osint={osintVisiveis}
+              focus={userPos}
+              highlightId={destaque}
+              onHover={setHoverId}
+            />
+          )}
 
-        {/* filtros + stats */}
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
-          <label className="flex items-center gap-2">
-            <span className="text-slate-400">Contexto</span>
-            <select
-              className="rounded-md border border-white/10 bg-slate-950 px-2 py-1 text-slate-100"
-              value={contexto}
-              onChange={(e) => setContexto(e.target.value as Contexto | "todos")}
-            >
-              <option value="todos">Todos</option>
-              <option value="disputa">{CONTEXTO_LABEL.disputa}</option>
-              <option value="policia">{CONTEXTO_LABEL.policia}</option>
-              <option value="outro">{CONTEXTO_LABEL.outro}</option>
-            </select>
-          </label>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-            {(["disputa", "policia", "outro"] as Contexto[]).map((c) => (
-              <span key={c} className="inline-flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: CONTEXTO_COR[c] }} />
-                {CONTEXTO_LABEL[c]}: {data?.meta.porContexto?.[c] ?? 0}
+          {/* overlay editorial (não intercepta o mouse) */}
+          <div className="pointer-events-none absolute left-[26px] top-[26px] z-[5] max-w-[460px]">
+            <div className="flex items-center gap-2.5 font-mono text-[10px] tracking-[.28em] text-registro">
+              <span className="inline-block h-px w-[22px] bg-registro" />
+              RADAR DE TIROTEIOS — TEMPO QUASE REAL
+            </div>
+            <div className="mt-3.5 flex items-baseline gap-3.5">
+              <div className="text-[72px] font-[640] leading-[.82] tracking-[-0.02em] text-ink [font-stretch:112%] sm:text-[104px]">
+                {loading ? "—" : kpi.ocorr}
+              </div>
+              <div className="max-w-[210px] text-[15px] leading-[1.45] text-sec">
+                ocorrências de disparo registradas nos últimos <span className="text-ink">{data?.meta.dias ?? 7} dias</span>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="flex items-center gap-[7px] border border-edge bg-[rgba(12,13,16,.72)] px-[11px] py-[7px] font-mono text-[10px] tracking-[.1em] text-sec backdrop-blur-[4px]">
+                <span className="text-[13px] font-semibold text-ink">{kpi.mortos}</span> MORTOS NA JANELA
               </span>
-            ))}
-            <span className="inline-flex items-center gap-1" title="Indícios de violência armada extraídos de notícias (OSINT), nacional, precisão municipal">
-              <span className="inline-block h-2.5 w-2.5 rotate-45 border border-amber-500 bg-amber-500/20" />
-              Notícia (OSINT): {data?.meta.osint?.length ?? 0}
+              <span className="flex items-center gap-[7px] border border-edge bg-[rgba(12,13,16,.72)] px-[11px] py-[7px] font-mono text-[10px] tracking-[.1em] text-sec backdrop-blur-[4px]">
+                <span className="h-1.5 w-1.5 rounded-full bg-policia" />
+                <span className="text-[13px] font-semibold text-ink">{kpi.policia}</span> AÇÃO POLICIAL
+              </span>
+              <span className="flex items-center gap-[7px] border border-edge bg-[rgba(12,13,16,.72)] px-[11px] py-[7px] font-mono text-[10px] tracking-[.1em] text-sec backdrop-blur-[4px]">
+                <span className="h-1.5 w-1.5 rounded-full bg-registro" />
+                <span className="text-[13px] font-semibold text-ink">{kpi.disputa}</span> DISPUTA
+              </span>
+              <span className="flex items-center gap-[7px] border border-[rgba(226,163,59,.35)] bg-[rgba(226,163,59,.06)] px-[11px] py-[7px] font-mono text-[10px] tracking-[.1em] text-indiciotx backdrop-blur-[4px]">
+                <span className="h-1.5 w-1.5 rotate-45 border border-indicio" />
+                <span className="text-[13px] font-semibold text-indicio">{kpi.osint}</span> INDÍCIOS EM {kpi.ufs} UFs
+              </span>
+            </div>
+          </div>
+
+          {/* chips de filtro (filtram mapa E feed) */}
+          <div className="absolute bottom-6 left-[26px] z-[6] flex flex-col gap-2.5">
+            <div className="font-mono text-[9px] tracking-[.24em] text-quat">FILTRAR CONTEXTO</div>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar contexto">
+              {filtros.map((f) => {
+                const act = filtro === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setFiltro(f.id)}
+                    aria-pressed={act}
+                    className="flex items-center gap-[7px] border px-[11px] py-[7px] font-mono text-[9.5px] tracking-[.14em] backdrop-blur-[4px] hover:border-edgehover hover:text-ink"
+                    style={{
+                      background: act ? "rgba(236,234,228,.1)" : "rgba(12,13,16,.72)",
+                      borderColor: act ? (f.cor ?? "#ECEAE4") : "#262B33",
+                      color: act ? "#ECEAE4" : "#797F88",
+                    }}
+                  >
+                    {f.label}
+                    <span className="font-semibold" style={{ color: act ? (f.cor ?? "#ECEAE4") : "#565B63" }}>
+                      {f.n}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* nota de cobertura */}
+          <div className="pointer-events-none absolute bottom-6 right-[22px] z-[5] hidden text-right font-mono text-[9px] leading-[2] tracking-[.14em] text-quat md:block">
+            <div className="text-[#6C717A]">COBERTURA AO VIVO — FOGO CRUZADO</div>
+            <div>RM RIO · RM RECIFE · RM SALVADOR · RM BELÉM</div>
+            <div className="text-indiciodim">FORA DELAS: ◆ INDÍCIO DE NOTÍCIA, NÃO REGISTRO</div>
+          </div>
+        </div>
+
+        {/* ===== FEED ===== */}
+        <aside className="flex min-h-[480px] flex-col border-l border-line bg-panel lg:h-[calc(100vh-224px)] lg:min-h-[660px]">
+          <div className="border-b border-hair px-[18px] pb-3 pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-mono text-[10px] tracking-[.24em] text-sec">FEED DE OCORRÊNCIAS</h2>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={pertoDeMim}
+                  title="Localizar o registro ou indício mais próximo de você"
+                  className="flex items-center gap-1.5 border border-edge px-2.5 py-1.5 font-mono text-[9px] tracking-[.14em] text-sec hover:border-policia hover:text-policiatx"
+                >
+                  ◎ PERTO DE MIM
+                </button>
+                <button
+                  type="button"
+                  onClick={carregar}
+                  className="flex items-center gap-1.5 border border-edge px-2.5 py-1.5 font-mono text-[9px] tracking-[.14em] text-sec hover:border-edgehover hover:text-ink"
+                >
+                  {loading ? "◌ ATUALIZANDO" : "↻ ATUALIZAR"}
+                </button>
+              </div>
+            </div>
+            <p className="mt-2 font-mono text-[9.5px] tracking-[.06em] text-quat">
+              {loading
+                ? "carregando janela…"
+                : `${feed.length} itens na janela · ${todas.length} registros FC + ${osint.length} indícios OSINT · fonte: ${data?.meta.fonte ?? "Fogo Cruzado"} + Google Notícias`}
+              {data?.meta.aviso ? ` · ${data.meta.aviso}` : ""}
+            </p>
+            {/* live region persistente: status da geolocalização anunciado a leitores de tela */}
+            <div role="status" aria-live="polite">
+              {geoMsg ? (
+                <p className="mt-2 border border-[rgba(79,160,232,.3)] bg-[rgba(79,160,232,.07)] px-2.5 py-2 font-mono text-[10px] leading-[1.6] text-policiatx">
+                  {geoMsg}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 border-b border-hair bg-[rgba(229,72,77,.04)] px-[18px] py-2">
+            <span className="h-[5px] w-[5px] flex-none rounded-full bg-registro" />
+            <span className="font-mono text-[9px] tracking-[.12em] text-[#8E9299]">
+              NÃO É ALERTA DE EMERGÊNCIA — EM URGÊNCIAS, LIGUE <span className="text-registro">190</span>
             </span>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={pertoDeMim}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs ${userPos ? "border-blue-400/50 text-blue-200" : "border-white/10 text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"}`}
-            >
-              <MapPin className="h-3.5 w-3.5" /> Perto de mim
-            </button>
-            <button
-              type="button"
-              onClick={carregar}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Atualizar
-            </button>
-          </div>
-        </div>
 
-        {data?.meta ? (
-          <p className="text-xs text-slate-500">
-            {filtradas.length} de {todas.length} ocorrências · {data.meta.mortos ?? 0} morto(s) na janela ·{" "}
-            {todas.filter((o) => typeof o.lat === "number").length} no mapa
-            {data.meta.fonte ? ` · fonte: ${data.meta.fonte}` : ""}
-            {data.meta.aviso ? ` · ${data.meta.aviso}` : ""}
-          </p>
-        ) : null}
-
-        {/* Região viva: status da geolocalização e resultado são anunciados a leitores de
-            tela. Caixa real (flex) — não `display:contents`, que pode sumir da árvore de
-            acessibilidade e silenciar o aria-live (Chromium+NVDA). `empty:hidden` evita
-            o gap extra quando não há mensagem. */}
-        <div role="status" aria-live="polite" className="flex flex-col gap-4 empty:hidden">
-          {geoMsg ? <p className="text-xs text-slate-400">{geoMsg}</p> : null}
-          {maisProximo ? (
-            <p className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-3 py-2 text-xs text-blue-100">
-              <MapPin className="mr-1 inline h-3.5 w-3.5" />{" "}
-              {maisProximo.kind === "fc"
-                ? "Registro mais próximo de você: "
-                : "Indício de notícia mais próximo de você: "}
-              <strong>{maisProximo.rotulo}</strong>
-              {maisProximo.kind === "osint" ? " (precisão municipal)" : ""} · ~
-              {maisProximo.km < 1 ? "<1" : Math.round(maisProximo.km)} km. Não é alerta de emergência.
-            </p>
-          ) : null}
-          {userPos && !maisProximo ? (
-            <p className="text-xs text-slate-400">
-              Localização obtida, mas nenhum registro/indício geolocalizado na janela atual.
-            </p>
-          ) : null}
-        </div>
-
-        <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_460px]">
-          <div className="min-h-[360px] overflow-hidden rounded-xl border border-white/10 bg-slate-950/40">
-            {loading ? (
-              <div className="flex h-full items-center justify-center text-sm text-slate-400">A carregar…</div>
-            ) : (
-              <ShootingsMap ocorrencias={filtradas} osint={contexto === "todos" ? (data?.meta.osint ?? []) : []} focus={userPos} />
-            )}
-          </div>
-
-          <ul className="max-h-[660px] space-y-2 overflow-y-auto pr-1">
+          <div className="flex-1 overflow-y-auto">
             {erro ? (
-              <li className="rounded-lg border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-100">Falha ao carregar: {erro}</li>
+              <p className="border-b border-hair px-[18px] py-3 font-mono text-[10px] leading-[1.6] text-registro">
+                FALHA AO CARREGAR: {erro}
+              </p>
             ) : null}
-            {!loading && filtradas.length === 0 && !erro ? (
-              <li className="rounded-lg border border-white/10 p-4 text-sm text-slate-400">Nenhuma ocorrência no filtro atual.</li>
+            {!loading && feed.length === 0 && !erro ? (
+              <p className="px-[18px] py-4 font-mono text-[10px] tracking-[.1em] text-quat">NENHUM ITEM NO FILTRO ATUAL.</p>
             ) : null}
-            {filtradas.slice(0, 200).map((o) => (
-              <li key={o.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-100">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: CONTEXTO_COR[o.contexto] }} />
-                    {CONTEXTO_LABEL[o.contexto]}
+            {feed.map((it) => {
+              const id = it.kind === "fc" ? it.o.id : it.p.id;
+              const hot = destaque === id;
+              const cor = it.kind === "fc" ? CONTEXTO_COR[it.o.contexto] : INDICIO;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onMouseEnter={() => setHoverId(id)}
+                  onMouseLeave={() => setHoverId(null)}
+                  onFocus={() => setHoverId(id)}
+                  onBlur={() => setHoverId(null)}
+                  onClick={() => setSelId(selId === id ? null : id)}
+                  className="block w-full border-b border-[#14161A] px-[18px] py-3 text-left hover:bg-hoverrow"
+                  style={{ background: hot ? "#13161B" : undefined, boxShadow: hot ? `inset 2px 0 0 ${cor}` : undefined }}
+                >
+                  <span className="flex items-center gap-2">
+                    {it.kind === "fc" ? (
+                      <span className="h-2 w-2 flex-none rounded-full" style={{ background: cor }} />
+                    ) : (
+                      <span className="h-[7px] w-[7px] flex-none rotate-45 border border-indicio" />
+                    )}
+                    <span className="font-mono text-[9.5px] tracking-[.16em]" style={{ color: cor }}>
+                      {it.kind === "fc" ? CONTEXTO_LABEL[it.o.contexto].toUpperCase() : "INDÍCIO DE NOTÍCIA"}
+                    </span>
+                    <span className="ml-auto font-mono text-[9.5px] text-quat">
+                      {tempoLabel(it.kind === "fc" ? it.o.data : it.p.data, agora)}
+                    </span>
                   </span>
-                  <span className="text-[11px] text-slate-500">{o.data.slice(0, 10)}</span>
-                </div>
-                <p className="mt-0.5 text-xs text-slate-400">
-                  {o.bairro ? `${o.bairro} — ` : ""}
-                  {o.municipio}/{o.estado}
-                </p>
-                <p className="mt-1 text-xs text-slate-300">
-                  {o.mortos} morto(s) · {o.feridos} ferido(s){o.mainReason ? ` · ${o.mainReason}` : ""}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Tendência histórica acumulada (cron → Supabase) */}
-        {data?.meta.historico && data.meta.historico.length > 1 ? (
-          <TrendStrip dados={data.meta.historico} />
-        ) : null}
-
-        {/* Análise por município (+ overlay da lente 2 no RJ) */}
-        {data?.meta.porMunicipio?.length ? (
-          <div className="mt-2">
-            <h3 className="mb-2 text-sm font-semibold text-slate-200">
-              Por município <span className="font-normal text-slate-500">— tiroteios na janela + cobertura na imprensa (OSINT)</span>
-            </h3>
-            <div className="overflow-x-auto rounded-xl border border-white/10">
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="px-3 py-2">Município</th>
-                    <th className="px-3 py-2">Tiroteios</th>
-                    <th className="px-3 py-2" title="% dos tiroteios por disputa entre grupos">% disputa</th>
-                    <th className="px-3 py-2">Mortos</th>
-                    <th className="px-3 py-2" title="Notícias OSINT no município (indício, não fato)">Imprensa</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.meta.porMunicipio.slice(0, 25).map((m) => (
-                    <tr key={`${m.municipio}|${m.estado}`} className="border-t border-white/5">
-                      <td className="px-3 py-2 font-medium text-slate-100">
-                        {m.municipio}
-                        <span className="text-slate-500"> / {m.estado}</span>
-                      </td>
-                      <td className="px-3 py-2 text-slate-300">{m.total}</td>
-                      <td className="px-3 py-2 font-mono text-slate-300">{(m.disputaShare * 100).toFixed(0)}%</td>
-                      <td className="px-3 py-2 text-slate-400">{m.mortos}</td>
-                      <td className="px-3 py-2">
-                        {m.noticias.length ? (
-                          <details className="group">
-                            <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[11px] text-cyan-300 hover:text-cyan-200">
-                              📰 {m.noticias.length} <span className="text-slate-500 group-open:hidden">▸</span>
-                            </summary>
-                            <ul className="mt-1 space-y-1">
-                              {m.noticias.map((n, i) => (
-                                <li key={`${n.url}|${i}`} className="text-[11px] leading-tight">
-                                  {n.url ? (
-                                    <a className="text-slate-300 underline hover:text-cyan-200" href={n.url} target="_blank" rel="noopener noreferrer">
-                                      {n.titulo}
-                                    </a>
-                                  ) : (
-                                    <span className="text-slate-300">{n.titulo}</span>
-                                  )}
-                                  <span className="text-slate-500">
-                                    {n.veiculo ? ` · ${n.veiculo}` : ""}
-                                    {n.data ? ` · ${n.data}` : ""}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </details>
-                        ) : (
-                          <span className="text-[11px] text-slate-600">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">
-              &quot;Imprensa&quot; liga ao acervo de{" "}
-              <Link className="underline hover:text-cyan-200" href="/noticias">notícias OSINT</Link> do município (cobertura cresce com o tempo). A leitura
-              de governança (controle×disputa) <strong>por UF</strong> está no{" "}
-              <Link className="underline hover:text-cyan-200" href="/radar">radar de anomalia</Link>. Indício, não acusação.
-            </p>
+                  <span className="mt-1.5 block text-[13.5px] font-[560] leading-[1.35] text-[#E4E2DC]">
+                    {it.kind === "fc"
+                      ? `${it.o.bairro ? it.o.bairro + " — " : ""}${it.o.municipio}/${it.o.estado}`
+                      : `${it.p.municipio} / ${it.p.uf}`}
+                  </span>
+                  <span className="mt-0.5 block font-mono text-[10px] leading-[1.55] text-ter">
+                    {it.kind === "fc"
+                      ? `${it.o.mortos} morto(s) · ${it.o.feridos} ferido(s)${it.o.mainReason ? ` · ${it.o.mainReason}` : ""}`
+                      : `“${it.p.titulo.slice(0, 90)}”${it.p.veiculo ? ` — ${it.p.veiculo}` : ""} · precisão municipal`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        ) : null}
+        </aside>
       </div>
+
+      {/* ===== TENDÊNCIA NACIONAL (SINESP/VDE) ===== */}
+      <TrendNacional serie={nacional} />
+
+      {/* ===== POR MUNICÍPIO (tabela compacta, colapsada) ===== */}
+      {data?.meta.porMunicipio?.length ? <PorMunicipio linhas={data.meta.porMunicipio} /> : null}
     </main>
   );
 }
 
-// Tira de barras diárias (tendência acumulada no banco). Altura ∝ tiroteios/dia;
-// barras com morto(s) recebem topo âmbar. Cresce de ~7 dias (janela viva) até 30.
-function TrendStrip({ dados }: { dados: DiaResumo[] }) {
-  const max = Math.max(1, ...dados.map((d) => d.total));
-  const totalJanela = dados.reduce((s, d) => s + d.total, 0);
-  const mortosJanela = dados.reduce((s, d) => s + d.mortos, 0);
+// Faixa full-width com a série mensal nacional completa (2015 → hoje).
+function TrendNacional({ serie }: { serie: SerieNacional }) {
+  const { labels, vals } = serie;
+  if (!vals.length) return null;
+  const last = vals[vals.length - 1];
+  const lastLabel = labels[labels.length - 1]; // "2026-04"
+  const [anoTx, mesTx] = lastLabel.split("-");
+  const mesNome = MESES_CURTO[Number(mesTx) - 1] ?? mesTx;
+  const prevYr = vals.length >= 13 ? vals[vals.length - 13] : null;
+  const dMes = prevYr ? ((last - prevYr) / prevYr) * 100 : null;
+  const sum12 = vals.slice(-12).reduce((a, b) => a + b, 0);
+  const prev12 = vals.slice(-24, -12).reduce((a, b) => a + b, 0);
+  const d12 = prev12 ? ((sum12 - prev12) / prev12) * 100 : null;
+  // é o menor valor deste mês em toda a série?
+  const mesmoMes = labels.map((l, i) => ({ l, v: vals[i] })).filter(({ l }) => l.endsWith(`-${mesTx}`));
+  const menorDoMes = mesmoMes.every(({ v }) => last <= v);
+
+  const W = 1200;
+  const H = 170;
+  const pad = 8;
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const x = (i: number) => pad + (i / (vals.length - 1)) * (W - 2 * pad);
+  const y = (v: number) => 14 + (1 - (v - min) / (max - min)) * (H - 44);
+  let line = "";
+  vals.forEach((v, i) => {
+    line += (i === 0 ? "M" : "L") + x(i).toFixed(1) + " " + y(v).toFixed(1);
+  });
+  const area = line + `L${x(vals.length - 1).toFixed(1)} ${H - 6}L${x(0).toFixed(1)} ${H - 6}Z`;
+  const iPeak = vals.indexOf(max);
+  const peakLabel = labels[iPeak];
+  const [pAno, pMes] = peakLabel.split("-");
+  const peakPctX = ((x(iPeak) / W) * 100).toFixed(1);
+
+  const fmtDelta = (d: number | null) =>
+    d == null ? "—" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1).replace(".", ",")}%`;
+
   return (
-    <div className="mt-2">
-      <h3 className="mb-2 text-sm font-semibold text-slate-200">
-        Tendência <span className="font-normal text-slate-500">— tiroteios/dia acumulados ({dados.length} dia(s) · {totalJanela} tiroteios · {mortosJanela} mortos)</span>
-      </h3>
-      <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-        <div className="flex h-24 items-end gap-0.5">
-          {dados.map((d) => (
-            <div
-              key={d.dia}
-              className="flex-1 rounded-t-sm bg-cyan-500/40"
-              style={{ height: `${Math.max(4, (d.total / max) * 100)}%` }}
-              title={`${d.dia}: ${d.total} tiroteio(s) · ${d.mortos} morto(s)`}
-            >
-              {d.mortos > 0 ? <div className="h-1 rounded-t-sm bg-amber-300/80" /> : null}
-            </div>
-          ))}
+    <section className="grid grid-cols-1 border-b border-line bg-maparea md:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="flex flex-col justify-center gap-2 border-r border-hair px-[26px] py-[22px]">
+        <h2 className="font-mono text-[9.5px] tracking-[.24em] text-quat">
+          TENDÊNCIA NACIONAL — HOMICÍDIO DOLOSO <span className="text-ghost">· SINESP/VDE</span>
+        </h2>
+        <div className="flex items-baseline gap-2.5">
+          <span className="text-[44px] font-[640] leading-none tracking-[-0.02em] text-ink [font-stretch:112%]">{fmtInt(last)}</span>
+          <span className={`font-mono text-[10.5px] tracking-[.06em] ${dMes != null && dMes <= 0 ? "text-positivo" : "text-registro"}`}>
+            {fmtDelta(dMes)} a/a
+          </span>
         </div>
-        <div className="mt-1 flex justify-between text-[11px] text-slate-500">
-          <span>{dados[0]?.dia}</span>
-          <span>{dados[dados.length - 1]?.dia}</span>
+        <p className="text-[12.5px] leading-[1.55] text-ter">
+          registros em <span className="text-sec">{mesNome}/{anoTx}</span>
+          {menorDoMes ? ` — o menor ${mesNome} de toda a série desde 2015` : ""}. Últimos 12 meses:{" "}
+          <span className="text-ink">{fmtInt(sum12)}</span> mortes ({fmtDelta(d12)}).
+        </p>
+      </div>
+      <div className="relative min-h-[170px] pt-2.5">
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" className="absolute inset-0 block" aria-hidden="true">
+          <defs>
+            <linearGradient id="natg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(229,72,77,.22)" />
+              <stop offset="100%" stopColor="rgba(229,72,77,0)" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill="url(#natg)" />
+          <path d={line} fill="none" stroke="#E5484D" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
+          <line x1="0" y1={H - 6} x2={W} y2={H - 6} stroke="#1E2126" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          {vals.map((_, i) => (i % 12 === 0 ? <line key={i} x1={x(i)} y1={H - 6} x2={x(i)} y2={H - 1} stroke="#33383F" strokeWidth="1" vectorEffect="non-scaling-stroke" /> : null))}
+          <circle cx={x(iPeak)} cy={y(max)} r="2.6" fill="#ECEAE4" />
+          <circle cx={x(vals.length - 1)} cy={y(last)} r="2.6" fill="#E5484D" stroke="#ECEAE4" strokeWidth="0.8" />
+        </svg>
+        <div className="pointer-events-none absolute top-3 -translate-x-1/2 text-center" style={{ left: `${peakPctX}%` }}>
+          <span className="font-mono text-[9px] tracking-[.12em] text-sec">
+            PICO {MESES_CURTO[Number(pMes) - 1]?.toUpperCase()}/{pAno} — {fmtInt(max)}
+          </span>
+        </div>
+        <div className="pointer-events-none absolute bottom-[46px] right-3.5 text-right">
+          <span className="font-mono text-[9px] tracking-[.12em] text-registro">
+            {mesNome.toUpperCase()}/{anoTx} — {fmtInt(last)}
+          </span>
         </div>
       </div>
-      <p className="mt-1 text-xs text-slate-500">
-        Histórico persistido a cada ingestão (cron diário + refresh sob demanda). A janela cresce com o tempo.
-      </p>
-    </div>
+    </section>
+  );
+}
+
+// Tabela por município (tiroteios × cobertura de imprensa), colapsada — o herói
+// da home é o mapa; o detalhe municipal abre sob demanda.
+function PorMunicipio({ linhas }: { linhas: MunicipioResumoFull[] }) {
+  return (
+    <details className="border-b border-line">
+      <summary className="cursor-pointer px-7 py-3.5 font-mono text-[10px] tracking-[.22em] text-quat hover:bg-cellhead hover:text-sec">
+        POR MUNICÍPIO — TIROTEIOS NA JANELA × IMPRENSA (OSINT) ▾
+      </summary>
+      <div className="overflow-x-auto px-7 pb-6">
+        <table className="w-full border-collapse border border-line text-sm">
+          <thead>
+            <tr className="bg-cellhead text-left font-mono text-[8.5px] uppercase tracking-[.18em] text-quat">
+              <th className="px-3.5 py-2.5 font-normal">Município</th>
+              <th className="px-3.5 py-2.5 font-normal">Tiroteios</th>
+              <th className="px-3.5 py-2.5 font-normal" title="% dos tiroteios por disputa entre grupos">
+                % disputa
+              </th>
+              <th className="px-3.5 py-2.5 font-normal">Mortos</th>
+              <th className="px-3.5 py-2.5 font-normal" title="Notícias OSINT no município (indício, não fato)">
+                Imprensa
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.slice(0, 25).map((m) => (
+              <tr key={`${m.municipio}|${m.estado}`} className="border-t border-hair bg-panel">
+                <td className="px-3.5 py-2.5 text-[13px] font-medium text-ink">
+                  {m.municipio}
+                  <span className="text-quat"> / {m.estado}</span>
+                </td>
+                <td className="px-3.5 py-2.5 font-mono text-[12px] text-sec">{m.total}</td>
+                <td className="px-3.5 py-2.5 font-mono text-[12px] text-sec">{(m.disputaShare * 100).toFixed(0)}%</td>
+                <td className="px-3.5 py-2.5 font-mono text-[12px] text-ter">{m.mortos}</td>
+                <td className="px-3.5 py-2.5">
+                  {m.noticias.length ? (
+                    <details className="group">
+                      <summary className="inline-flex cursor-pointer list-none items-center gap-1 font-mono text-[10px] tracking-[.08em] text-indiciotx hover:text-indicio">
+                        ◆ {m.noticias.length} <span className="text-quat group-open:hidden">▸</span>
+                      </summary>
+                      <ul className="mt-1 space-y-1">
+                        {m.noticias.map((n, i) => (
+                          <li key={`${n.url}|${i}`} className="text-[11px] leading-tight">
+                            {n.url ? (
+                              <a className="text-sec underline underline-offset-2 hover:text-ink" href={n.url} target="_blank" rel="noopener noreferrer">
+                                {n.titulo}
+                              </a>
+                            ) : (
+                              <span className="text-sec">{n.titulo}</span>
+                            )}
+                            <span className="text-quat">
+                              {n.veiculo ? ` · ${n.veiculo}` : ""}
+                              {n.data ? ` · ${n.data}` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : (
+                    <span className="font-mono text-[11px] text-ghost">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-2 font-mono text-[9.5px] leading-[1.8] tracking-[.06em] text-quat">
+          “IMPRENSA” LIGA AO ACERVO DE{" "}
+          <Link className="underline underline-offset-2 hover:text-sec" href="/noticias">
+            NOTÍCIAS OSINT
+          </Link>{" "}
+          DO MUNICÍPIO · A LEITURA DE GOVERNANÇA POR UF ESTÁ NO{" "}
+          <Link className="underline underline-offset-2 hover:text-sec" href="/radar">
+            RADAR DE ANOMALIA
+          </Link>{" "}
+          · INDÍCIO, NÃO ACUSAÇÃO.
+        </p>
+      </div>
+    </details>
   );
 }
