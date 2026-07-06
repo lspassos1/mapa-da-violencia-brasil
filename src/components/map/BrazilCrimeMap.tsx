@@ -190,12 +190,13 @@ export function BrazilCrimeMap({
               },
             },
             layers: [
+              { id: "bg", type: "background", paint: { "background-color": "#0B0C0F" } },
               {
                 id: "base",
                 type: "raster",
                 source: "base",
                 paint: {
-                  "raster-opacity": 0.68,
+                  "raster-opacity": 0.62,
                 },
               },
             ],
@@ -236,8 +237,8 @@ export function BrazilCrimeMap({
             type: "line",
             source: "states",
             paint: {
-              "line-color": "#67e8f9",
-              "line-opacity": 0.34,
+              "line-color": "#ECEAE4",
+              "line-opacity": 0.16,
               "line-width": 1.2,
             },
           });
@@ -259,7 +260,7 @@ export function BrazilCrimeMap({
             type: "line",
             source: "municipios",
             paint: {
-              "line-color": "#0f172a",
+              "line-color": "#0A0B0D",
               "line-opacity": 0.55,
               "line-width": 0.6,
             },
@@ -270,7 +271,7 @@ export function BrazilCrimeMap({
             source: "municipios",
             filter: ["==", ["get", "id"], ""],
             paint: {
-              "line-color": "#f8fafc",
+              "line-color": "#ECEAE4",
               "line-opacity": 0.95,
               "line-width": 2.4,
             },
@@ -281,7 +282,7 @@ export function BrazilCrimeMap({
             source: "states",
             filter: ["==", ["get", "uf"], ""],
             paint: {
-              "line-color": "#f8fafc",
+              "line-color": "#ECEAE4",
               "line-opacity": 0.9,
               "line-width": 2.4,
             },
@@ -467,23 +468,23 @@ export function BrazilCrimeMap({
         />
       ) : null}
       {isLoading ? (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/70">
-          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-200">
-            <Loader2 className="h-4 w-4 animate-spin text-cyan-300" />
-            Carregando mapa
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(10,11,13,.7)]">
+          <div className="flex items-center gap-3 border border-edge bg-panel px-4 py-3 font-mono text-[11px] tracking-[.14em] text-sec">
+            <Loader2 className="h-4 w-4 animate-spin text-ter" />
+            CARREGANDO MAPA
           </div>
         </div>
       ) : null}
       {mapError && !useStaticFallback ? (
-        <div className="absolute right-4 top-20 z-20 flex max-w-sm items-start gap-3 rounded-lg border border-red-300/20 bg-red-950/80 p-3 text-sm text-red-100">
+        <div className="absolute right-4 top-20 z-20 flex max-w-sm items-start gap-3 border border-[rgba(229,72,77,.35)] bg-[rgba(20,10,11,.9)] p-3 text-sm text-[#F0B0B3]">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           {mapError}
         </div>
       ) : null}
       {!isLoading && data.length === 0 ? (
-        <div className="absolute inset-0 z-[2] flex items-center justify-center bg-slate-950/50">
-          <p className="rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-300">
-            Nenhum dado demonstrativo encontrado para este periodo.
+        <div className="absolute inset-0 z-[2] flex items-center justify-center bg-[rgba(10,11,13,.5)]">
+          <p className="border border-edge bg-panel px-4 py-3 font-mono text-[11px] tracking-[.08em] text-sec">
+            Nenhum dado encontrado para este período.
           </p>
         </div>
       ) : null}
@@ -504,10 +505,10 @@ function StaticCrimeMapFallback({
   const states = useMemo(() => Array.from(new Set(data.map((item) => item.uf))).sort(), [data]);
 
   return (
-    <div className="absolute inset-0 z-[1] overflow-hidden bg-[radial-gradient(circle_at_50%_45%,rgba(14,165,233,0.18),rgba(15,23,42,0.96)_58%)]">
-      <div className="absolute inset-x-10 bottom-16 top-24 rounded-[42%] border border-cyan-300/15 bg-cyan-300/[0.03]" />
-      <div className="absolute right-4 top-20 max-w-[260px] rounded-lg border border-white/10 bg-slate-950/85 p-3 text-xs leading-5 text-slate-300 shadow-xl backdrop-blur">
-        <p className="font-semibold text-slate-100">Mapa estatico</p>
+    <div className="absolute inset-0 z-[1] overflow-hidden bg-[radial-gradient(circle_at_50%_45%,rgba(229,83,61,0.08),rgba(10,11,13,0.97)_58%)]">
+      <div className="absolute inset-x-10 bottom-16 top-24 rounded-[42%] border border-line bg-[rgba(255,255,255,.015)]" />
+      <div className="absolute right-4 top-20 max-w-[260px] border border-edge bg-[rgba(12,13,16,.9)] p-3 text-xs leading-5 text-sec backdrop-blur">
+        <p className="font-semibold text-ink">Mapa estatico</p>
         <p className="mt-1">WebGL indisponivel; exibindo posicoes aproximadas dos municipios.</p>
       </div>
       <div className="absolute bottom-8 right-4 flex max-w-[300px] flex-wrap justify-end gap-2">
@@ -516,8 +517,8 @@ function StaticCrimeMapFallback({
             key={uf}
             className={`h-8 rounded-md border px-2 text-xs font-semibold transition ${
               selectedState === uf
-                ? "border-cyan-200 bg-cyan-300/20 text-cyan-100"
-                : "border-white/10 bg-slate-950/80 text-slate-300 hover:border-cyan-300/40"
+                ? "border-ink bg-[rgba(236,234,228,.12)] text-ink"
+                : "border-edge bg-[rgba(12,13,16,.8)] text-sec hover:border-edgehover"
             }`}
             type="button"
             onClick={() => onStateSelect(uf)}
@@ -551,7 +552,7 @@ function StaticCrimeMapFallback({
             key={item.idIbge}
             aria-label={`${item.municipio}, ${item.uf}: ${formatMetricValue(metricValue, viewMode)}`}
             className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-lg transition hover:scale-110 ${
-              isSelected ? "border-white ring-4 ring-cyan-200/40" : "border-slate-100/90"
+              isSelected ? "border-ink ring-4 ring-[rgba(236,234,228,.35)]" : "border-[rgba(236,234,228,.8)]"
             }`}
             style={style}
             title={`${item.municipio} / ${item.uf}`}

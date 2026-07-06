@@ -56,14 +56,14 @@ export function CrimeDashboard() {
 
   if (!api) {
     return (
-      <main className="flex min-h-screen flex-col text-slate-100">
+      <main className="flex min-h-screen flex-col bg-bg0 text-ink">
         <AppHeader />
         <div
-          className="flex flex-1 items-center justify-center p-8 text-sm text-slate-400"
+          className="flex flex-1 items-center justify-center p-8 font-mono text-[11px] tracking-[.18em] text-quat"
           role="status"
           aria-live="polite"
         >
-          A carregar a carga nacional…
+          CARREGANDO A CARGA NACIONAL…
         </div>
       </main>
     );
@@ -250,10 +250,10 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
   }
 
   return (
-    <main className="flex min-h-screen flex-col overflow-hidden text-slate-100">
+    <main className="flex min-h-screen flex-col overflow-hidden bg-bg0 text-ink">
       <a
         href="#conteudo-principal"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-cyan-300 focus:px-4 focus:py-2 focus:font-semibold focus:text-slate-950"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-ink focus:px-4 focus:py-2 focus:font-semibold focus:text-bg0"
       >
         Saltar para o conteudo principal
       </a>
@@ -263,6 +263,32 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
         municipalities={dataScope.municipalities}
         periodLabel={selectedPeriodLabel}
       />
+      <div className="flex flex-wrap items-end justify-between gap-6 border-b border-line px-7 pb-[22px] pt-[30px]">
+        <div>
+          <div className="flex items-center gap-2.5 font-mono text-[10px] tracking-[.28em] text-sec">
+            <span className="inline-block h-px w-[22px] bg-quat" />
+            MAPA OFICIAL — ESTATÍSTICA CONSOLIDADA
+          </div>
+          <h1 className="mt-3 text-[32px] font-[620] leading-[1.02] tracking-[-0.015em] text-ink [font-stretch:115%] sm:text-[40px]">
+            O país, medido pelo dado oficial
+          </h1>
+          <p className="mt-2.5 max-w-[560px] text-[13.5px] leading-[1.6] text-ter">
+            {indicatorLabel} por município e UF. Clique em um estado para abrir o perfil e ver os municípios com
+            fronteiras reais.
+          </p>
+        </div>
+        <div className="flex-none text-right font-mono text-[9.5px] leading-[2.1] tracking-[.14em] text-quat">
+          <div>
+            FONTE — <span className="text-sec">{demoStatus.source.toUpperCase()}</span>
+          </div>
+          <div>
+            JANELA — <span className="text-sec">{selectedPeriodLabel.toUpperCase()}</span>
+          </div>
+          <div>
+            MODO — <span className="text-sec">{viewModeLabel.toUpperCase()}</span>
+          </div>
+        </div>
+      </div>
       <section
         id="conteudo-principal"
         className="flex flex-1 flex-col gap-4 p-4 lg:grid lg:grid-cols-[440px_minmax(0,1fr)_340px] lg:p-5"
@@ -308,7 +334,7 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
           </div>
         </aside>
 
-        <section className="relative min-h-[620px] overflow-hidden rounded-lg border border-white/10 bg-slate-950/80 shadow-2xl">
+        <section className="panel-grid relative min-h-[620px] overflow-hidden border border-line bg-maparea">
           <div className="absolute left-4 right-4 top-4 z-10 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <Breadcrumb
               selectedMunicipality={selectedMunicipality}
@@ -318,7 +344,7 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
             />
             <div className="flex flex-wrap items-center gap-2">
               <div
-                className="inline-flex overflow-hidden rounded-lg border border-white/10 bg-slate-950/80 text-xs font-medium backdrop-blur"
+                className="inline-flex overflow-hidden border border-edge bg-[rgba(12,13,16,.85)] font-mono text-[10px] tracking-[.12em] backdrop-blur"
                 role="group"
                 aria-label="Alternar visualizacao"
               >
@@ -326,27 +352,27 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
                   type="button"
                   aria-pressed={!showTable}
                   className={`inline-flex items-center gap-1.5 px-3 py-2 ${
-                    !showTable ? "bg-cyan-300/20 text-cyan-100" : "text-slate-300 hover:text-cyan-200"
+                    !showTable ? "bg-[rgba(236,234,228,.1)] text-ink" : "text-sec hover:text-ink"
                   }`}
                   onClick={() => setShowTable(false)}
                 >
                   <MapIcon className="h-4 w-4" aria-hidden="true" />
-                  Mapa
+                  MAPA
                 </button>
                 <button
                   type="button"
                   aria-pressed={showTable}
                   className={`inline-flex items-center gap-1.5 px-3 py-2 ${
-                    showTable ? "bg-cyan-300/20 text-cyan-100" : "text-slate-300 hover:text-cyan-200"
+                    showTable ? "bg-[rgba(236,234,228,.1)] text-ink" : "text-sec hover:text-ink"
                   }`}
                   onClick={() => setShowTable(true)}
                 >
                   <TableIcon className="h-4 w-4" aria-hidden="true" />
-                  Tabela
+                  TABELA
                 </button>
               </div>
               {metadata.dataMode === "official" ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-100 backdrop-blur">
+                <div className="flex flex-wrap items-center gap-2 border border-edge bg-[rgba(12,13,16,.85)] px-3 py-2 font-mono text-[9.5px] tracking-[.1em] text-sec backdrop-blur">
                   <AlertTriangle className="h-4 w-4" />
                   {officialDataLabel}
                 </div>
@@ -388,32 +414,32 @@ function CrimeDashboardView({ api }: { api: CrimeDataApi }) {
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4">
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Status da base</p>
-            <div className="mt-3 space-y-2 text-sm text-slate-300">
+          <div className="border border-line bg-panel p-4">
+            <p className="font-mono text-[9.5px] uppercase tracking-[.22em] text-quat">STATUS DA BASE</p>
+            <div className="mt-3 space-y-2 text-[13px] text-sec">
               <p>
-                <span className="text-slate-500">Fonte:</span> {demoStatus.source}
+                <span className="text-quat">Fonte:</span> {demoStatus.source}
               </p>
               <p>
-                <span className="text-slate-500">Modo:</span>{" "}
+                <span className="text-quat">Modo:</span>{" "}
                 {demoStatus.mode === "official_sample" ? "amostra oficial" : demoStatus.mode ?? "demo"}
               </p>
               <p>
-                <span className="text-slate-500">Periodo:</span> {selectedPeriodLabel}
+                <span className="text-quat">Periodo:</span> {selectedPeriodLabel}
               </p>
               <p>
-                <span className="text-slate-500">Atualizado:</span> {demoStatus.lastUpdated}
+                <span className="text-quat">Atualizado:</span> {demoStatus.lastUpdated}
               </p>
               <p>
-                <span className="text-slate-500">Escopo:</span> {dataScope.municipalities} municipios,
+                <span className="text-quat">Escopo:</span> {dataScope.municipalities} municipios,
                 {" "}{dataScope.ufs} UF
               </p>
               <p>
-                <span className="text-slate-500">Cobertura:</span> {dataScope.indicators} indicador,
+                <span className="text-quat">Cobertura:</span> {dataScope.indicators} indicador,
                 {" "}{dataScope.periods} periodos
               </p>
               <p>
-                <span className="text-slate-500">Serie:</span>{" "}
+                <span className="text-quat">Serie:</span>{" "}
                 {dataScope.hasVariationSeries ? "variacao disponivel" : "sem serie para variacao"}
               </p>
             </div>

@@ -43,58 +43,58 @@ export function StateProfilePanel({
   onSelectMunicipality,
 }: StateProfilePanelProps) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
-      <div className="flex items-center gap-2 text-cyan-300">
+    <div className="rounded-lg border border-line bg-panel p-4 backdrop-blur">
+      <div className="flex items-center gap-2 text-sec">
         <MapPinned className="h-4 w-4" />
         <p className="text-xs uppercase tracking-[0.18em]">Perfil do estado</p>
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="text-base font-semibold text-slate-100">{ufNome}</p>
+        <p className="text-base font-semibold text-ink">{ufNome}</p>
         {current ? (
           <span
-            className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-slate-950"
+            className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-bg0"
             style={{ background: riskColors[current.nivel] }}
           >
             {riskLevelLabels[current.nivel]}
           </span>
         ) : null}
       </div>
-      <p className="text-[11px] text-slate-500">
+      <p className="text-[11px] text-quat">
         {indicatorLabel} — {periodLabel}
       </p>
 
       {current ? (
         <dl className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
           <div>
-            <dt className="uppercase tracking-wide text-slate-500">Total</dt>
-            <dd className="text-sm font-semibold text-slate-100">{formatNumber(current.total)}</dd>
+            <dt className="uppercase tracking-wide text-quat">Total</dt>
+            <dd className="text-sm font-semibold text-ink">{formatNumber(current.total)}</dd>
           </div>
           <div>
-            <dt className="uppercase tracking-wide text-slate-500" title="Taxa por 100 mil">
+            <dt className="uppercase tracking-wide text-quat" title="Taxa por 100 mil">
               Taxa
             </dt>
-            <dd className="text-sm font-semibold text-slate-100">
+            <dd className="text-sm font-semibold text-ink">
               {typeof current.taxa100k === "number" ? formatDecimal(current.taxa100k) : "—"}
             </dd>
           </div>
           <div>
             <dt
-              className="uppercase tracking-wide text-slate-500"
+              className="uppercase tracking-wide text-quat"
               title="Posicao entre as UFs com dados no periodo, ordenadas pelo total"
             >
               Ranking UF
             </dt>
-            <dd className="text-sm font-semibold text-slate-100">
+            <dd className="text-sm font-semibold text-ink">
               {nationalRank > 0 && nationalRankTotal > 1 ? `${nationalRank}º/${nationalRankTotal}` : "—"}
             </dd>
           </div>
         </dl>
       ) : (
-        <p className="mt-3 text-sm text-slate-400">Sem dados estaduais neste periodo.</p>
+        <p className="mt-3 text-sm text-ter">Sem dados estaduais neste periodo.</p>
       )}
 
       {typeof current?.taxa100k === "number" && nationalAvgTaxa !== null ? (
-        <p className="mt-2 text-[11px] leading-snug text-slate-400">
+        <p className="mt-2 text-[11px] leading-snug text-ter">
           Taxa {current.taxa100k >= nationalAvgTaxa ? "acima" : "abaixo"} da media nacional (
           {formatDecimal(nationalAvgTaxa)}/100 mil).
         </p>
@@ -102,7 +102,7 @@ export function StateProfilePanel({
 
       {series.length > 1 ? (
         <div className="mt-4">
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-slate-500">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-quat">
             <LineChart className="h-3.5 w-3.5" /> Serie {series[0].periodo}–{series[series.length - 1].periodo}{" "}
             (total)
           </div>
@@ -112,7 +112,7 @@ export function StateProfilePanel({
 
       {topMunicipalities.length > 0 ? (
         <div className="mt-4">
-          <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">
+          <p className="mb-2 text-[11px] uppercase tracking-wide text-quat">
             Top municipios ({uf})
           </p>
           <ol className="space-y-1.5">
@@ -122,14 +122,14 @@ export function StateProfilePanel({
                 <li key={item.idIbge}>
                   <button
                     type="button"
-                    className="flex w-full items-baseline justify-between gap-2 rounded-md border border-white/10 bg-slate-950/70 px-2.5 py-1.5 text-left text-sm transition hover:border-cyan-300/30"
+                    className="flex w-full items-baseline justify-between gap-2 rounded-md border border-line bg-panel/70 px-2.5 py-1.5 text-left text-sm transition hover:border-edge"
                     onClick={() => onSelectMunicipality(item)}
                   >
-                    <span className="truncate text-slate-200">
-                      <span className="mr-1.5 text-[11px] font-semibold text-slate-500">#{index + 1}</span>
+                    <span className="truncate text-ink">
+                      <span className="mr-1.5 text-[11px] font-semibold text-quat">#{index + 1}</span>
                       {item.municipio}
                     </span>
-                    <span className="shrink-0 font-semibold text-slate-100">
+                    <span className="shrink-0 font-semibold text-ink">
                       {metric ? formatNumber(metric.total) : "—"}
                     </span>
                   </button>

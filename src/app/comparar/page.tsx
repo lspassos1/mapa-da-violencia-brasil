@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 // suspensao inicial (sem flash de pagina em branco).
 export default function CompararPage() {
   return (
-    <main className="flex min-h-screen flex-col text-slate-100">
+    <main className="flex min-h-screen flex-col bg-bg0 text-ink">
       <AppHeader />
       <Suspense fallback={null}>
         <CompareDashboard />

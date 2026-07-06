@@ -1,21 +1,76 @@
 @import "tailwindcss";
 
-/* Inter (via next/font) vira a fonte sans padrão do Tailwind. */
+/* ============================================================================
+   TEMA "INSTRUMENTO DE INTELIGÊNCIA" — tokens do design_handoff_redesign
+   - Archivo variável (wdth 62–125) p/ UI; IBM Plex Mono p/ micro/dados.
+   - Zero border-radius global: a escala --radius-* inteira vale 0 (cantos
+     retos). `rounded-full` continua círculo — ponto de dado é forma, não canto.
+   - Cor é SEMÂNTICA, nunca decorativa:
+       registro #E5484D  Fogo Cruzado · disputa · emergência/190
+       policia  #4FA0E8  ação policial
+       outro    #9BA3AF  contexto neutro
+       indicio  #E2A33B  EXCLUSIVO de indício/OSINT (losango vazado)
+       positivo #58B37E  só para deltas de queda
+   ========================================================================== */
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* cantos retos em toda a escala (rounded-sm..3xl → 0) */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+
+  /* superfícies */
+  --color-bg0: #0a0b0d; /* fundo geral */
+  --color-panel: #0c0d10; /* painéis laterais / ribbon */
+  --color-cell: #0e1013; /* células de stat-grid */
+  --color-cellhead: #101216; /* header de tabela */
+  --color-maparea: #0b0c0f; /* área do mapa */
+  --color-hoverrow: #111318; /* hover de linha/card */
+
+  /* hairlines e bordas */
+  --color-hair: #16181c; /* divisor interno fino */
+  --color-line: #1e2126; /* divisor de seção */
+  --color-edge: #262b33; /* borda de chip/botão em repouso */
+  --color-edgehover: #3a4048; /* borda em hover */
+
+  /* texto */
+  --color-ink: #eceae4; /* títulos, valores (branco quente) */
+  --color-sec: #a6aab2; /* corpo secundário */
+  --color-ter: #797f88; /* legendas, apoio */
+  --color-quat: #565b63; /* microtexto, eyebrows */
+  --color-ghost: #33383f; /* números decorativos 01/02/03 */
+  --color-ghost2: #2c3138;
+
+  /* semântica de dado */
+  --color-registro: #e5484d;
+  --color-policia: #4fa0e8;
+  --color-policiatx: #9cc8f0;
+  --color-outro: #9ba3af;
+  --color-indicio: #e2a33b;
+  --color-indiciodim: #8a6b33;
+  --color-indiciotx: #c9a15e;
+  --color-positivo: #58b37e;
+  --color-oficial5: #e5533d; /* topo da rampa oficial */
 }
 
 :root {
   color-scheme: dark;
-  --background: #060911;
-  --foreground: #f1f5f9;
-  /* tokens semânticos — usar no lugar de cores ad-hoc espalhadas */
-  --surface: rgba(255, 255, 255, 0.025);
-  --surface-raised: rgba(255, 255, 255, 0.05);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --accent: #22d3ee;
-  --accent-soft: rgba(34, 211, 238, 0.12);
+  --background: #0a0b0d;
+  --foreground: #eceae4;
+  /* tokens legados (componentes ainda não portados referenciam) */
+  --surface: #0c0d10;
+  --surface-raised: #0e1013;
+  --border: #1e2126;
+  --border-strong: #262b33;
+  --accent: #eceae4;
+  --accent-soft: rgba(236, 234, 228, 0.1);
 }
 
 * {
@@ -30,13 +85,10 @@ html {
 body {
   min-height: 100dvh;
   margin: 0;
-  background:
-    radial-gradient(1100px circle at 12% -10%, rgba(34, 211, 238, 0.1), transparent 50%),
-    radial-gradient(900px circle at 100% 0%, rgba(56, 189, 248, 0.06), transparent 45%),
-    linear-gradient(180deg, #060911 0%, #0a1020 55%, #070d18 100%);
-  background-repeat: no-repeat;
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-stretch: 100%;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -47,11 +99,11 @@ a {
   font: inherit;
 }
 
-/* Foco acessível e consistente em tudo que é interativo. */
+/* Foco acessível, quadrado, alto contraste. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid #eceae4;
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 /* Micro-interações sutis (respeitando quem prefere menos movimento). */
@@ -64,33 +116,100 @@ summary,
     color 0.15s ease,
     background-color 0.15s ease,
     border-color 0.15s ease,
-    opacity 0.15s ease,
-    transform 0.15s ease;
+    opacity 0.15s ease;
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.32);
+  background: rgba(229, 72, 77, 0.35);
   color: #fff;
 }
 
-/* Scrollbar moderna e discreta. */
+/* Scrollbar técnica, quadrada. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
 }
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.13);
-  border: 2px solid transparent;
-  border-radius: 9999px;
-  background-clip: padding-box;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 0;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
-  background-clip: padding-box;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Grade técnica dos painéis de mapa (a referência aplica só na área do mapa). */
+.panel-grid {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 52px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 52px);
+}
+
+/* ============================================================================
+   ANIMAÇÕES DO INSTRUMENTO — CSS puro, contínuas (nenhum estado React envolvido;
+   o relógio do header vive em componente isolado justamente p/ não re-renderizar
+   a árvore e não competir com estas animações).
+   ========================================================================== */
+
+/* Pulso do dot AO VIVO: opacity 1↔0.25, 1.6s (spec exata do handoff). */
+@keyframes mv-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.pulse-live {
+  animation: mv-blink 1.6s ease-in-out infinite;
+}
+
+/* Halo de ocorrência nova (<24h): anel expande + esmaece, 2.6s. Aplicado num
+   filho do marcador MapLibre (o transform do elemento raiz é do MapLibre). */
+@keyframes mv-halo {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.halo-24h {
+  animation: mv-halo 2.6s ease-out infinite;
+}
+
+/* Varredura de radar: cone semitransparente rotacionando 360° em 11s. */
+@keyframes mv-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.map-sweep {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 4;
+}
+.map-sweep::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 240vmax;
+  height: 240vmax;
+  margin: -120vmax 0 0 -120vmax;
+  background: conic-gradient(from 0deg, rgba(229, 72, 77, 0.09) 0deg, rgba(229, 72, 77, 0.02) 38deg, transparent 55deg);
+  animation: mv-sweep 11s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -99,16 +218,46 @@ summary,
   *::after {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    animation: none !important;
   }
 }
 
+/* ============================================================================
+   MapLibre — reskin (popups quadrados escuros com border-top semântico,
+   controles/attribution no tema).
+   ========================================================================== */
 .maplibregl-popup-content {
   background: transparent;
   box-shadow: none;
   padding: 0;
+  border-radius: 0;
+}
+.maplibregl-popup-tip {
+  display: none;
 }
 
 .maplibregl-ctrl-attrib {
-  background: rgba(15, 23, 42, 0.8) !important;
-  color: #cbd5e1 !important;
+  background: rgba(10, 11, 13, 0.85) !important;
+  color: #797f88 !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: #a6aab2 !important;
+}
+
+.maplibregl-ctrl-group {
+  background: #0c0d10 !important;
+  border: 1px solid #262b33 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.maplibregl-ctrl-group button {
+  border-radius: 0 !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid #16181c !important;
+}
+.maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: invert(0.82);
 }

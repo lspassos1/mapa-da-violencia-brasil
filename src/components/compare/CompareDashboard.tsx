@@ -62,7 +62,7 @@ export function CompareDashboard() {
   // para a navegacao ficar visivel durante a suspensao/carga inicial.
   if (!api) {
     return (
-      <div className="flex flex-1 items-center justify-center p-8 text-sm text-slate-400" role="status" aria-live="polite">
+      <div className="flex flex-1 items-center justify-center p-8 text-sm text-ter" role="status" aria-live="polite">
         A carregar a carga nacional…
       </div>
     );
@@ -139,15 +139,15 @@ function CompareView({ api }: { api: CrimeDataApi }) {
     <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 lg:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <GitCompareArrows className="h-5 w-5 text-cyan-300" />
+            <GitCompareArrows className="h-5 w-5 text-sec" />
             <h2 className="text-lg font-semibold">Comparar estados</h2>
           </div>
           <BackLink href="/mapa">Voltar ao mapa</BackLink>
         </div>
 
         {/* Selecao de estados (2-4) */}
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-slate-400">
+        <div className="rounded-lg border border-line bg-cellhead p-4">
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-ter">
             Estados ({ufs.length}/{MAX_UFS})
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -165,10 +165,10 @@ function CompareView({ api }: { api: CrimeDataApi }) {
                   onClick={() => toggleUf(entry.uf)}
                   className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold transition ${
                     selected
-                      ? "border-transparent text-slate-950"
+                      ? "border-transparent text-bg0"
                       : disabled
-                        ? "cursor-not-allowed border-white/5 text-slate-600"
-                        : "border-white/10 text-slate-300 hover:border-cyan-300/40"
+                        ? "cursor-not-allowed border-hair text-ghost"
+                        : "border-line text-sec hover:border-edgehover"
                   }`}
                   style={selected ? { background: UF_COLORS[colorIndex] } : undefined}
                 >
@@ -182,9 +182,9 @@ function CompareView({ api }: { api: CrimeDataApi }) {
         {/* Filtros */}
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="block text-sm">
-            <span className="mb-1 block text-xs uppercase tracking-wide text-slate-400">Indicador</span>
+            <span className="mb-1 block text-xs uppercase tracking-wide text-ter">Indicador</span>
             <select
-              className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2"
+              className="w-full rounded-lg border border-line bg-panel px-3 py-2"
               value={indicator}
               onChange={(event) => setIndicator(event.target.value as CrimeIndicatorKey)}
             >
@@ -196,9 +196,9 @@ function CompareView({ api }: { api: CrimeDataApi }) {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block text-xs uppercase tracking-wide text-slate-400">Metrica</span>
+            <span className="mb-1 block text-xs uppercase tracking-wide text-ter">Metrica</span>
             <select
-              className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2"
+              className="w-full rounded-lg border border-line bg-panel px-3 py-2"
               value={mode}
               onChange={(event) => setMode(event.target.value as CompareMode)}
             >
@@ -210,9 +210,9 @@ function CompareView({ api }: { api: CrimeDataApi }) {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block text-xs uppercase tracking-wide text-slate-400">Periodo (cartoes/tabela)</span>
+            <span className="mb-1 block text-xs uppercase tracking-wide text-ter">Periodo (cartoes/tabela)</span>
             <select
-              className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2"
+              className="w-full rounded-lg border border-line bg-panel px-3 py-2"
               value={period}
               onChange={(event) => setPeriod(event.target.value)}
             >
@@ -227,7 +227,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
 
         {ufSeries.length === 0 ? (
           <p
-            className="rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-3 text-sm text-amber-100/90"
+            className="rounded-lg border border-edge bg-[rgba(86,91,99,.12)] p-3 text-sm text-sec"
             role="status"
           >
             Sem agregados estaduais para este indicador nesta carga de dados. Regenere o dataset
@@ -240,14 +240,14 @@ function CompareView({ api }: { api: CrimeDataApi }) {
           {ufs.map((uf, index) => {
             const datum = byUfPeriod.get(`${uf}|${period}`);
             return (
-              <article key={uf} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+              <article key={uf} className="rounded-lg border border-line bg-cellhead p-4">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold" style={{ color: UF_COLORS[index] }}>
                     {nameByUf.get(uf) ?? uf}
                   </p>
                   {datum ? (
                     <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-slate-950"
+                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-bg0"
                       style={{ background: riskColors[datum.nivel] }}
                     >
                       {riskLevelLabels[datum.nivel]}
@@ -256,16 +256,16 @@ function CompareView({ api }: { api: CrimeDataApi }) {
                 </div>
                 <dl className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
                   <div>
-                    <dt className="uppercase tracking-wide text-slate-500">Indice</dt>
-                    <dd className="text-sm font-semibold text-slate-100">{formatValue(valueOf(datum, "score"), "score")}</dd>
+                    <dt className="uppercase tracking-wide text-quat">Indice</dt>
+                    <dd className="text-sm font-semibold text-ink">{formatValue(valueOf(datum, "score"), "score")}</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-slate-500">Total</dt>
-                    <dd className="text-sm font-semibold text-slate-100">{formatValue(valueOf(datum, "total"), "total")}</dd>
+                    <dt className="uppercase tracking-wide text-quat">Total</dt>
+                    <dd className="text-sm font-semibold text-ink">{formatValue(valueOf(datum, "total"), "total")}</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-slate-500" title="Taxa por 100 mil">Taxa</dt>
-                    <dd className="text-sm font-semibold text-slate-100">
+                    <dt className="uppercase tracking-wide text-quat" title="Taxa por 100 mil">Taxa</dt>
+                    <dd className="text-sm font-semibold text-ink">
                       {formatValue(valueOf(datum, "taxa100k"), "taxa100k")}
                     </dd>
                   </div>
@@ -276,8 +276,8 @@ function CompareView({ api }: { api: CrimeDataApi }) {
         </div>
 
         {/* Serie historica sobreposta */}
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <p className="mb-1 text-xs uppercase tracking-[0.16em] text-slate-400">
+        <div className="rounded-lg border border-line bg-cellhead p-4">
+          <p className="mb-1 text-xs uppercase tracking-[0.16em] text-ter">
             {indicatorLabel} — {MODE_OPTIONS.find((option) => option.key === mode)?.label} por ano
           </p>
           <UfSeriesChart
@@ -287,7 +287,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
             byUfPeriod={byUfPeriod}
             mode={mode}
           />
-          <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-300">
+          <div className="mt-2 flex flex-wrap gap-3 text-xs text-sec">
             {ufs.map((uf, index) => (
               <span key={uf} className="inline-flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: UF_COLORS[index] }} />
@@ -298,15 +298,15 @@ function CompareView({ api }: { api: CrimeDataApi }) {
         </div>
 
         {/* Tabela: todos os indicadores no periodo selecionado */}
-        <div className="overflow-x-auto rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-slate-400">
+        <div className="overflow-x-auto rounded-lg border border-line bg-cellhead p-4">
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-ter">
             Todos os indicadores — {MODE_OPTIONS.find((option) => option.key === mode)?.label}, {periodLabel}
           </p>
           <table className="w-full border-collapse text-left text-sm">
             <caption className="sr-only">
               Comparacao de {ufs.length} estados em todos os indicadores, periodo {periodLabel}.
             </caption>
-            <thead className="text-xs uppercase tracking-wide text-slate-400">
+            <thead className="text-xs uppercase tracking-wide text-ter">
               <tr>
                 <th scope="col" className="px-3 py-2">Indicador</th>
                 {ufs.map((uf, index) => (
@@ -323,8 +323,8 @@ function CompareView({ api }: { api: CrimeDataApi }) {
                 const best = finite.length > 1 ? Math.min(...finite) : null;
                 const worst = finite.length > 1 ? Math.max(...finite) : null;
                 return (
-                  <tr key={option.key} className="odd:bg-white/[0.02]">
-                    <th scope="row" className="px-3 py-2 font-medium text-slate-200">
+                  <tr key={option.key} className="odd:bg-panel">
+                    <th scope="row" className="px-3 py-2 font-medium text-ink">
                       {option.label}
                     </th>
                     {values.map((value, index) => {
@@ -334,7 +334,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
                         <td
                           key={ufs[index]}
                           className={`px-3 py-2 ${
-                            isBest ? "font-semibold text-emerald-300" : isWorst ? "font-semibold text-red-300" : "text-slate-100"
+                            isBest ? "font-semibold text-positivo" : isWorst ? "font-semibold text-[#E5533D]" : "text-ink"
                           }`}
                         >
                           {formatValue(value, mode)}
@@ -346,7 +346,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
               })}
             </tbody>
           </table>
-          <p className="mt-2 text-[11px] text-slate-500">
+          <p className="mt-2 text-[11px] text-quat">
             Verde = menor valor (melhor); vermelho = maior valor (pior) entre os estados selecionados.
           </p>
         </div>

@@ -20,7 +20,7 @@ export function DataModeBanner({ mode, municipalities, periodLabel }: DataModeBa
     return (
       <div
         role="note"
-        className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-cyan-300/20 bg-cyan-300/10 px-5 py-2.5 text-sm text-cyan-100"
+        className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line bg-[rgba(236,234,228,.05)] px-5 py-2.5 text-sm text-ink"
       >
         <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span>
@@ -37,7 +37,7 @@ export function DataModeBanner({ mode, municipalities, periodLabel }: DataModeBa
   return (
     <div
       role="note"
-      className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-amber-300/25 bg-amber-300/10 px-5 py-2.5 text-sm text-amber-100"
+      className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-edge bg-[rgba(86,91,99,.15)] px-5 py-2.5 text-sm text-sec"
     >
       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
       <span>

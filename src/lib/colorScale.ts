@@ -1,11 +1,14 @@
 import type { RiskLevel } from "@/types/crime";
 
+// Rampa oficial de 5 pontos (design handoff): escuro → vermelho vivo.
+// Reservada à ESTATÍSTICA OFICIAL (choropleth/score) — âmbar fica fora dela
+// de propósito (âmbar = indício/OSINT, nunca dado oficial).
 export const riskColors: Record<RiskLevel, string> = {
-  baixo: "#22c55e",
-  moderado: "#eab308",
-  atencao: "#f97316",
-  alto: "#ef4444",
-  critico: "#7f1d1d",
+  baixo: "#23272E",
+  moderado: "#4B2C2A",
+  atencao: "#7A342C",
+  alto: "#B03D2C",
+  critico: "#E5533D",
 };
 
 export function getScoreColor(score: number): string {
@@ -19,4 +22,3 @@ export function getScoreColor(score: number): string {
 export function getScoreRadius(score: number): number {
   return Math.max(7, Math.min(22, 7 + score / 6));
 }
-
