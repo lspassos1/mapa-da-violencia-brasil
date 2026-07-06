@@ -42,7 +42,7 @@ export function AccessibleDataTable({
         <div className="mb-2 flex justify-end">
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-cyan-300/50 hover:text-cyan-200"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink hover:border-edgehover hover:text-ink"
             onClick={onExport}
           >
             <Download className="h-3.5 w-3.5" />
@@ -51,7 +51,7 @@ export function AccessibleDataTable({
         </div>
       ) : null}
       {truncated ? (
-        <p className="mb-2 rounded border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-xs text-amber-100">
+        <p className="mb-2 rounded border border-edge bg-[rgba(86,91,99,.15)] px-3 py-1.5 text-xs text-sec">
           Mostrando os {data.length} primeiros de {total} municipios. Selecione um estado para refinar.
         </p>
       ) : null}
@@ -60,7 +60,7 @@ export function AccessibleDataTable({
           {indicatorLabel} por municipio — {viewModeLabel}, periodo {periodLabel}.{" "}
           {truncated ? `Mostrando ${data.length} de ${total}` : `${data.length}`} municipios.
         </caption>
-        <thead className="sticky top-20 bg-slate-950 text-xs uppercase tracking-wide text-slate-400">
+        <thead className="sticky top-20 bg-panel text-xs uppercase tracking-wide text-ter">
           <tr>
             <th scope="col" className="px-3 py-2">#</th>
             <th scope="col" className="px-3 py-2">Municipio</th>
@@ -73,7 +73,7 @@ export function AccessibleDataTable({
         <tbody>
           {data.length === 0 ? (
             <tr>
-              <td className="px-3 py-4 text-slate-400" colSpan={6}>
+              <td className="px-3 py-4 text-ter" colSpan={6}>
                 Nenhum municipio no filtro atual.
               </td>
             </tr>
@@ -88,24 +88,24 @@ export function AccessibleDataTable({
                 <tr
                   key={item.idIbge}
                   aria-current={active ? "true" : undefined}
-                  className={active ? "bg-cyan-300/10" : "odd:bg-white/[0.02]"}
+                  className={active ? "bg-[rgba(236,234,228,.07)]" : "odd:bg-panel"}
                 >
-                  <td className="px-3 py-2 text-slate-500">{index + 1}</td>
-                  <th scope="row" className="px-3 py-2 font-medium text-slate-100">
+                  <td className="px-3 py-2 text-ink0">{index + 1}</td>
+                  <th scope="row" className="px-3 py-2 font-medium text-ink">
                     <button
                       type="button"
-                      className="rounded text-left underline-offset-4 hover:text-cyan-200 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
+                      className="rounded text-left underline-offset-4 hover:text-ink hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
                       onClick={() => onSelect(item)}
                     >
                       {item.municipio}
                     </button>
                   </th>
-                  <td className="px-3 py-2 text-slate-300">{item.uf}</td>
-                  <td className="px-3 py-2 text-slate-100">
+                  <td className="px-3 py-2 text-sec">{item.uf}</td>
+                  <td className="px-3 py-2 text-ink">
                     {formatMetricValue(getMetricValue(item, indicator, viewMode), viewMode)}
                   </td>
-                  <td className="px-3 py-2 text-slate-300">{riskLevelLabels[metric.nivel]}</td>
-                  <td className="px-3 py-2 text-slate-400">{getDataStatusLabel(metric.dataStatus)}</td>
+                  <td className="px-3 py-2 text-sec">{riskLevelLabels[metric.nivel]}</td>
+                  <td className="px-3 py-2 text-ter">{getDataStatusLabel(metric.dataStatus)}</td>
                 </tr>
               );
             })

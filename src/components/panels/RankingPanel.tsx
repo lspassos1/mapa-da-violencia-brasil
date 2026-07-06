@@ -24,19 +24,19 @@ export function RankingPanel({
 }: RankingPanelProps) {
   const isWorst = tone === "worst";
   return (
-    <section className="flex max-h-[540px] min-h-0 flex-col rounded-lg border border-white/10 bg-white/[0.04] p-3 backdrop-blur">
+    <section className="flex max-h-[540px] min-h-0 flex-col rounded-lg border border-line bg-panel p-3 backdrop-blur">
       <div className="mb-3 flex items-center gap-2">
         {isWorst ? (
-          <Trophy className="h-4 w-4 shrink-0 text-red-300" />
+          <Trophy className="h-4 w-4 shrink-0 text-[#E5533D]" />
         ) : (
-          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-300" />
+          <ShieldCheck className="h-4 w-4 shrink-0 text-positivo" />
         )}
-        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink">
           {isWorst ? "10 piores indices" : "10 melhores indices"}
         </h2>
       </div>
       {data.length === 0 ? (
-        <p className="rounded-lg border border-white/10 bg-slate-950 p-3 text-sm text-slate-400">
+        <p className="rounded-lg border border-line bg-panel p-3 text-sm text-ter">
           Nenhum municipio no filtro atual.
         </p>
       ) : (
@@ -51,8 +51,8 @@ export function RankingPanel({
               <button
                 className={`w-full rounded-lg border p-2.5 text-left transition ${
                   active
-                    ? "border-cyan-300/60 bg-cyan-300/10"
-                    : "border-white/10 bg-slate-950/70 hover:border-cyan-300/30"
+                    ? "border-edgehover bg-[rgba(236,234,228,.07)]"
+                    : "border-line bg-panel/70 hover:border-edge"
                 }`}
                 key={item.idIbge}
                 type="button"
@@ -60,26 +60,26 @@ export function RankingPanel({
                 onClick={() => onSelect(item)}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold text-slate-500">#{index + 1}</span>
-                  <span className="text-[11px] text-slate-400">{riskLevelLabels[metric.nivel]}</span>
+                  <span className="text-[11px] font-semibold text-ink0">#{index + 1}</span>
+                  <span className="text-[11px] text-ter">{riskLevelLabels[metric.nivel]}</span>
                 </div>
-                <p className="mt-0.5 truncate text-sm font-semibold text-slate-100">
-                  {item.municipio} <span className="text-slate-500">/{item.uf}</span>
+                <p className="mt-0.5 truncate text-sm font-semibold text-ink">
+                  {item.municipio} <span className="text-ink0">/{item.uf}</span>
                 </p>
                 <dl className="mt-1.5 grid grid-cols-3 gap-1 text-[10px]">
                   <div>
-                    <dt className="uppercase tracking-wide text-slate-500">Indice</dt>
-                    <dd className="font-semibold text-slate-200">{Math.round(metric.score)}/100</dd>
+                    <dt className="uppercase tracking-wide text-ink0">Indice</dt>
+                    <dd className="font-semibold text-ink">{Math.round(metric.score)}/100</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-slate-500">Total</dt>
-                    <dd className="font-semibold text-slate-200">{formatNumber(metric.total)}</dd>
+                    <dt className="uppercase tracking-wide text-ink0">Total</dt>
+                    <dd className="font-semibold text-ink">{formatNumber(metric.total)}</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-slate-500" title="Taxa por 100 mil">
+                    <dt className="uppercase tracking-wide text-ink0" title="Taxa por 100 mil">
                       Taxa
                     </dt>
-                    <dd className="font-semibold text-slate-200">
+                    <dd className="font-semibold text-ink">
                       {typeof metric.taxa100k === "number" ? formatDecimal(metric.taxa100k) : "—"}
                     </dd>
                   </div>

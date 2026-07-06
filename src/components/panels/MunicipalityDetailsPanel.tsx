@@ -39,12 +39,12 @@ export function MunicipalityDetailsPanel({
     const stateItems = selectedState ? allData.filter((item) => item.uf === selectedState) : [];
 
     return (
-      <section className="flex flex-1 flex-col justify-center rounded-lg border border-white/10 bg-white/[0.04] p-5 text-center backdrop-blur">
-        <MapPinned className="mx-auto h-8 w-8 text-cyan-300" />
+      <section className="flex flex-1 flex-col justify-center rounded-lg border border-line bg-panel p-5 text-center backdrop-blur">
+        <MapPinned className="mx-auto h-8 w-8 text-sec" />
         <h2 className="mt-4 text-lg font-semibold">
           {state ? `${state.nome} em foco` : "Nenhum municipio selecionado"}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
+        <p className="mt-2 text-sm leading-6 text-ter">
           {state
             ? `${stateItems.length} municipios disponiveis neste recorte. Clique em uma cidade no mapa ou no ranking para abrir os detalhes.`
             : "Clique em uma cidade no mapa ou em um item do ranking para ver detalhes demonstrativos."}
@@ -59,10 +59,10 @@ export function MunicipalityDetailsPanel({
   const nationalRank = getMunicipalityRank(allData, municipality.idIbge, indicator, viewMode);
   if (!metric) {
     return (
-      <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
-        <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Municipio</p>
-        <h2 className="mt-1 text-2xl font-semibold text-white">{municipality.municipio}</h2>
-        <p className="mt-3 text-sm leading-6 text-slate-400">
+      <section className="rounded-lg border border-line bg-panel p-5 backdrop-blur">
+        <p className="text-xs uppercase tracking-[0.18em] text-sec">Municipio</p>
+        <h2 className="mt-1 text-2xl font-semibold text-ink">{municipality.municipio}</h2>
+        <p className="mt-3 text-sm leading-6 text-ter">
           Este indicador nao esta disponivel para o municipio e periodo selecionados.
         </p>
       </section>
@@ -72,25 +72,25 @@ export function MunicipalityDetailsPanel({
   const unitLabel = metric.unidade === "vitimas" ? "Vitimas" : metric.unidade === "ocorrencias" ? "Ocorrencias" : "Indice";
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
+    <section className="rounded-lg border border-line bg-panel p-5 backdrop-blur">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Municipio</p>
-          <h2 className="mt-1 text-2xl font-semibold text-white">{municipality.municipio}</h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-xs uppercase tracking-[0.18em] text-sec">Municipio</p>
+          <h2 className="mt-1 text-2xl font-semibold text-ink">{municipality.municipio}</h2>
+          <p className="text-sm text-ter">
             {municipality.estado} / {municipality.uf}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <div className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-right">
-            <p className="text-xs text-slate-500">Nivel</p>
-            <p className="font-semibold text-white">{riskLevelLabels[metric.nivel]}</p>
+          <div className="rounded-lg border border-line bg-panel px-3 py-2 text-right">
+            <p className="text-xs text-ink0">Nivel</p>
+            <p className="font-semibold text-ink">{riskLevelLabels[metric.nivel]}</p>
           </div>
           <span
             className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
               isUnavailableStatus(metric.dataStatus)
-                ? "bg-amber-300/15 text-amber-200"
-                : "bg-cyan-300/15 text-cyan-200"
+                ? "bg-[rgba(86,91,99,.2)] text-sec"
+                : "bg-[rgba(236,234,228,.08)] text-sec"
             }`}
             title={getDataStatusDescription(metric.dataStatus)}
           >
@@ -116,12 +116,12 @@ export function MunicipalityDetailsPanel({
         <MetricCard label="Ranking nacional" value={nationalRank ? `${nationalRank}º` : "-"} />
       </div>
 
-      <div className="mt-5 rounded-lg border border-white/10 bg-slate-950/70 p-4">
-        <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-100">
-          <BarChart3 className="h-4 w-4 text-cyan-300" />
+      <div className="mt-5 rounded-lg border border-line bg-panel/70 p-4">
+        <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
+          <BarChart3 className="h-4 w-4 text-sec" />
           Fonte e atualizacao
         </div>
-        <p className="text-sm leading-6 text-slate-400">
+        <p className="text-sm leading-6 text-ter">
           {metric.fonte}. Atualizado em {dataStatus.lastUpdated}. Unidade exibida: {unitLabel.toLowerCase()}.
           {isUnavailableStatus(metric.dataStatus) ? ` ${getDataStatusDescription(metric.dataStatus)}` : ""}
           {metric.limitacoes ? ` ${metric.limitacoes}` : ""}
@@ -133,9 +133,9 @@ export function MunicipalityDetailsPanel({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-slate-950/75 p-3">
-      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-100">{value}</p>
+    <div className="rounded-lg border border-line bg-panel/75 p-3">
+      <p className="text-[11px] uppercase tracking-[0.12em] text-ink0">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-ink">{value}</p>
     </div>
   );
 }

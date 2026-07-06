@@ -16,7 +16,7 @@ const STATE_FILL_SCALE = [
 ];
 
 // Cinza para UFs sem dados no indicador/periodo selecionado.
-const STATE_FILL_FALLBACK = "#334155";
+const STATE_FILL_FALLBACK = "#14171C";
 
 // Escala DIVERGENTE para a variacao anual: verde = queda (melhorou), cinza =
 // estavel (±5%), vermelho = subida (piorou). Null (ano parcial/sem ano
@@ -25,11 +25,11 @@ export function getVariationColor(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) {
     return STATE_FILL_FALLBACK;
   }
-  if (value <= -25) return "#15803d";
-  if (value <= -5) return "#4ade80";
-  if (value < 5) return "#94a3b8";
-  if (value < 25) return "#fb923c";
-  return "#dc2626";
+  if (value <= -25) return "#2E7A54";
+  if (value <= -5) return "#58B37E";
+  if (value < 5) return "#565B63";
+  if (value < 25) return "#B03D2C";
+  return "#E5533D";
 }
 
 export interface StateChoroplethEntry {

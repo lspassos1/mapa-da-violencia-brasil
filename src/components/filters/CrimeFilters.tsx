@@ -25,16 +25,16 @@ export function CrimeFilters({
   onViewModeChange,
 }: CrimeFiltersProps) {
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
+    <section className="rounded-lg border border-line bg-panel p-4 backdrop-blur">
       <div className="mb-4 flex items-center gap-2">
-        <Filter className="h-4 w-4 text-cyan-300" />
-        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-200">Filtros</h2>
+        <Filter className="h-4 w-4 text-sec" />
+        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">Filtros</h2>
       </div>
       <div className="space-y-4">
         <label className="block">
-          <span className="mb-2 block text-xs font-medium text-slate-400">Indicador</span>
+          <span className="mb-2 block text-xs font-medium text-ter">Indicador</span>
           <select
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300"
+            className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink outline-none focus:border-edgehover"
             value={indicator}
             onChange={(event) => onIndicatorChange(event.target.value as CrimeIndicatorKey)}
           >
@@ -47,9 +47,9 @@ export function CrimeFilters({
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-xs font-medium text-slate-400">Modo</span>
+          <span className="mb-2 block text-xs font-medium text-ter">Modo</span>
           <select
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300"
+            className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink outline-none focus:border-edgehover"
             value={viewMode}
             onChange={(event) => onViewModeChange(event.target.value as ViewMode)}
           >
@@ -62,9 +62,9 @@ export function CrimeFilters({
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-xs font-medium text-slate-400">Periodo</span>
+          <span className="mb-2 block text-xs font-medium text-ter">Periodo</span>
           <select
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300"
+            className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink outline-none focus:border-edgehover"
             value={period}
             onChange={(event) => onPeriodChange(event.target.value)}
           >
