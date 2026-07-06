@@ -27,7 +27,9 @@ const UF_NOME: Record<string, string> = {
   RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
 };
 import { getHiddenHomicides } from "@/server/anomaly/hiddenHomicides";
+import hiddenAsset from "@/data/hiddenHomicides.json";
 import { WeeklyDigest } from "@/components/radar/WeeklyDigest";
+import { TesouraEstatistica, type TesouraSerie } from "@/components/radar/TesouraEstatistica";
 
 const PORTE_LABEL: Record<Porte, string> = {
   grande: "grande",
@@ -99,6 +101,16 @@ export default function RadarPage() {
   const govDisputa = gov.ufs.filter((u) => u.classificacao === "disputa").length;
   const oculto = getHiddenHomicides();
   const ocultos = oculto.ufs.filter((u) => u.sinal === "indicio_oculto").length;
+  // séries anuais da tesoura (lente 3): h, mvci e razaoMvci por UF/ano
+  const tesouraSeries: TesouraSerie[] = Object.entries(
+    (hiddenAsset as { series: Record<string, Record<string, { homicidios: number; mvci: number; razaoMvci: number }>> }).series,
+  ).map(([uf, anos]) => ({
+    uf,
+    nome: UF_NOME[uf] ?? uf,
+    pontos: Object.entries(anos)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([ano, v]) => ({ ano: Number(ano), h: v.homicidios, mvci: v.mvci, r: v.razaoMvci })),
+  }));
 
   return (
     <main className="flex min-h-screen flex-col text-ink">
@@ -369,6 +381,8 @@ export default function RadarPage() {
             </div>
           </>
         )}
+
+        {!oculto.pendente ? <TesouraEstatistica series={tesouraSeries} /> : null}
 
         <WeeklyDigest />
       </div>
