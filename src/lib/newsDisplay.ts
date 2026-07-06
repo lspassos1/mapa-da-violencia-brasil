@@ -19,11 +19,13 @@ export const REVIEW_LABEL: Record<NewsReviewStatus, string> = {
   rejeitado: "rejeitado",
 };
 
-// Cor por nivel de confianca (verde alto / ambar medio / laranja baixo).
+// Cor por nivel de confianca — monocromia de INDÍCIO (âmbar por intensidade):
+// alto = âmbar pleno, médio = âmbar-texto, baixo = âmbar-dim. Verde fica fora
+// (reservado a deltas de queda) e o âmbar segue exclusivo da camada de indício.
 export function confidenceColor(c: number): string {
-  if (c >= 0.75) return "#22c55e";
-  if (c >= 0.5) return "#eab308";
-  return "#f97316";
+  if (c >= 0.75) return "#E2A33B";
+  if (c >= 0.5) return "#C9A15E";
+  return "#8A6B33";
 }
 
 export function confidencePct(c: number): string {

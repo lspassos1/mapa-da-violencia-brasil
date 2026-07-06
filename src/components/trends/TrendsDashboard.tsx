@@ -66,7 +66,7 @@ export function TrendsDashboard() {
 
   if (!data) {
     return (
-      <div className="flex flex-1 items-center justify-center p-8 text-sm text-slate-400" role="status" aria-live="polite">
+      <div className="flex flex-1 items-center justify-center p-8 text-sm text-ter" role="status" aria-live="polite">
         A carregar as series mensais…
       </div>
     );
@@ -75,7 +75,7 @@ export function TrendsDashboard() {
   if (data.series.length === 0) {
     return (
       <div className="mx-auto w-full max-w-3xl p-6">
-        <p className="rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-4 text-sm text-amber-100/90" role="status">
+        <p className="rounded-lg border border-edge bg-[rgba(86,91,99,.12)] p-4 text-sm text-sec" role="status">
           Series mensais indisponiveis nesta carga. Gere o dataset com
           {" "}<code>python3 -m etl.aggregate_vde build-trends</code> e publique
           {" "}<code>public/trendsData.json.gz</code>.
@@ -135,7 +135,7 @@ function TrendsView({ data }: { data: TrendsData }) {
   if (years.length === 0) {
     return (
       <section className="mx-auto w-full max-w-3xl p-6">
-        <p className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-300" role="status">
+        <p className="rounded-lg border border-line bg-cellhead p-4 text-sm text-sec" role="status">
           Sem serie mensal para esta combinacao de indicador e abrangencia.
         </p>
       </section>
@@ -168,7 +168,7 @@ function TrendsView({ data }: { data: TrendsData }) {
     <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <LineChart className="h-5 w-5 text-cyan-300" />
+          <LineChart className="h-5 w-5 text-sec" />
           <h2 className="text-lg font-semibold">Tendências</h2>
         </div>
         <BackLink href="/mapa">Voltar ao mapa</BackLink>
@@ -177,9 +177,9 @@ function TrendsView({ data }: { data: TrendsData }) {
       {/* Filtros */}
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="block text-sm">
-          <span className="mb-1 block text-xs uppercase tracking-wide text-slate-400">Indicador</span>
+          <span className="mb-1 block text-xs uppercase tracking-wide text-ter">Indicador</span>
           <select
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2"
+            className="w-full rounded-lg border border-line bg-panel px-3 py-2"
             value={indicator}
             onChange={(event) => setIndicator(event.target.value)}
           >
@@ -191,9 +191,9 @@ function TrendsView({ data }: { data: TrendsData }) {
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-xs uppercase tracking-wide text-slate-400">Abrangencia</span>
+          <span className="mb-1 block text-xs uppercase tracking-wide text-ter">Abrangencia</span>
           <select
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2"
+            className="w-full rounded-lg border border-line bg-panel px-3 py-2"
             value={nivel}
             onChange={(event) => setNivel(event.target.value)}
           >
@@ -205,9 +205,9 @@ function TrendsView({ data }: { data: TrendsData }) {
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-xs uppercase tracking-wide text-slate-400">Anos no grafico</span>
+          <span className="mb-1 block text-xs uppercase tracking-wide text-ter">Anos no grafico</span>
           <select
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2"
+            className="w-full rounded-lg border border-line bg-panel px-3 py-2"
             value={yearWindow}
             onChange={(event) => setYearWindow(Number.parseInt(event.target.value, 10))}
           >
@@ -220,30 +220,30 @@ function TrendsView({ data }: { data: TrendsData }) {
 
       {/* KPIs */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <article className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">
+        <article className="rounded-lg border border-line bg-cellhead p-4">
+          <p className="text-xs uppercase tracking-wide text-ter">
             Total {latestYear}
             {isPartial ? ` (${monthSpanLabel})` : ""}
           </p>
-          <p className="mt-1 text-2xl font-semibold text-slate-100">{formatNumber(latestTotal)}</p>
+          <p className="mt-1 text-2xl font-semibold text-ink">{formatNumber(latestTotal)}</p>
         </article>
-        <article className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Media por dia</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-100">
+        <article className="rounded-lg border border-line bg-cellhead p-4">
+          <p className="text-xs uppercase tracking-wide text-ter">Media por dia</p>
+          <p className="mt-1 text-2xl font-semibold text-ink">
             {perDay !== null ? formatDecimal(perDay) : "—"}
           </p>
         </article>
-        <article className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">
+        <article className="rounded-lg border border-line bg-cellhead p-4">
+          <p className="text-xs uppercase tracking-wide text-ter">
             Variacao {latestYear - 1}/{latestYear} ({monthSpanLabel})
           </p>
           <p
             className={`mt-1 inline-flex items-center gap-1.5 text-2xl font-semibold ${
               variation === null || variation === 0
-                ? "text-slate-100"
+                ? "text-ink"
                 : variation > 0
-                  ? "text-red-300"
-                  : "text-emerald-300"
+                  ? "text-[#E5533D]"
+                  : "text-positivo"
             }`}
           >
             {variation === null ? (
@@ -260,17 +260,17 @@ function TrendsView({ data }: { data: TrendsData }) {
               </>
             )}
           </p>
-          <p className="mt-1 text-[11px] text-slate-500">Mesmos meses nos dois anos (like-for-like).</p>
+          <p className="mt-1 text-[11px] text-ink0">Mesmos meses nos dois anos (like-for-like).</p>
         </article>
       </div>
 
       {/* Linhas mensais sobrepostas por ano (sazonalidade) */}
-      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-        <p className="mb-1 text-xs uppercase tracking-[0.16em] text-slate-400">
+      <div className="rounded-lg border border-line bg-cellhead p-4">
+        <p className="mb-1 text-xs uppercase tracking-[0.16em] text-ter">
           {indicatorLabel} por mes — {nivelLabel}
         </p>
         <MonthlyChart byYear={byYear} chartYears={chartYears} partialYears={data.partialYears} />
-        <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-300">
+        <div className="mt-2 flex flex-wrap gap-3 text-xs text-sec">
           {chartYears.map((year, index) => (
             <span key={year} className="inline-flex items-center gap-1.5">
               <span
@@ -285,13 +285,13 @@ function TrendsView({ data }: { data: TrendsData }) {
       </div>
 
       {/* Barras anuais */}
-      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-        <p className="mb-1 text-xs uppercase tracking-[0.16em] text-slate-400">
+      <div className="rounded-lg border border-line bg-cellhead p-4">
+        <p className="mb-1 text-xs uppercase tracking-[0.16em] text-ter">
           Total por ano — {nivelLabel}
         </p>
         <YearBars byYear={byYear} years={years} partialYears={data.partialYears} />
         {data.partialYears.length > 0 ? (
-          <p className="mt-2 text-[11px] text-amber-200/80">
+          <p className="mt-2 text-[11px] text-ter">
             *{data.partialYears.join(", ")}: ano parcial ({monthSpanLabel}).
           </p>
         ) : null}

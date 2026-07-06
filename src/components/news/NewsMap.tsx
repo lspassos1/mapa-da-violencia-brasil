@@ -55,7 +55,7 @@ export function NewsMap({
           const el = document.createElement("button");
           el.type = "button";
           el.setAttribute("aria-label", `${NEWS_TYPE_LABEL[inc.tipo]} em ${inc.municipio}/${inc.uf}`);
-          el.style.cssText = `width:14px;height:14px;border-radius:9999px;border:2px solid #0b1120;cursor:pointer;background:${confidenceColor(inc.confianca)};box-shadow:0 0 0 1px rgba(255,255,255,.25)`;
+          el.style.cssText = `width:14px;height:14px;border-radius:9999px;border:2px solid #0A0B0D;cursor:pointer;background:${confidenceColor(inc.confianca)};box-shadow:0 0 0 1px rgba(255,255,255,.14)`;
           const popup = new maplibregl.Popup({ offset: 12, closeButton: false }).setHTML(
             `<div style="font:12px system-ui;max-width:220px;color:#0b1120">
                <strong>${NEWS_TYPE_LABEL[inc.tipo]}</strong> — ${inc.municipio}/${inc.uf}<br/>
