@@ -39,24 +39,24 @@ export function UfDetailsPanel({ indicators, indicatorKey, ufNome, selectedState
           <p className="text-base font-semibold text-ink">{ufNome ?? selectedState}</p>
           <dl className="grid grid-cols-2 gap-3">
             <div>
-              <dt className="text-[11px] uppercase tracking-wide text-ink0">Total ({unidade})</dt>
+              <dt className="text-[11px] uppercase tracking-wide text-quat">Total ({unidade})</dt>
               <dd className="text-lg font-semibold text-ink">{formatNumber(datum.total)}</dd>
             </div>
             <div>
-              <dt className="text-[11px] uppercase tracking-wide text-ink0">Taxa / 100 mil</dt>
+              <dt className="text-[11px] uppercase tracking-wide text-quat">Taxa / 100 mil</dt>
               <dd className="text-lg font-semibold text-ink">
                 {typeof datum.taxa100k === "number" ? formatDecimal(datum.taxa100k) : "Indisponivel"}
               </dd>
             </div>
             <div>
-              <dt className="text-[11px] uppercase tracking-wide text-ink0">Nivel</dt>
+              <dt className="text-[11px] uppercase tracking-wide text-quat">Nivel</dt>
               <dd className="flex items-center gap-2 font-semibold text-ink">
                 <span className="inline-block h-3 w-3 rounded-full" style={{ background: riskColors[datum.nivel] }} />
                 {riskLevelLabels[datum.nivel]}
               </dd>
             </div>
             <div>
-              <dt className="text-[11px] uppercase tracking-wide text-ink0">Indice</dt>
+              <dt className="text-[11px] uppercase tracking-wide text-quat">Indice</dt>
               <dd className="text-lg font-semibold text-ink">{datum.score}</dd>
             </div>
           </dl>

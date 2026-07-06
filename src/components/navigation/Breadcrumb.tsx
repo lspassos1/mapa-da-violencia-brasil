@@ -25,7 +25,7 @@ export function Breadcrumb({
       </button>
       {state ? (
         <>
-          <span className="text-ink0">/</span>
+          <span className="text-quat">/</span>
           <button className="text-ink hover:text-ink" onClick={onBackToState}>
             {state.nome}
           </button>
@@ -33,7 +33,7 @@ export function Breadcrumb({
       ) : null}
       {selectedMunicipality ? (
         <>
-          <span className="text-ink0">/</span>
+          <span className="text-quat">/</span>
           <span className="font-semibold text-ink">{selectedMunicipality.municipio}</span>
         </>
       ) : null}

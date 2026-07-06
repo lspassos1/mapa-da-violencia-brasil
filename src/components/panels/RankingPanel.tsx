@@ -60,23 +60,23 @@ export function RankingPanel({
                 onClick={() => onSelect(item)}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold text-ink0">#{index + 1}</span>
+                  <span className="text-[11px] font-semibold text-quat">#{index + 1}</span>
                   <span className="text-[11px] text-ter">{riskLevelLabels[metric.nivel]}</span>
                 </div>
                 <p className="mt-0.5 truncate text-sm font-semibold text-ink">
-                  {item.municipio} <span className="text-ink0">/{item.uf}</span>
+                  {item.municipio} <span className="text-quat">/{item.uf}</span>
                 </p>
                 <dl className="mt-1.5 grid grid-cols-3 gap-1 text-[10px]">
                   <div>
-                    <dt className="uppercase tracking-wide text-ink0">Indice</dt>
+                    <dt className="uppercase tracking-wide text-quat">Indice</dt>
                     <dd className="font-semibold text-ink">{Math.round(metric.score)}/100</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-ink0">Total</dt>
+                    <dt className="uppercase tracking-wide text-quat">Total</dt>
                     <dd className="font-semibold text-ink">{formatNumber(metric.total)}</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-ink0" title="Taxa por 100 mil">
+                    <dt className="uppercase tracking-wide text-quat" title="Taxa por 100 mil">
                       Taxa
                     </dt>
                     <dd className="font-semibold text-ink">

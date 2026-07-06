@@ -60,7 +60,7 @@ export function AccessibleDataTable({
           {indicatorLabel} por municipio — {viewModeLabel}, periodo {periodLabel}.{" "}
           {truncated ? `Mostrando ${data.length} de ${total}` : `${data.length}`} municipios.
         </caption>
-        <thead className="sticky top-20 bg-panel text-xs uppercase tracking-wide text-ter">
+        <thead className="sticky top-[92px] bg-panel text-xs uppercase tracking-wide text-ter">
           <tr>
             <th scope="col" className="px-3 py-2">#</th>
             <th scope="col" className="px-3 py-2">Municipio</th>
@@ -90,7 +90,7 @@ export function AccessibleDataTable({
                   aria-current={active ? "true" : undefined}
                   className={active ? "bg-[rgba(236,234,228,.07)]" : "odd:bg-panel"}
                 >
-                  <td className="px-3 py-2 text-ink0">{index + 1}</td>
+                  <td className="px-3 py-2 text-quat">{index + 1}</td>
                   <th scope="row" className="px-3 py-2 font-medium text-ink">
                     <button
                       type="button"

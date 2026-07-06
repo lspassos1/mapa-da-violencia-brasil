@@ -260,7 +260,7 @@ function TrendsView({ data }: { data: TrendsData }) {
               </>
             )}
           </p>
-          <p className="mt-1 text-[11px] text-ink0">Mesmos meses nos dois anos (like-for-like).</p>
+          <p className="mt-1 text-[11px] text-quat">Mesmos meses nos dois anos (like-for-like).</p>
         </article>
       </div>
 

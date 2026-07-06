@@ -83,7 +83,7 @@ export function MunicipalityDetailsPanel({
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="rounded-lg border border-line bg-panel px-3 py-2 text-right">
-            <p className="text-xs text-ink0">Nivel</p>
+            <p className="text-xs text-quat">Nivel</p>
             <p className="font-semibold text-ink">{riskLevelLabels[metric.nivel]}</p>
           </div>
           <span
@@ -134,7 +134,7 @@ export function MunicipalityDetailsPanel({
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-line bg-panel/75 p-3">
-      <p className="text-[11px] uppercase tracking-[0.12em] text-ink0">{label}</p>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-quat">{label}</p>
       <p className="mt-1 text-lg font-semibold text-ink">{value}</p>
     </div>
   );

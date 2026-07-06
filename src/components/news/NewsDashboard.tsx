@@ -172,7 +172,7 @@ export function NewsDashboard() {
         </div>
 
         {data?.meta ? (
-          <p className="text-xs text-ink0">
+          <p className="text-xs text-quat">
             {filtrados.length} de {incidents.length} indícios ·{" "}
             {incidents.filter((i) => i.idIbge).length} geolocalizados ·{" "}
             {incidents.filter((i) => i.corroboracao > 1).length} com múltiplas fontes
@@ -232,7 +232,7 @@ export function NewsDashboard() {
                   {typeof i.vitimas === "number" ? ` · ${i.vitimas} vítima(s)` : ""}
                 </p>
                 <p className="mt-1 text-sm text-ink">{i.resumo}</p>
-                <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-ink0">
+                <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-quat">
                   <span>
                     {i.veiculo} · extraído por {i.provedor}
                   </span>
@@ -246,7 +246,7 @@ export function NewsDashboard() {
                   </a>
                 </div>
                 {i.fontes.length > 1 ? (
-                  <details className="mt-1.5 text-[11px] text-ink0">
+                  <details className="mt-1.5 text-[11px] text-quat">
                     <summary className="cursor-pointer text-indiciotx hover:text-indiciotx">
                       +{i.fontes.length - 1} fonte(s) corroborando
                     </summary>

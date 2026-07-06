@@ -256,15 +256,15 @@ function CompareView({ api }: { api: CrimeDataApi }) {
                 </div>
                 <dl className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
                   <div>
-                    <dt className="uppercase tracking-wide text-ink0">Indice</dt>
+                    <dt className="uppercase tracking-wide text-quat">Indice</dt>
                     <dd className="text-sm font-semibold text-ink">{formatValue(valueOf(datum, "score"), "score")}</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-ink0">Total</dt>
+                    <dt className="uppercase tracking-wide text-quat">Total</dt>
                     <dd className="text-sm font-semibold text-ink">{formatValue(valueOf(datum, "total"), "total")}</dd>
                   </div>
                   <div>
-                    <dt className="uppercase tracking-wide text-ink0" title="Taxa por 100 mil">Taxa</dt>
+                    <dt className="uppercase tracking-wide text-quat" title="Taxa por 100 mil">Taxa</dt>
                     <dd className="text-sm font-semibold text-ink">
                       {formatValue(valueOf(datum, "taxa100k"), "taxa100k")}
                     </dd>
@@ -346,7 +346,7 @@ function CompareView({ api }: { api: CrimeDataApi }) {
               })}
             </tbody>
           </table>
-          <p className="mt-2 text-[11px] text-ink0">
+          <p className="mt-2 text-[11px] text-quat">
             Verde = menor valor (melhor); vermelho = maior valor (pior) entre os estados selecionados.
           </p>
         </div>

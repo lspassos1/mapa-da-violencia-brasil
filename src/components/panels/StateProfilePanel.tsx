@@ -59,18 +59,18 @@ export function StateProfilePanel({
           </span>
         ) : null}
       </div>
-      <p className="text-[11px] text-ink0">
+      <p className="text-[11px] text-quat">
         {indicatorLabel} — {periodLabel}
       </p>
 
       {current ? (
         <dl className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
           <div>
-            <dt className="uppercase tracking-wide text-ink0">Total</dt>
+            <dt className="uppercase tracking-wide text-quat">Total</dt>
             <dd className="text-sm font-semibold text-ink">{formatNumber(current.total)}</dd>
           </div>
           <div>
-            <dt className="uppercase tracking-wide text-ink0" title="Taxa por 100 mil">
+            <dt className="uppercase tracking-wide text-quat" title="Taxa por 100 mil">
               Taxa
             </dt>
             <dd className="text-sm font-semibold text-ink">
@@ -79,7 +79,7 @@ export function StateProfilePanel({
           </div>
           <div>
             <dt
-              className="uppercase tracking-wide text-ink0"
+              className="uppercase tracking-wide text-quat"
               title="Posicao entre as UFs com dados no periodo, ordenadas pelo total"
             >
               Ranking UF
@@ -102,7 +102,7 @@ export function StateProfilePanel({
 
       {series.length > 1 ? (
         <div className="mt-4">
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-ink0">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-quat">
             <LineChart className="h-3.5 w-3.5" /> Serie {series[0].periodo}–{series[series.length - 1].periodo}{" "}
             (total)
           </div>
@@ -112,7 +112,7 @@ export function StateProfilePanel({
 
       {topMunicipalities.length > 0 ? (
         <div className="mt-4">
-          <p className="mb-2 text-[11px] uppercase tracking-wide text-ink0">
+          <p className="mb-2 text-[11px] uppercase tracking-wide text-quat">
             Top municipios ({uf})
           </p>
           <ol className="space-y-1.5">
@@ -126,7 +126,7 @@ export function StateProfilePanel({
                     onClick={() => onSelectMunicipality(item)}
                   >
                     <span className="truncate text-ink">
-                      <span className="mr-1.5 text-[11px] font-semibold text-ink0">#{index + 1}</span>
+                      <span className="mr-1.5 text-[11px] font-semibold text-quat">#{index + 1}</span>
                       {item.municipio}
                     </span>
                     <span className="shrink-0 font-semibold text-ink">
