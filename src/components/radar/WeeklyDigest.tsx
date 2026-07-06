@@ -31,21 +31,21 @@ export function WeeklyDigest() {
   }, []);
 
   return (
-    <div className="mt-6 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.04] p-4">
-      <div className="mb-2 flex items-center gap-2 text-cyan-300">
+    <div className="mt-6 rounded-xl border border-line bg-panel p-4">
+      <div className="mb-2 flex items-center gap-2 text-sec">
         <Sparkles className="h-4 w-4" />
         <h3 className="text-sm font-semibold uppercase tracking-[0.18em]">Digest semanal (IA)</h3>
-        {data?.semana ? <span className="text-xs text-slate-500">· {data.semana}</span> : null}
+        {data?.semana ? <span className="text-xs text-quat">· {data.semana}</span> : null}
       </div>
 
-      {!data && !erro ? <p className="text-sm text-slate-400">A gerar resumo…</p> : null}
-      {erro ? <p className="text-sm text-slate-500">Digest indisponível no momento.</p> : null}
-      {data?.aviso ? <p className="text-sm text-slate-500">{data.aviso}</p> : null}
+      {!data && !erro ? <p className="text-sm text-ter">A gerar resumo…</p> : null}
+      {erro ? <p className="text-sm text-quat">Digest indisponível no momento.</p> : null}
+      {data?.aviso ? <p className="text-sm text-quat">{data.aviso}</p> : null}
 
       {data?.texto ? (
         <>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-200">{data.texto}</p>
-          <p className="mt-3 text-[11px] text-slate-500">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-ink">{data.texto}</p>
+          <p className="mt-3 text-[11px] text-quat">
             Gerado por IA ({data.provedor}) a partir das lentes do radar — <strong>indício, não acusação</strong>.{" "}
             {data.fontes?.length ? `Fontes: ${data.fontes.join("; ")}.` : ""}
           </p>

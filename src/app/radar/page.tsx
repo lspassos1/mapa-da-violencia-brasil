@@ -14,10 +14,10 @@ const GOV_LABEL: Record<GovClass, string> = {
   sem_faccao: "sem facção nacional",
 };
 const GOV_STYLE: Record<GovClass, string> = {
-  controle: "bg-amber-300/15 text-amber-200",
-  disputa: "bg-red-400/15 text-red-200",
-  misto: "text-slate-400",
-  sem_faccao: "text-slate-600",
+  controle: "bg-[rgba(226,163,59,.12)] text-indiciotx",
+  disputa: "bg-[rgba(229,72,77,.12)] text-registro",
+  misto: "text-ter",
+  sem_faccao: "text-ghost",
 };
 const UF_NOME: Record<string, string> = {
   AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará",
@@ -42,9 +42,9 @@ const PRESENCA_LABEL: Record<PresencaCrimeOrg, string> = {
   baixa: "sem facção nac. doc.",
 };
 const PRESENCA_STYLE: Record<PresencaCrimeOrg, string> = {
-  alta: "text-red-200",
-  media: "text-amber-200",
-  baixa: "text-slate-500",
+  alta: "text-registro",
+  media: "text-indiciotx",
+  baixa: "text-quat",
 };
 
 const CLASS_LABEL: Record<Classificacao, string> = {
@@ -53,9 +53,9 @@ const CLASS_LABEL: Record<Classificacao, string> = {
   misto: "misto",
 };
 const CLASS_STYLE: Record<Classificacao, string> = {
-  controle: "bg-amber-300/15 text-amber-200",
-  disputa: "bg-red-400/15 text-red-200",
-  misto: "text-slate-500",
+  controle: "bg-[rgba(226,163,59,.12)] text-indiciotx",
+  disputa: "bg-[rgba(229,72,77,.12)] text-registro",
+  misto: "text-quat",
 };
 function n(v: number | null): string {
   return v === null ? "—" : String(v);
@@ -75,18 +75,18 @@ function sinalBadge(sinal: SinalEleitoral) {
   switch (sinal) {
     case "forte":
       return (
-        <span className="rounded-full bg-red-400/15 px-2 py-0.5 text-[11px] font-semibold text-red-200">
+        <span className="rounded-full bg-[rgba(229,72,77,.12)] px-2 py-0.5 text-[11px] font-semibold text-registro">
           indício forte · investigar
         </span>
       );
     case "isolado":
       return (
-        <span className="rounded-full bg-amber-300/10 px-2 py-0.5 text-[11px] text-amber-200/80" title="cai mais que os pares, mas sem facção documentada na UF — não promovido">
+        <span className="rounded-full bg-[rgba(226,163,59,.05)] px-2 py-0.5 text-[11px] text-indiciotx" title="cai mais que os pares, mas sem facção documentada na UF — não promovido">
           isolado (sem facção)
         </span>
       );
     default:
-      return <span className="text-[11px] text-slate-500">{sinal === "baixa_amostra" ? "baixa amostra" : "sem desvio relevante"}</span>;
+      return <span className="text-[11px] text-quat">{sinal === "baixa_amostra" ? "baixa amostra" : "sem desvio relevante"}</span>;
   }
 }
 
@@ -101,24 +101,39 @@ export default function RadarPage() {
   const ocultos = oculto.ufs.filter((u) => u.sinal === "indicio_oculto").length;
 
   return (
-    <main className="flex min-h-screen flex-col text-slate-100">
+    <main className="flex min-h-screen flex-col text-ink">
       <AppHeader />
-      <div className="mx-auto flex w-full max-w-[1100px] flex-1 flex-col gap-4 p-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Radar de anomalia</p>
-            <h2 className="text-2xl font-semibold">Ciclo eleitoral × homicídio (dado oficial)</h2>
+      <div className="flex flex-wrap items-end justify-between gap-6 border-b border-line px-7 pb-[26px] pt-[34px]">
+        <div className="max-w-[720px]">
+          <div className="flex items-center gap-2.5 font-mono text-[10px] tracking-[.28em] text-indicio">
+            <span className="inline-block h-px w-[22px] bg-indicio" />
+            RADAR DE ANOMALIA — CREDIBILIDADE DO DADO OFICIAL
           </div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/30 px-3 py-2 text-sm font-medium text-red-100 hover:border-red-400/60 hover:text-red-50"
-          >
-            🎯 Radar de tiroteios (tempo quase real)
-          </Link>
+          <h1 className="mt-3 text-[30px] font-[620] leading-[1.04] tracking-[-0.015em] text-ink [font-stretch:115%] sm:text-[42px]">
+            Quando a queda no dado
+            <br />
+            não é queda no crime
+          </h1>
+          <p className="mt-3 text-[14px] leading-[1.65] text-ter">
+            Três lentes estatísticas, fundamentadas em literatura, apontam onde a violência reportada pode estar{" "}
+            <span className="text-[#C9C7C1]">suprimida ou reclassificada</span>. O resultado é sempre um indício para
+            investigar — nunca uma acusação.
+          </p>
         </div>
+        <div className="flex-none border border-[rgba(226,163,59,.35)] bg-[rgba(226,163,59,.05)] px-4 py-3.5 font-mono text-[9.5px] leading-[2] tracking-[.14em] text-indiciotx">
+          MOLDURA INEGOCIÁVEL
+          <br />
+          <span className="text-indiciodim">01</span> INDÍCIO, NUNCA ACUSAÇÃO
+          <br />
+          <span className="text-indiciodim">02</span> APARTIDÁRIO
+          <br />
+          <span className="text-indiciodim">03</span> SEMPRE COM A FONTE
+        </div>
+      </div>
+      <div className="mx-auto flex w-full max-w-[1100px] flex-1 flex-col gap-4 p-4">
 
         {/* Aviso inegociável: indício, não prova */}
-        <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+        <div className="flex items-start gap-2 rounded-lg border border-[rgba(226,163,59,.35)] bg-[rgba(226,163,59,.05)] px-4 py-3 text-sm text-indiciotx">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
             <strong>Indício para investigar, não prova de manipulação.</strong> Um efeito negativo significa que o
@@ -130,8 +145,8 @@ export default function RadarPage() {
         </div>
 
         {/* Metodologia */}
-        <div className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-slate-300">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+        <div className="flex items-start gap-2 rounded-lg border border-line bg-panel px-4 py-3 text-xs text-sec">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-sec" />
           <p>
             <strong>Como é medido:</strong> índice sazonal intra-UF (média ago–out ÷ média do ano), comparando anos de
             eleição ({ELECTION_YEARS.join(", ")}) com anos normais (2015–2025) — esse é o <em>efeito</em>. Depois um{" "}
@@ -144,7 +159,7 @@ export default function RadarPage() {
             crime organizado; sem facção nacional documentada, fica{" "}
             <strong>&quot;isolado&quot;</strong> (não promovido). Indicador: {INDICADOR}. Fontes: SINESP/VDE +{" "}
             {FACTION_SOURCE}. {fortes} UF(s) com indício forte (cai mais que os pares E com facção).{" "}
-            <Link className="underline hover:text-cyan-200" href="/metodologia#radar">
+            <Link className="underline hover:text-ink" href="/metodologia#radar">
               Metodologia
             </Link>
             .
@@ -152,9 +167,9 @@ export default function RadarPage() {
         </div>
 
         {/* Tabela */}
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div className="overflow-x-auto rounded-xl border border-line">
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+            <thead className="bg-cellhead text-left text-xs uppercase tracking-wide text-ter">
               <tr>
                 <th className="px-3 py-2">#</th>
                 <th className="px-3 py-2">UF</th>
@@ -170,16 +185,16 @@ export default function RadarPage() {
               {ufs.map((u, i) => (
                 <tr
                   key={u.uf}
-                  className={`border-t border-white/5 ${u.sinal === "forte" ? "bg-amber-300/5" : ""} ${!u.robusto ? "text-slate-500" : ""}`}
+                  className={`border-t border-hair ${u.sinal === "forte" ? "bg-[rgba(226,163,59,.04)]" : ""} ${!u.robusto ? "text-quat" : ""}`}
                 >
-                  <td className="px-3 py-2 text-slate-500">{i + 1}</td>
-                  <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
-                  <td className="px-3 py-2 text-slate-400">{PORTE_LABEL[u.porte]}</td>
-                  <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.efeito)}</td>
-                  <td className={`px-3 py-2 font-mono ${u.efeitoRelativo !== null && u.efeitoRelativo < 0 ? "text-amber-300" : "text-slate-300"}`}>
+                  <td className="px-3 py-2 text-quat">{i + 1}</td>
+                  <td className="px-3 py-2 font-semibold text-ink">{u.uf}</td>
+                  <td className="px-3 py-2 text-ter">{PORTE_LABEL[u.porte]}</td>
+                  <td className="px-3 py-2 font-mono text-ter">{fmt(u.efeito)}</td>
+                  <td className={`px-3 py-2 font-mono ${u.efeitoRelativo !== null && u.efeitoRelativo < 0 ? "text-indicio" : "text-sec"}`}>
                     {fmt(u.efeitoRelativo)}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">{u.mediaMensal}</td>
+                  <td className="px-3 py-2 text-ter">{u.mediaMensal}</td>
                   <td className={`px-3 py-2 text-[11px] ${PRESENCA_STYLE[u.presenca]}`}>{PRESENCA_LABEL[u.presenca]}</td>
                   <td className="px-3 py-2">{sinalBadge(u.sinal)}</td>
                 </tr>
@@ -189,12 +204,12 @@ export default function RadarPage() {
         </div>
 
         {/* LENTE 2 — governança criminal (NACIONAL, 27 UFs) */}
-        <div className="mt-6 border-t border-white/10 pt-5">
-          <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Lente 2 · governança criminal</p>
+        <div className="mt-6 border-t border-line pt-5">
+          <p className="text-sm uppercase tracking-[0.18em] text-sec">Lente 2 · governança criminal</p>
           <h3 className="text-xl font-semibold">Controle (pax) × disputa — por UF, Brasil</h3>
         </div>
 
-        <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+        <div className="flex items-start gap-2 rounded-lg border border-[rgba(226,163,59,.35)] bg-[rgba(226,163,59,.05)] px-4 py-3 text-sm text-indiciotx">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
             <strong>Indício, não acusação.</strong> Onde há crime organizado, violência <strong>atipicamente baixa</strong> com
@@ -209,9 +224,9 @@ export default function RadarPage() {
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div className="overflow-x-auto rounded-xl border border-line">
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+            <thead className="bg-cellhead text-left text-xs uppercase tracking-wide text-ter">
               <tr>
                 <th className="px-3 py-2">UF</th>
                 <th className="px-3 py-2">Sinal</th>
@@ -222,38 +237,38 @@ export default function RadarPage() {
             </thead>
             <tbody>
               {gov.ufs.map((u) => (
-                <tr key={u.uf} className={`border-t border-white/5 ${u.classificacao === "controle" ? "bg-amber-300/5" : u.classificacao === "disputa" ? "bg-red-400/5" : ""}`}>
-                  <td className="px-3 py-2 font-semibold text-slate-100">
+                <tr key={u.uf} className={`border-t border-hair ${u.classificacao === "controle" ? "bg-[rgba(226,163,59,.04)]" : u.classificacao === "disputa" ? "bg-[rgba(229,72,77,.05)]" : ""}`}>
+                  <td className="px-3 py-2 font-semibold text-ink">
                     {u.uf}
-                    <span className="text-slate-500"> · {UF_NOME[u.uf] ?? ""}</span>
+                    <span className="text-quat"> · {UF_NOME[u.uf] ?? ""}</span>
                   </td>
                   <td className="px-3 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${GOV_STYLE[u.classificacao]}`}>
                       {GOV_LABEL[u.classificacao]}
                     </span>
                   </td>
-                  <td className="px-3 py-2 font-mono text-slate-300">{(u.intensidade * 100).toFixed(2)}%</td>
+                  <td className="px-3 py-2 font-mono text-sec">{(u.intensidade * 100).toFixed(2)}%</td>
                   {/* Cor segue a CLASSIFICAÇÃO (não o número cru): UF sem facção
                       fica neutra mesmo com intensidade baixa — alinha com o selo. */}
-                  <td className={`px-3 py-2 font-mono ${u.classificacao === "controle" ? "text-amber-300" : u.classificacao === "disputa" ? "text-red-300" : "text-slate-400"}`}>
+                  <td className={`px-3 py-2 font-mono ${u.classificacao === "controle" ? "text-indicio" : u.classificacao === "disputa" ? "text-registro" : "text-ter"}`}>
                     {u.intensRelativa.toFixed(2)}×
                   </td>
-                  <td className="px-3 py-2 text-slate-400">{u.faccoes}</td>
+                  <td className="px-3 py-2 text-ter">{u.faccoes}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <details className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
-          <summary className="cursor-pointer text-slate-300">Aprofundamento: detalhe municipal do RJ ({ANO_REF}) — onde há dado mais rico</summary>
-          <p className="mt-2 text-xs text-slate-400">
+        <details className="rounded-xl border border-line bg-panel px-4 py-3 text-sm">
+          <summary className="cursor-pointer text-sec">Aprofundamento: detalhe municipal do RJ ({ANO_REF}) — onde há dado mais rico</summary>
+          <p className="mt-2 text-xs text-ter">
             No RJ há dado municipal de tiroteios (Fogo Cruzado) + extorsão/tráfico (ISP-RJ), que permite a leitura por
             município: tiroteios com ~0% de &quot;disputa&quot; + extorsão ativa = milícia/controle. {rj.filter((r) => r.classificacao === "controle").length} município(s) com indício de controle.
           </p>
-          <div className="mt-2 overflow-x-auto rounded-lg border border-white/10">
+          <div className="mt-2 overflow-x-auto rounded-lg border border-line">
             <table className="w-full border-collapse text-sm">
-              <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+              <thead className="bg-cellhead text-left text-xs uppercase tracking-wide text-ter">
                 <tr>
                   <th className="px-3 py-2">Município</th>
                   <th className="px-3 py-2">Sinal</th>
@@ -264,14 +279,14 @@ export default function RadarPage() {
               </thead>
               <tbody>
                 {rj.map((r) => (
-                  <tr key={r.municipio} className={`border-t border-white/5 ${!r.robusto ? "text-slate-500" : ""}`}>
-                    <td className="px-3 py-2 font-medium text-slate-200">{r.municipio}</td>
+                  <tr key={r.municipio} className={`border-t border-hair ${!r.robusto ? "text-quat" : ""}`}>
+                    <td className="px-3 py-2 font-medium text-ink">{r.municipio}</td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${CLASS_STYLE[r.classificacao]}`}>{CLASS_LABEL[r.classificacao]}</span>
                     </td>
-                    <td className="px-3 py-2 text-slate-300">{r.tiroteios}</td>
-                    <td className="px-3 py-2 font-mono text-slate-300">{(r.disputaShare * 100).toFixed(1)}%</td>
-                    <td className="px-3 py-2 text-amber-200/90">{n(r.extorsao)}</td>
+                    <td className="px-3 py-2 text-sec">{r.tiroteios}</td>
+                    <td className="px-3 py-2 font-mono text-sec">{(r.disputaShare * 100).toFixed(1)}%</td>
+                    <td className="px-3 py-2 text-indiciotx/90">{n(r.extorsao)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -279,17 +294,17 @@ export default function RadarPage() {
           </div>
         </details>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-quat">
           Fontes: {gov.fonte}. Detalhe RJ: Fogo Cruzado + ISP-RJ/ISPdados.
         </p>
 
         {/* LENTE 3 — homicídios ocultos (MVCI) */}
-        <div className="mt-6 border-t border-white/10 pt-5">
-          <p className="text-sm uppercase tracking-[0.18em] text-cyan-300">Lente 3 · homicídios ocultos</p>
+        <div className="mt-6 border-t border-line pt-5">
+          <p className="text-sm uppercase tracking-[0.18em] text-sec">Lente 3 · homicídios ocultos</p>
           <h3 className="text-xl font-semibold">Assinatura de ouro — homicídio ↓ enquanto MVCI ↑</h3>
         </div>
 
-        <div className="flex items-start gap-2 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+        <div className="flex items-start gap-2 rounded-lg border border-[rgba(226,163,59,.35)] bg-[rgba(226,163,59,.05)] px-4 py-3 text-sm text-indiciotx">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
             <strong>Indício de subnotificação, não acusação.</strong> Quando o homicídio registrado (CID X85–Y09){" "}
@@ -303,20 +318,20 @@ export default function RadarPage() {
         </div>
 
         {oculto.pendente ? (
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-sm text-slate-400">
-            <p className="font-semibold text-slate-300">Dados pendentes de geração.</p>
+          <div className="rounded-xl border border-line bg-panel px-4 py-6 text-sm text-ter">
+            <p className="font-semibold text-sec">Dados pendentes de geração.</p>
             <p className="mt-1">
               A lib e a UI estão prontas; falta gerar o asset (run offline pesado do SIM/DATASUS, fora do CI):
             </p>
-            <pre className="mt-2 overflow-x-auto rounded-md bg-slate-950/60 p-3 text-xs text-slate-300">python3 etl/build_hidden_homicides.py --anos 2015-2024</pre>
+            <pre className="mt-2 overflow-x-auto rounded-md bg-panel/60 p-3 text-xs text-sec">python3 etl/build_hidden_homicides.py --anos 2015-2024</pre>
             <p className="mt-2">Ao commitar o <code>src/data/hiddenHomicides.json</code> gerado, esta seção acende automaticamente.</p>
           </div>
         ) : (
           <>
-            <p className="text-xs text-slate-500">{ocultos} UF(s) com indício: homicídio caindo E razão MVCI subindo bem acima da tendência nacional.</p>
-            <div className="overflow-x-auto rounded-xl border border-white/10">
+            <p className="text-xs text-quat">{ocultos} UF(s) com indício: homicídio caindo E razão MVCI subindo bem acima da tendência nacional.</p>
+            <div className="overflow-x-auto rounded-xl border border-line">
               <table className="w-full border-collapse text-sm">
-                <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-400">
+                <thead className="bg-cellhead text-left text-xs uppercase tracking-wide text-ter">
                   <tr>
                     <th className="px-3 py-2">UF</th>
                     <th className="px-3 py-2" title="variação dos homicídios (2ª metade vs 1ª)">Homicídio</th>
@@ -328,23 +343,23 @@ export default function RadarPage() {
                 </thead>
                 <tbody>
                   {oculto.ufs.map((u) => (
-                    <tr key={u.uf} className={`border-t border-white/5 ${u.sinal === "indicio_oculto" ? "bg-amber-300/5" : ""} ${!u.robusto ? "text-slate-500" : ""}`}>
-                      <td className="px-3 py-2 font-semibold text-slate-100">{u.uf}</td>
-                      <td className={`px-3 py-2 font-mono ${u.homPct < 0 ? "text-amber-300" : "text-slate-300"}`}>{(u.homPct * 100).toFixed(1)}%</td>
-                      <td className="px-3 py-2 font-mono text-slate-400">{fmt(u.razaoInicial)} → {fmt(u.razaoFinal)}</td>
-                      <td className="px-3 py-2 font-mono text-slate-400">
+                    <tr key={u.uf} className={`border-t border-hair ${u.sinal === "indicio_oculto" ? "bg-[rgba(226,163,59,.04)]" : ""} ${!u.robusto ? "text-quat" : ""}`}>
+                      <td className="px-3 py-2 font-semibold text-ink">{u.uf}</td>
+                      <td className={`px-3 py-2 font-mono ${u.homPct < 0 ? "text-indicio" : "text-sec"}`}>{(u.homPct * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-2 font-mono text-ter">{fmt(u.razaoInicial)} → {fmt(u.razaoFinal)}</td>
+                      <td className="px-3 py-2 font-mono text-ter">
                         {u.razaoDelta === null ? "—" : (u.razaoDelta > 0 ? "+" : "") + (u.razaoDelta * 100).toFixed(2) + " p.p."}
                       </td>
-                      <td className={`px-3 py-2 font-mono ${u.razaoDeltaRelativo !== null && u.razaoDeltaRelativo >= 0.03 ? "text-amber-300" : "text-slate-400"}`}>
+                      <td className={`px-3 py-2 font-mono ${u.razaoDeltaRelativo !== null && u.razaoDeltaRelativo >= 0.03 ? "text-indicio" : "text-ter"}`}>
                         {u.razaoDeltaRelativo === null ? "—" : (u.razaoDeltaRelativo > 0 ? "+" : "") + (u.razaoDeltaRelativo * 100).toFixed(2) + " p.p."}
                       </td>
                       <td className="px-3 py-2">
                         {!u.robusto ? (
-                          <span className="text-[11px] text-slate-500">baixa amostra</span>
+                          <span className="text-[11px] text-quat">baixa amostra</span>
                         ) : u.sinal === "indicio_oculto" ? (
-                          <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[11px] font-semibold text-amber-200">indício oculto · investigar</span>
+                          <span className="rounded-full bg-[rgba(226,163,59,.12)] px-2 py-0.5 text-[11px] font-semibold text-indiciotx">indício oculto · investigar</span>
                         ) : (
-                          <span className="text-[11px] text-slate-500">sem assinatura</span>
+                          <span className="text-[11px] text-quat">sem assinatura</span>
                         )}
                       </td>
                     </tr>
