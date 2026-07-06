@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 // header fica FORA da fronteira para a navegacao nao desaparecer na carga.
 export default function TendenciasPage() {
   return (
-    <main className="flex min-h-screen flex-col text-slate-100">
+    <main className="flex min-h-screen flex-col bg-bg0 text-ink">
       <AppHeader />
       <Suspense fallback={null}>
         <TrendsDashboard />

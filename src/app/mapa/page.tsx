@@ -16,7 +16,7 @@ export default function MapaOficialPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen flex-col text-slate-100">
+        <main className="flex min-h-screen flex-col bg-bg0 text-ink">
           <AppHeader />
         </main>
       }

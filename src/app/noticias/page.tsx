@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function NoticiasPage() {
   return (
-    <div className="flex min-h-screen flex-col text-slate-100">
+    <div className="flex min-h-screen flex-col bg-bg0 text-ink">
       <AppHeader />
       <NewsDashboard />
     </div>
