@@ -37,6 +37,7 @@ function frase(nome: string, pontos: TesouraSerie["pontos"]): string {
 
 // Gráfico dual-axis (geometria da referência: 640×320, eixos independentes).
 function Grafico({ pontos }: { pontos: TesouraSerie["pontos"] }) {
+  if (pontos.length < 2) return null; // série curta: sem geometria válida (evita NaN)
   const W = 640;
   const H = 320;
   const padL = 46;
@@ -105,10 +106,13 @@ function Grafico({ pontos }: { pontos: TesouraSerie["pontos"] }) {
 
 export function TesouraEstatistica({ series }: { series: TesouraSerie[] }) {
   const [ufSel, setUfSel] = useState("SP");
-  const atual = series.find((s) => s.uf === ufSel) ?? series[0];
+  // só séries com >=2 anos entram (chips, ranking e gráfico) — UF vazia/parcial
+  // num asset regenerado não pode crashar a seção
+  const validas = series.filter((s) => s.pontos.length >= 2);
+  const atual = validas.find((s) => s.uf === ufSel) ?? validas[0];
   if (!atual) return null;
   const ultimo = atual.pontos[atual.pontos.length - 1];
-  const rank = [...series]
+  const rank = [...validas]
     .map((s) => ({ uf: s.uf, r: s.pontos[s.pontos.length - 1]?.r ?? 0 }))
     .sort((a, b) => b.r - a.r)
     .slice(0, 8);
@@ -123,7 +127,7 @@ export function TesouraEstatistica({ series }: { series: TesouraSerie[] }) {
             <h3 className="mt-2 text-[26px] font-[620] text-ink [font-stretch:112%]">A tesoura estatística</h3>
           </div>
           <div className="flex flex-wrap gap-[5px]" role="group" aria-label="Trocar UF do gráfico">
-            {CHIPS.map((uf) => {
+            {CHIPS.filter((uf) => validas.some((s) => s.uf === uf)).map((uf) => {
               const act = ufSel === uf;
               return (
                 <button
@@ -144,8 +148,10 @@ export function TesouraEstatistica({ series }: { series: TesouraSerie[] }) {
             })}
           </div>
         </div>
-        <div className="mt-[18px] h-[320px]">
-          <Grafico pontos={atual.pontos} />
+        <div className="mt-[18px] overflow-x-auto">
+          <div className="h-[320px] min-w-[560px]">
+            <Grafico pontos={atual.pontos} />
+          </div>
         </div>
         <div className="mt-3.5 flex flex-wrap gap-5 font-mono text-[9.5px] tracking-[.1em] text-ter">
           <span className="flex items-center gap-[7px]">
@@ -160,7 +166,7 @@ export function TesouraEstatistica({ series }: { series: TesouraSerie[] }) {
       </div>
 
       <aside className="flex flex-col gap-[18px] bg-panel px-6 py-[26px]">
-        <div>
+        <div aria-live="polite">
           <p className="font-mono text-[9.5px] tracking-[.22em] text-quat">LEITURA — {atual.nome.toUpperCase()}</p>
           <div className="mt-2.5 flex items-baseline gap-2.5">
             <span className="text-[52px] font-[640] leading-none text-indicio [font-stretch:112%]">{fmtR(ultimo.r)}</span>
