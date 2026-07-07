@@ -112,7 +112,7 @@ export function ShootingsMap({
           const cor = CONTEXTO_COR[o.contexto];
           const tamanho = 10 + Math.min(o.mortos * 3, 12);
           const el = document.createElement("div");
-          el.style.cssText = `position:relative;width:${tamanho}px;height:${tamanho}px`;
+          el.style.cssText = `width:${tamanho}px;height:${tamanho}px`;
           const recente = now - Date.parse(o.data) < H24;
           if (recente) {
             const halo = document.createElement("div");
@@ -164,7 +164,7 @@ export function ShootingsMap({
         // senão, enquadra todos os pontos (FC + OSINT).
         if (focus) {
           const el = document.createElement("div");
-          el.style.cssText = "position:relative;width:14px;height:14px";
+          el.style.cssText = "width:14px;height:14px";
           el.innerHTML =
             `<div class="halo-24h" style="position:absolute;inset:0;border-radius:9999px;border:1px solid #4FA0E8"></div>` +
             `<div style="position:absolute;inset:0;border-radius:9999px;background:#4FA0E8;border:1.5px solid #fff"></div>` +
