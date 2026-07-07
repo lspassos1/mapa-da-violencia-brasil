@@ -111,6 +111,9 @@ export function TesouraEstatistica({ series }: { series: TesouraSerie[] }) {
   const validas = series.filter((s) => s.pontos.length >= 2);
   const atual = validas.find((s) => s.uf === ufSel) ?? validas[0];
   if (!atual) return null;
+  // seleção efetiva = a UF realmente renderizada (se ufSel saiu das válidas num
+  // asset parcial, chips/ranking destacam o fallback, nunca uma seleção fantasma)
+  const ufAtivo = atual.uf;
   const ultimo = atual.pontos[atual.pontos.length - 1];
   const rank = [...validas]
     .map((s) => ({ uf: s.uf, r: s.pontos[s.pontos.length - 1]?.r ?? 0 }))
@@ -128,7 +131,7 @@ export function TesouraEstatistica({ series }: { series: TesouraSerie[] }) {
           </div>
           <div className="flex flex-wrap gap-[5px]" role="group" aria-label="Trocar UF do gráfico">
             {CHIPS.filter((uf) => validas.some((s) => s.uf === uf)).map((uf) => {
-              const act = ufSel === uf;
+              const act = ufAtivo === uf;
               return (
                 <button
                   key={uf}
@@ -182,7 +185,7 @@ export function TesouraEstatistica({ series }: { series: TesouraSerie[] }) {
           <p className="mb-2.5 font-mono text-[9.5px] tracking-[.22em] text-quat">PARCELA MVCI {ultimo.ano} — MAIORES</p>
           <div className="flex flex-col gap-[7px]">
             {rank.map((r) => {
-              const act = ufSel === r.uf;
+              const act = ufAtivo === r.uf;
               return (
                 <button
                   key={r.uf}
